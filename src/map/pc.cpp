@@ -10775,6 +10775,9 @@ int32 pc_itemheal(map_session_data *sd, t_itemid itemid, int32 hp, int32 sp)
 			hp = 0;
 	}
 
+	if (sd->showrecovery)
+		return status_heal(sd, hp, sp, 2);
+
 	return status_heal(sd, hp, sp, 1);
 }
 

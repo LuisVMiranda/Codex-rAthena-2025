@@ -525,6 +525,7 @@
 	export_constant(MF_PRIVATEAIRSHIP_SOURCE);
 	export_constant(MF_PRIVATEAIRSHIP_DESTINATION);
 	export_constant(MF_SKILL_DURATION);
+	export_constant(MF_NORESS);
 	export_constant(MF_NOCASHSHOP);
 	export_constant(MF_NORODEX);
 	export_constant(MF_NORENEWALDROPPENALTY);
@@ -3524,6 +3525,7 @@
 	export_constant(RC2_SCARABA);
 	export_constant(RC2_OGH_ATK_DEF);
 	export_constant(RC2_OGH_HIDDEN);
+	export_constant(RC2_GREENAURA);
 	export_constant(RC2_BIO5_SWORDMAN_THIEF);
 	export_constant(RC2_BIO5_ACOLYTE_MERCHANT);
 	export_constant(RC2_BIO5_MAGE_ARCHER);

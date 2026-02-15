@@ -1,0 +1,102 @@
+# Battleground EasyCore rev24 client release bundle manifest
+
+Source root: `diffs/Battleground-EasyCore-21-24 [OK]/Clientside`
+
+| Source file | Deploy to client path |
+|---|---|
+| `data/arug_cas06.gat` | `data/arug_cas06.gat` |
+| `data/arug_cas07.gat` | `data/arug_cas07.gat` |
+| `data/arug_cas08.gat` | `data/arug_cas08.gat` |
+| `data/bat_a03.gat` | `data/bat_a03.gat` |
+| `data/bat_a04.gat` | `data/bat_a04.gat` |
+| `data/bat_a05.gat` | `data/bat_a05.gat` |
+| `data/bat_b03.gat` | `data/bat_b03.gat` |
+| `data/bat_b04.gat` | `data/bat_b04.gat` |
+| `data/bat_b05.gat` | `data/bat_b05.gat` |
+| `data/bat_c04.gat` | `data/bat_c04.gat` |
+| `data/bat_c05.gat` | `data/bat_c05.gat` |
+| `data/bat_c06.gat` | `data/bat_c06.gat` |
+| `data/bat_c07.gat` | `data/bat_c07.gat` |
+| `data/bat_c08.gat` | `data/bat_c08.gat` |
+| `data/bat_cc.gat` | `data/bat_cc.gat` |
+| `data/bat_cc.gnd` | `data/bat_cc.gnd` |
+| `data/bat_cc.rsw` | `data/bat_cc.rsw` |
+| `data/bat_cc2.gat` | `data/bat_cc2.gat` |
+| `data/bat_cc2.gnd` | `data/bat_cc2.gnd` |
+| `data/bat_cc2.rsw` | `data/bat_cc2.rsw` |
+| `data/luafiles514/lua files/entryqueue/entryqueuelist.lub` | `data/luafiles514/lua files/entryqueue/entryqueuelist.lub` |
+| `data/luafiles514/lua files/skillinfoz/skillid.lub` | `data/luafiles514/lua files/skillinfoz/skillid.lub` |
+| `data/luafiles514/lua files/skillinfoz/skillinfolist.lub` | `data/luafiles514/lua files/skillinfoz/skillinfolist.lub` |
+| `data/region_8.gat` | `data/region_8.gat` |
+| `data/resnametable.txt` | `data/resnametable.txt` |
+| `data/rush_cas01.gat` | `data/rush_cas01.gat` |
+| `data/rush_cas02.gat` | `data/rush_cas02.gat` |
+| `data/rush_cas03.gat` | `data/rush_cas03.gat` |
+| `data/rush_cas04.gat` | `data/rush_cas04.gat` |
+| `data/schg_cas06.gat` | `data/schg_cas06.gat` |
+| `data/schg_cas07.gat` | `data/schg_cas07.gat` |
+| `data/schg_cas08.gat` | `data/schg_cas08.gat` |
+| `data/sprite/¾ÆÀÌÅÛ/blueskull.act` | `data/sprite/¾ÆÀÌÅÛ/blueskull.act` |
+| `data/sprite/¾ÆÀÌÅÛ/blueskull.spr` | `data/sprite/¾ÆÀÌÅÛ/blueskull.spr` |
+| `data/sprite/¾ÆÀÌÅÛ/greenskull.act` | `data/sprite/¾ÆÀÌÅÛ/greenskull.act` |
+| `data/sprite/¾ÆÀÌÅÛ/greenskull.spr` | `data/sprite/¾ÆÀÌÅÛ/greenskull.spr` |
+| `data/sprite/¾ÆÀÌÅÛ/redskull.act` | `data/sprite/¾ÆÀÌÅÛ/redskull.act` |
+| `data/sprite/¾ÆÀÌÅÛ/redskull.spr` | `data/sprite/¾ÆÀÌÅÛ/redskull.spr` |
+| `data/texture/effect/µ¶¼ö¸®(b).bmp` | `data/texture/effect/µ¶¼ö¸®(b).bmp` |
+| `data/texture/effect/»çÀÚ(a).bmp` | `data/texture/effect/»çÀÚ(a).bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_a.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_a.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_b.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_b.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_c.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_guild_c.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_a.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_a.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_b.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_b.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_c.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/apply_party_c.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/boss.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/boss.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/cq.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/cq.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ctf.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ctf.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/dom.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/dom.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/eos.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/eos.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ru.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ru.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/sc.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/sc.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/td.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/td.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ti.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/battle_field/ti.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/blueskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/blueskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/greenskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/greenskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/redskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/collection/redskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/display_mapname/extended_bg.png` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/display_mapname/extended_bg.png` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_100.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_100.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_101.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_101.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_102.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/group/group_102.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_BG.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_BG.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_EQUIPMENT.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_EQUIPMENT.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_WOE.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/CS_WOE.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/blueskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/blueskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/greenskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/greenskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/redskull.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/item/redskull.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas06.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas06.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas07.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas07.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas08.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/arug_cas08.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a01.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a01.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a02.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a02.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a03.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a03.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a04.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_a04.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b01.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b01.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b02.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b02.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b03.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b03.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b04.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_b04.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_cc.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_cc.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_cc2.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/bat_cc2.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/region_8.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/region_8.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas01.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas01.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas02.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas02.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas03.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas03.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas04.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/rush_cas04.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas06.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas06.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas07.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas07.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas08.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/map/schg_cas08.bmp` |
+| `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/ÀüÀåÀûÇ¥½Ã.bmp` | `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/ÀüÀåÀûÇ¥½Ã.bmp` |
+| `system/achievement_list.lub` | `system/achievement_list.lub` |
+| `system/iteminfo.lub` | `system/iteminfo.lub` |
+| `system/mapinfo.lub` | `system/mapinfo.lub` |
+| `system/readme.txt` | `system/readme.txt` |

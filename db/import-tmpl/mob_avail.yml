@@ -123,3 +123,23 @@ Header:
 #    Sprite: WHISPER
 #  - Mob: EP14_3_DEATH_B_MOB3
 #    Sprite: DARK_LORD
+
+Body:
+  - Mob: B_EMPEL_1
+    Sprite: S_EMPEL_1
+  - Mob: B_EMPEL_2
+    Sprite: S_EMPEL_2
+  - Mob: B_EMPERIUM
+    Sprite: EMPELIUM
+  - Mob: OBJ_NEUTRAL2
+    Sprite: OBJ_NEUTRAL
+  - Mob: OBJ_FLAG_A2
+    Sprite: OBJ_FLAG_A
+  - Mob: OBJ_FLAG_B2
+    Sprite: OBJ_FLAG_B
+  - Mob: BAPHOMET_BOSSNIA
+    Sprite: BAPHOMET
+  - Mob: LORD_OF_DEATH_BOSSNIA
+    Sprite: LORD_OF_DEATH
+  - Mob: THANATOS_BOSSNIA
+    Sprite: THANATOS

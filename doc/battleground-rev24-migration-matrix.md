@@ -26,3 +26,9 @@ Scope covered:
 - `char_wstats` baseline scoring columns (`score`, `points`).
 
 If these are absent at boot, the server now keeps running and disables rev24 stat persistence paths with explicit warnings.
+
+## Deployment references
+
+- SQL + import + NPC rollout: `doc/battleground-rev24-deployment.md`
+- Client files release manifest: `doc/battleground-rev24-client-bundle-manifest.md`
+- Parity tracking checklist: `doc/battleground-rev24-parity-checklist.md`

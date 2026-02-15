@@ -44,3 +44,10 @@
 Header:
   Type: STATUS_DB
   Version: 4
+
+Body:
+  # Migrated from diffs/Sys-VipStatusIcon/0001-System-Vip-Status-Icon.patch
+  - Status: VIPSTATE
+    Icon: EFST_VIPSTATE
+    Flags:
+      NoDispell: true

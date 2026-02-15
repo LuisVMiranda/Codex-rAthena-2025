@@ -141,3 +141,15 @@
 Header:
   Type: SKILL_DB
   Version: 4
+
+Body:
+  # Migrated from diffs/SonicBlow-ArrowVulcan/Sonic Blow and Arrow Vulcan v3.patch
+  # Legacy skill_animation.txt `Count` values map to `HitCount` in SKILL_DB.
+  - Id: 136
+    Name: AS_SONICBLOW
+    Hit: Multi_Hit
+    HitCount: -8
+  - Id: 394
+    Name: CG_ARROWVULCAN
+    Hit: Multi_Hit
+    HitCount: -9

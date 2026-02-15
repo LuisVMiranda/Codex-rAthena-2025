@@ -145,7 +145,7 @@
 | `diffs/ExtendedVending-v4/Server Files/db/rsm-mod/item_vending_db.yml` | asset/doc | N/A | N/A |
 | `diffs/ExtendedVending-v4/Server Files/fe4234cd39e341985b1006a371acf9119a3ae248.diff` | patch | FAIL: error: patch failed: conf/msg_conf/map_msg.conf:1817 | error: conf/msg_conf/map_msg.conf: patch does not apply | FAIL: error: patch failed: src/map/achievement.cpp:1096 | error: src/map/achievement.cpp: patch does not apply |
 | `diffs/ExtendedVending-v4/Sql Files/main.sql` | asset/doc | N/A | N/A |
-| `diffs/Hidepet/[Daegaladh] hidepet 2.2.diff` | patch | FAIL: error: src/custom/atcommand.inc: No such file or directory | error: src/custom/atcommand_def.inc: No such file or directory | FAIL: error: patch failed: src/map/clif.cpp:4977 | error: src/map/clif.cpp: patch does not apply |
+| `diffs/Hidepet [OK]/[Daegaladh] hidepet 2.2.diff` | patch | FAIL: error: src/custom/atcommand.inc: No such file or directory | error: src/custom/atcommand_def.inc: No such file or directory | FAIL: error: patch failed: src/map/clif.cpp:4977 | error: src/map/clif.cpp: patch does not apply |
 | `diffs/MIGRATION_NOTES.md` | asset/doc | N/A | N/A |
 | `diffs/MVP-Spawn-Shakto/MVP-Spawn-v1.0.1.diff` | patch | FAIL: error: patch failed: conf/battle/monster.conf:239 | error: conf/battle/monster.conf: patch does not apply | FAIL: error: patch failed: src/map/mob.cpp:1188 | error: src/map/mob.cpp: patch does not apply |
 | `diffs/Mapflag-NoRess/[DIFF] Mapflag NORESS [HD Scripts].diff` | patch | FAIL: error: corrupt patch at line 40 | FAIL: error: corrupt patch at line 40 |
@@ -329,18 +329,18 @@
 | `diffs/MonsterChampion/desktop.ini` | asset/doc | N/A | N/A |
 | `diffs/Overkill/Sistema HitKill.diff` | non-patch | N/A | N/A |
 | `diffs/Overkill/Sistema HitKill.rebased.patch` | patch | OK | OK |
-| `diffs/SBP-PartyBuff/party_buff.diff` | patch | FAIL: error: patch failed: src/map/atcommand.cpp:10050 | error: src/map/atcommand.cpp: patch does not apply | FAIL: error: patch failed: src/map/atcommand.cpp:10050 | error: src/map/atcommand.cpp: patch does not apply |
-| `diffs/SharedZeny/shared_zeny_account.diff` | patch | FAIL: error: patch failed: src/char/char.cpp:307 | error: src/char/char.cpp: patch does not apply | FAIL: error: patch failed: src/char/char.cpp:519 | error: src/char/char.cpp: patch does not apply |
-| `diffs/ShowPartySP/party_sp_bar.diff` | patch | FAIL: error: src/custom/atcommand.inc: No such file or directory | error: src/custom/atcommand_def.inc: No such file or directory | FAIL: error: patch failed: src/map/clif.cpp:3246 | error: src/map/clif.cpp: patch does not apply |
-| `diffs/ShowRecovery/showrecovery.diff` | patch | FAIL: error: corrupt patch at line 60 | FAIL: error: corrupt patch at line 60 |
-| `diffs/ShowRecovery/showrecovery.rebased.patch` | patch | OK | OK |
+| `diffs/SBP-PartyBuff [OK]/party_buff.diff` | patch | FAIL: error: patch failed: src/map/atcommand.cpp:10050 | error: src/map/atcommand.cpp: patch does not apply | FAIL: error: patch failed: src/map/atcommand.cpp:10050 | error: src/map/atcommand.cpp: patch does not apply |
+| `diffs/SharedZeny [OK]/shared_zeny_account.diff` | patch | FAIL: error: patch failed: src/char/char.cpp:307 | error: src/char/char.cpp: patch does not apply | FAIL: error: patch failed: src/char/char.cpp:519 | error: src/char/char.cpp: patch does not apply |
+| `diffs/ShowPartySP [OK]/party_sp_bar.diff` | patch | FAIL: error: src/custom/atcommand.inc: No such file or directory | error: src/custom/atcommand_def.inc: No such file or directory | FAIL: error: patch failed: src/map/clif.cpp:3246 | error: src/map/clif.cpp: patch does not apply |
+| `diffs/ShowRecovery [OK]/showrecovery.diff` | patch | FAIL: error: corrupt patch at line 60 | FAIL: error: corrupt patch at line 60 |
+| `diffs/ShowRecovery [OK]/showrecovery.rebased.patch` | patch | OK | OK |
 | `diffs/SonicBlow-ArrowVulcan/Sonic Blow and Arrow Vulcan v3.patch` | patch | FAIL: error: db/skill_animation.txt: already exists in working directory | error: patch failed: src/map/clif.cpp:2075 | FAIL: error: patch failed: src/map/clif.cpp:2075 | error: src/map/clif.cpp: patch does not apply |
 | `diffs/Sys-VipStatusIcon/0001-System-Vip-Status-Icon.patch` | patch | FAIL: error: db/import/status.yml: No such file or directory | error: patch failed: src/map/chrif.cpp:1607 | FAIL: error: db/import/status.yml: No such file or directory | error: patch failed: src/map/chrif.cpp:1607 |
 | `diffs/Sys-VipStatusIcon/data/luafiles514/lua files/stateicon/efstids.lub` | asset/doc | N/A | N/A |
 | `diffs/Sys-VipStatusIcon/data/luafiles514/lua files/stateicon/stateiconimginfo.lub` | asset/doc | N/A | N/A |
 | `diffs/Sys-VipStatusIcon/data/luafiles514/lua files/stateicon/stateiconinfo.lub` | asset/doc | N/A | N/A |
 | `diffs/Sys-VipStatusIcon/data/texture/effect/vipstate.tga` | asset/doc | N/A | N/A |
-| `diffs/WeaponShadow/WeaponShadow.diff` | patch | FAIL: error: patch failed: src/common/mmo.hpp:518 | error: src/common/mmo.hpp: patch does not apply | FAIL: error: patch failed: src/common/mmo.hpp:518 | error: src/common/mmo.hpp: patch does not apply |
+| `diffs/WeaponShadow [OK]/WeaponShadow.diff` | patch | FAIL: error: patch failed: src/common/mmo.hpp:518 | error: src/common/mmo.hpp: patch does not apply | FAIL: error: patch failed: src/common/mmo.hpp:518 | error: src/common/mmo.hpp: patch does not apply |
 | `diffs/Wordboss-cutins/WorldBossv3.diff` | non-patch | N/A | N/A |
 | `diffs/Wordboss-cutins/WorldBossv3.rebased.patch` | patch | OK | OK |
 | `diffs/Wordboss-cutins/data.rar` | asset/doc | N/A | N/A |
@@ -446,8 +446,8 @@
 | `diffs/Wordboss-cutins/data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/illust/98.bmp` | asset/doc | N/A | N/A |
 | `diffs/Wordboss-cutins/data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/illust/99.bmp` | asset/doc | N/A | N/A |
 | `diffs/Wordboss-cutins/worldboss.txt` | asset/doc | N/A | N/A |
-| `diffs/fakeIcon/fakeIcon.rebased.patch` | patch | OK | OK |
-| `diffs/fakeIcon/fakeIcon.txt` | asset/doc | N/A | N/A |
+| `diffs/fakeIcon [OK]/fakeIcon.rebased.patch` | patch | OK | OK |
+| `diffs/fakeIcon [OK]/fakeIcon.txt` | asset/doc | N/A | N/A |
 
 ## Why many diffs fail
 - Legacy extension points no longer present (`src/custom/*.inc`) are referenced by several old patches.

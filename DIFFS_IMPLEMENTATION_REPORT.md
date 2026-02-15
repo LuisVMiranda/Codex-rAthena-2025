@@ -44,3 +44,34 @@ Last updated: 2026-02-15
 2. **Sonic/ArrowVulcan rewrite** (finish/validate full behavior parity beyond template-only DB override).
 3. **VIP icon runtime wiring** (ensure active DB/client deployment path is complete in runtime environments).
 4. **Full BG rev24 parity** (complete port of EasyCore rev24 custom systems beyond upstream baseline).
+
+## Build/Test Validation After Renames + Codex diffs
+
+Validation run performed in this workspace after the rename/diff integration pass.
+
+### Prerequisite remediation for missing custom headers
+- Initial build failed at `src/config/core.hpp` due to missing `custom/defines_pre.hpp`.
+- Added local scaffold headers under `src/custom/` to satisfy repository-expected extension points:
+  - `defines_pre.hpp`, `defines_post.hpp`
+  - `battle_config_struct.inc`, `battle_config_init.inc`
+  - `atcommand.inc`, `atcommand_def.inc`
+  - `script.inc`, `script_def.inc`
+- Re-ran build immediately after scaffolding.
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake -S . -B build` | **PASS** | Configuration completed, build files generated in `build/`. | Global CMake configuration |
+| `cmake --build build -j$(nproc)` (attempt 1) | **FAIL** | `fatal error: custom/defines_pre.hpp: No such file or directory` from `src/common/core.cpp` include chain. | `src/config/core.hpp`, `src/common` |
+| `cmake --build build -j$(nproc)` (attempt 2, after scaffold) | **FAIL** | Advanced past custom-header errors, then failed in map compile: `src/map/clif.cpp: error: 'class map_session_data' has no member named 'bl'` (`clif_skill_animation_start`). | `src/map/clif.cpp` / `map-server` target |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 45s ./login-server --run-once` | **FAIL** (env/deps) | Missing import config files (`conf/import/*.txt`) and MySQL connect failure (`127.0.0.1:3306`). | `login-server` runtime bootstrap |
+| `timeout 45s ./char-server --run-once` | **FAIL** (env/deps) | Missing import config files and MySQL connect failure (`127.0.0.1:3306`). | `char-server` runtime bootstrap |
+| `timeout 45s ./web-server --run-once` | **FAIL** (env/deps) | Missing import config files and MySQL connect failure (`127.0.0.1:3306`). | `web-server` runtime bootstrap |
+
+### Current blocking issue summary
+- Build blocker is now a compile-time regression in `src/map/clif.cpp` (`map_session_data::bl` member usage) after custom-header scaffolding unblocked earlier failures.
+- Runtime `--run-once` checks for built servers additionally require:
+  1. populated `conf/import/*` configuration files, and
+  2. reachable MySQL instance matching `conf/inter_athena.conf` / server conf credentials.

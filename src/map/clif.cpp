@@ -6069,7 +6069,7 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	if (sd == nullptr) {
 		return;
 	}
-	skill_clear_animation(&sd->bl);
+	skill_clear_animation(sd);
 
 	int32 start = (animation->start_delay >= 0) ? animation->start_delay : sdelay;
 	if (start < 0) {
@@ -6082,10 +6082,10 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	env->base_dir = static_cast<int8>(unit_getdir(&dst));
 
 	sd->skill_animation.step = 0;
-	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->bl.id, reinterpret_cast<intptr_t>(env));
+	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->id, reinterpret_cast<intptr_t>(env));
 	if (sd->skill_animation.tid == INVALID_TIMER) {
 		delete env;
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 	}
 }
 

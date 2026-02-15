@@ -1,0 +1,118 @@
+# Wordboss Cutins Client Asset Manifest
+
+- Source directory: `diffs/Wordboss-cutins [OK]/data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/illust/`
+- Client destination: `data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/illust/` (same encoded path as provided archive).
+- Asset count: **101** `.bmp` files.
+- Numeric range: **0..100**.
+- Missing indices: **none**.
+
+## Numbering assumptions used by script/server
+
+1. `npc/custom/events/worldboss.txt` calls `cutin(""+.P_HP+"", 1)` where `.P_HP` is current boss HP percent from 0 to 100.
+2. Therefore each integer percent requires a same-name BMP (`0.bmp`..`100.bmp`) in the client illust folder.
+3. On boss death, script forces `cutin("0", 1)`, then `cutin("", 255)` to hide the overlay; `0.bmp` must exist for a smooth transition.
+4. Server-side green aura reduction message/config uses percentages as well (`greenaura_reduction_rate`), aligned with the 0..100 cutin naming convention.
+
+## Asset list
+
+- `0.bmp`
+- `1.bmp`
+- `2.bmp`
+- `3.bmp`
+- `4.bmp`
+- `5.bmp`
+- `6.bmp`
+- `7.bmp`
+- `8.bmp`
+- `9.bmp`
+- `10.bmp`
+- `11.bmp`
+- `12.bmp`
+- `13.bmp`
+- `14.bmp`
+- `15.bmp`
+- `16.bmp`
+- `17.bmp`
+- `18.bmp`
+- `19.bmp`
+- `20.bmp`
+- `21.bmp`
+- `22.bmp`
+- `23.bmp`
+- `24.bmp`
+- `25.bmp`
+- `26.bmp`
+- `27.bmp`
+- `28.bmp`
+- `29.bmp`
+- `30.bmp`
+- `31.bmp`
+- `32.bmp`
+- `33.bmp`
+- `34.bmp`
+- `35.bmp`
+- `36.bmp`
+- `37.bmp`
+- `38.bmp`
+- `39.bmp`
+- `40.bmp`
+- `41.bmp`
+- `42.bmp`
+- `43.bmp`
+- `44.bmp`
+- `45.bmp`
+- `46.bmp`
+- `47.bmp`
+- `48.bmp`
+- `49.bmp`
+- `50.bmp`
+- `51.bmp`
+- `52.bmp`
+- `53.bmp`
+- `54.bmp`
+- `55.bmp`
+- `56.bmp`
+- `57.bmp`
+- `58.bmp`
+- `59.bmp`
+- `60.bmp`
+- `61.bmp`
+- `62.bmp`
+- `63.bmp`
+- `64.bmp`
+- `65.bmp`
+- `66.bmp`
+- `67.bmp`
+- `68.bmp`
+- `69.bmp`
+- `70.bmp`
+- `71.bmp`
+- `72.bmp`
+- `73.bmp`
+- `74.bmp`
+- `75.bmp`
+- `76.bmp`
+- `77.bmp`
+- `78.bmp`
+- `79.bmp`
+- `80.bmp`
+- `81.bmp`
+- `82.bmp`
+- `83.bmp`
+- `84.bmp`
+- `85.bmp`
+- `86.bmp`
+- `87.bmp`
+- `88.bmp`
+- `89.bmp`
+- `90.bmp`
+- `91.bmp`
+- `92.bmp`
+- `93.bmp`
+- `94.bmp`
+- `95.bmp`
+- `96.bmp`
+- `97.bmp`
+- `98.bmp`
+- `99.bmp`
+- `100.bmp`

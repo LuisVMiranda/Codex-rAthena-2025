@@ -423,7 +423,7 @@ static int32 clif_send_sub(block_list *bl, va_list ap)
 	case AREA_WOS:
 		if (bl == src_bl)
 			return 0;
-		if (src_bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == src_bl->id))))
+		if (src_bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->id == src_bl->id))))
 			return 0;
 	break;
 	case AREA_WOC:
@@ -566,6 +566,7 @@ int32 clif_send(const void* buf, int32 len, const block_list* bl, enum send_targ
 	case PARTY_WOS:
 	case PARTY_SAMEMAP:
 	case PARTY_SAMEMAP_WOS:
+	case PARTY_BUFF_INFO:
 		if (sd && sd->status.party_id)
 			p = party_search(sd->status.party_id);
 
@@ -580,7 +581,10 @@ int32 clif_send(const void* buf, int32 len, const block_list* bl, enum send_targ
 				if( sd->id == bl->id && (type == PARTY_WOS || type == PARTY_SAMEMAP_WOS || type == PARTY_AREA_WOS) )
 					continue;
 
-				if( type != PARTY && type != PARTY_WOS && bl->m != sd->m )
+				if( type != PARTY_BUFF_INFO && type != PARTY && type != PARTY_WOS && bl->m != sd->m )
+					continue;
+
+				if( type == PARTY_BUFF_INFO && !sd->state.spb )
 					continue;
 
 				if( (type == PARTY_AREA || type == PARTY_AREA_WOS) && (sd->x < x0 || sd->y < y0 || sd->x > x1 || sd->y > y1) )
@@ -5047,7 +5051,7 @@ void clif_getareachar_unit( map_session_data* sd,block_list *bl ){
 		return;
 	}
 
-	if (bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == bl->id)))) {
+	if (bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->id == bl->id)))) {
 		return;
 	}
 
@@ -7908,8 +7912,62 @@ void clif_party_info( const party_data& party, const map_session_data* sd ){
 		c++;
 	}
 
+	if( target == PARTY ){
+		clif_send( p, p->packetLen, sd, PARTY );
+
+		std::vector<uint8> buff_packet( p->packetLen );
+		memcpy( buff_packet.data(), p, p->packetLen );
+		PACKET_ZC_GROUP_LIST* pb = reinterpret_cast<PACKET_ZC_GROUP_LIST*>( buff_packet.data() );
+		for( int32 i = 0, c = 0; i < MAX_PARTY; i++ ){
+			const party_member& m = party.party.member[i];
+			if( m.account_id == 0 )
+				continue;
+			const map_session_data* party_sd = party.data[i].sd;
+			if( party_sd != nullptr ){
+				char output[NAME_LENGTH + 8] = "[";
+				strcat( output, party_sd->sc.getSCE(SC_BLESSING) != nullptr ? "B" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_INCREASEAGI) != nullptr ? "A" : "_" );
+				strcat( output,
+					( party_sd->sc.getSCE(SC_CP_WEAPON) != nullptr && party_sd->sc.getSCE(SC_CP_SHIELD) != nullptr &&
+					  party_sd->sc.getSCE(SC_CP_ARMOR) != nullptr && party_sd->sc.getSCE(SC_CP_HELM) != nullptr ) ? "F" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_SPIRIT) != nullptr ? "S" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_DEVOTION) != nullptr ? "+" : "_" );
+				strcat( output, "]" );
+				strncat( output, m.name, NAME_LENGTH - 1 );
+				safestrncpy( pb->members[c].playerName, output, sizeof( pb->members[c].playerName ) );
+			}
+			c++;
+		}
+		clif_send( pb, pb->packetLen, sd, PARTY_BUFF_INFO );
+		return;
+	}
+
+	if( target == SELF && sd->state.spb ){
+		for( int32 i = 0, c = 0; i < MAX_PARTY; i++ ){
+			const party_member& m = party.party.member[i];
+			if( m.account_id == 0 )
+				continue;
+			const map_session_data* party_sd = party.data[i].sd;
+			if( party_sd != nullptr ){
+				char output[NAME_LENGTH + 8] = "[";
+				strcat( output, party_sd->sc.getSCE(SC_BLESSING) != nullptr ? "B" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_INCREASEAGI) != nullptr ? "A" : "_" );
+				strcat( output,
+					( party_sd->sc.getSCE(SC_CP_WEAPON) != nullptr && party_sd->sc.getSCE(SC_CP_SHIELD) != nullptr &&
+					  party_sd->sc.getSCE(SC_CP_ARMOR) != nullptr && party_sd->sc.getSCE(SC_CP_HELM) != nullptr ) ? "F" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_SPIRIT) != nullptr ? "S" : "_" );
+				strcat( output, party_sd->sc.getSCE(SC_DEVOTION) != nullptr ? "+" : "_" );
+				strcat( output, "]" );
+				strncat( output, m.name, NAME_LENGTH - 1 );
+				safestrncpy( p->members[c].playerName, output, sizeof( p->members[c].playerName ) );
+			}
+			c++;
+		}
+	}
+
 	clif_send( p, p->packetLen, sd, target );
 }
+
 
 
 /// The player's 'party invite' state, sent during login (ZC_PARTY_CONFIG).

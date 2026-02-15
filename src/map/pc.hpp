@@ -427,6 +427,7 @@ public:
 		uint16 autoloot;
 		t_itemid autolootid[AUTOLOOTITEM_SIZE]; // [Zephyrus]
 		uint16 autoloottype;
+		uint32 spb : 1; // @spb / @partybuff
 		uint32 autolooting : 1; //performance-saver, autolooting state for @alootid
 		uint32 gmaster_flag : 1;
 		uint32 prevend : 1;//used to flag wheather you've spent 40sp to open the vending or not.

@@ -33,6 +33,7 @@
 #include "itemdb.hpp"
 #include "log.hpp"
 #include "map.hpp"
+#include "mapreg.hpp"
 #include "mercenary.hpp"
 #include "npc.hpp"
 #include "party.hpp"
@@ -1220,6 +1221,11 @@ int32 mob_spawn (mob_data *md)
 		clif_spawn(md);
 	skill_unit_move(md,tick,1);
 	mobskill_use(md, tick, MSC_SPAWN);
+
+	if( md->spawn != nullptr && md->spawn->state.boss ){
+		std::string mapregname = "$" + std::to_string(md->mob_id) + "_" + std::to_string(md->m);
+		mapreg_setreg(reference_uid(add_str(mapregname.c_str()), 0), 2);
+	}
 	return 0;
 }
 
@@ -3647,6 +3653,16 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 	// MvP tomb [GreenBox]
 	if (battle_config.mvp_tomb_enabled && md->spawn->state.boss && map_getmapflag(md->m, MF_NOTOMB) != 1)
 		mvptomb_create(md, mvp_sd != nullptr ? mvp_sd->status.name : (first_sd != nullptr ? first_sd->status.name : nullptr), time(nullptr));
+
+	if( md->spawn != nullptr && md->spawn->state.boss ){
+		std::string mapregname = "$" + std::to_string(md->db->id) + "_" + std::to_string(md->m);
+		std::string mapregnamestr = mapregname + "$";
+		mapreg_setreg(reference_uid(add_str(mapregname.c_str()), 0), 1);
+		mapreg_setreg(reference_uid(add_str(mapregname.c_str()), 1), md->x);
+		mapreg_setreg(reference_uid(add_str(mapregname.c_str()), 2), md->y);
+		mapreg_setreg(reference_uid(add_str(mapregname.c_str()), 3), static_cast<int32>(time(nullptr)));
+		mapreg_setregstr(reference_uid(add_str(mapregnamestr.c_str()), 4), mvp_sd != nullptr ? mvp_sd->status.name : (first_sd != nullptr ? first_sd->status.name : ""));
+	}
 
 	if( !rebirth )
 		mob_setdelayspawn(md); //Set respawning.

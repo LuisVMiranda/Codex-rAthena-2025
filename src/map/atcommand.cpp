@@ -9196,7 +9196,7 @@ static int32 atcommand_hidepet_sub(block_list* bl, va_list ap) {
 	nullpo_ret(sd);
 	nullpo_ret(bl);
 
-	if (!hide_all && sd->pd != nullptr && sd->pd->bl.id == bl->id) {
+	if (!hide_all && sd->pd != nullptr && sd->pd->id == bl->id) {
 		return 0;
 	}
 
@@ -9223,13 +9223,13 @@ ACMD_FUNC(hidepet) {
 	}
 
 	if (sd->state.hidepet == 0) {
-		map_foreachinallrange(clif_insight, &sd->bl, AREA_SIZE, BL_PET, &sd->bl);
+		map_foreachinallrange(clif_insight, sd, AREA_SIZE, BL_PET, sd);
 		if (previous_state == 2 && sd->pd != nullptr) {
-			clif_spawn(&sd->pd->bl, true);
+			clif_spawn(sd->pd, true);
 		}
 		clif_displaymessage(fd, "All pets are visible.");
 	} else {
-		map_foreachinallrange(atcommand_hidepet_sub, &sd->bl, AREA_SIZE, BL_PET, &sd->bl, hide_all ? 1 : 0);
+		map_foreachinallrange(atcommand_hidepet_sub, sd, AREA_SIZE, BL_PET, sd, hide_all ? 1 : 0);
 		clif_displaymessage(fd, hide_all ? "All pets are hidden." : "All pets except yours are hidden.");
 	}
 
@@ -9246,11 +9246,31 @@ ACMD_FUNC(spbar) {
 		if (pl_sd == nullptr) {
 			continue;
 		}
-		clif_refresh(*pl_sd);
+		clif_refresh(pl_sd);
 	}
 	mapit_free(iter);
 
 	clif_displaymessage(fd, battle_config.party_sp_on ? "Party SP bar is enabled." : "Party SP bar is disabled.");
+	return 0;
+}
+
+ACMD_FUNC(partybuff) {
+	nullpo_retr(-1, sd);
+
+	if( sd->status.party_id == 0 ) {
+		clif_displaymessage(fd, msg_txt(sd,1071));
+		return -1;
+	}
+
+	party_data* p = party_search(sd->status.party_id);
+	if( p == nullptr ) {
+		clif_displaymessage(fd, msg_txt(sd,1071));
+		return -1;
+	}
+
+	sd->state.spb = !sd->state.spb;
+	clif_displaymessage(fd, sd->state.spb ? msg_txt(sd,1073) : msg_txt(sd,1072));
+	clif_party_info(*p, sd);
 	return 0;
 }
 
@@ -11776,6 +11796,8 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(hidepet),
 		ACMD_DEF2("hidepetall", hidepet),
 		ACMD_DEF(spbar),
+		ACMD_DEF(partybuff),
+		ACMD_DEF2("spb", partybuff),
 		ACMD_DEF(autotrade),
 		ACMD_DEF(changegm),
 		ACMD_DEF(changeleader),

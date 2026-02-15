@@ -33,6 +33,7 @@
 #include "path.hpp"
 #include "pc.hpp"
 #include "pc_groups.hpp"
+#include "party.hpp"
 #include "pet.hpp"
 #include "script.hpp"
 
@@ -3295,6 +3296,23 @@ static int32 status_get_hpbonus_item(block_list *bl) {
  * @return bonus: total bonus for SP
  * @author [Cydh]
  */
+
+static bool status_should_refresh_party_buffs(sc_type type){
+	switch( type ){
+		case SC_BLESSING:
+		case SC_INCREASEAGI:
+		case SC_CP_WEAPON:
+		case SC_CP_SHIELD:
+		case SC_CP_ARMOR:
+		case SC_CP_HELM:
+		case SC_SPIRIT:
+		case SC_DEVOTION:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static int32 status_get_spbonus(block_list *bl, enum e_status_bonus type) {
 	int32 bonus = 0;
 
@@ -13352,6 +13370,12 @@ static bool status_change_start_post_delay(block_list* src, block_list* bl, sc_t
 	if( opt_flag[SCF_ONTOUCH] && sd && !sd->npc_ontouch_.empty() )
 		npc_touchnext_areanpc(sd,false); // Run OnTouch_ on next char in range
 
+	if( sd != nullptr && sd->status.party_id > 0 && status_should_refresh_party_buffs(type) ){
+		party_data* p = party_search(sd->status.party_id);
+		if( p != nullptr )
+			clif_party_info(*p, nullptr);
+	}
+
 	return true;
 }
 
@@ -13417,6 +13441,7 @@ int32 status_change_clear(block_list* bl, int32 type)
 
 	if( type == 0 || type == 2 )
 		clif_changeoption(bl);
+
 
 	return 1;
 }

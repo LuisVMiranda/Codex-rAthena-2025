@@ -29,6 +29,7 @@
 #include "log.hpp"
 #include "log.hpp"
 #include "map.hpp"
+#include "mapreg.hpp"
 #include "mob.hpp"
 #include "navi.hpp"
 #include "pc.hpp"
@@ -5202,6 +5203,39 @@ void npc_parse_mob2(struct spawn_data* mob)
 	for( i = mob->active; i < mob->num; ++i )
 	{
 		mob_data* md = mob_spawn_dataset(mob);
+		if( md == nullptr )
+			continue;
+
+		if( md->state.boss ){
+			std::string mapregname = "$" + std::to_string(md->db->id) + "_" + std::to_string(md->m);
+			if( mapreg_readreg(reference_uid(add_str(mapregname.c_str()), 0)) == 1 ){
+				int64 dead_since = mapreg_readreg(reference_uid(add_str(mapregname.c_str()), 3));
+				int64 now = time(nullptr);
+				int64 respawn_delay = mob->delay1;
+				if( mob->delay2 > 0 )
+					respawn_delay += rnd() % mob->delay2;
+				int64 remaining_ms = (dead_since + (respawn_delay / 1000) - now) * 1000;
+				if( remaining_ms > 0 ){
+					if( battle_config.mvp_tomb_enabled && map_getmapflag(md->m, MF_NOTOMB) != 1 ){
+						std::string mapregnamestr = mapregname + "$";
+						int16 old_x = md->x;
+						int16 old_y = md->y;
+						md->x = static_cast<int16>(mapreg_readreg(reference_uid(add_str(mapregname.c_str()), 1)));
+						md->y = static_cast<int16>(mapreg_readreg(reference_uid(add_str(mapregname.c_str()), 2)));
+						char* killer = mapreg_readregstr(reference_uid(add_str(mapregnamestr.c_str()), 4));
+						mvptomb_create(md, killer, static_cast<time_t>(dead_since));
+						md->x = old_x;
+						md->y = old_y;
+					}
+					if( md->spawn_timer != INVALID_TIMER )
+						delete_timer(md->spawn_timer, mob_delayspawn);
+					md->spawn = mob;
+					md->spawn->active++;
+					md->spawn_timer = add_timer(gettick() + static_cast<t_tick>(remaining_ms), mob_delayspawn, md->id, 0);
+					continue;
+				}
+			}
+		}
 		md->spawn = mob;
 		// Determine center cell for each mob in the spawn line
 		if (battle_config.randomize_center_cell) {

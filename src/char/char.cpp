@@ -303,7 +303,7 @@ int32 char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 	)
 	{	//Save status
 		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `base_level`='%d', `job_level`='%d',"
-			"`base_exp`='%" PRIu64 "', `job_exp`='%" PRIu64 "', `zeny`='%d',"
+			"`base_exp`='%" PRIu64 "', `job_exp`='%" PRIu64 "',"
 			"`max_hp`='%u',`hp`='%u',`max_sp`='%u',`sp`='%u',`status_point`='%d',`skill_point`='%d',"
 			"`str`='%d',`agi`='%d',`vit`='%d',`int`='%d',`dex`='%d',`luk`='%d',"
 			"`option`='%d',`party_id`='%d',`guild_id`='%d',`pet_id`='%d',`homun_id`='%d',`elemental_id`='%d',"
@@ -316,7 +316,7 @@ int32 char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 			"`pow`='%d',`sta`='%d',`wis`='%d',`spl`='%d',`con`='%d',`crt`='%d'"
 			" WHERE `account_id`='%d' AND `char_id` = '%d'",
 			schema_config.char_db, p->base_level, p->job_level,
-			p->base_exp, p->job_exp, p->zeny,
+			p->base_exp, p->job_exp,
 			p->max_hp, p->hp, p->max_sp, p->sp, p->status_point, p->skill_point,
 			p->str, p->agi, p->vit, p->int_, p->dex, p->luk,
 			p->option, p->party_id, p->guild_id, p->pet_id, p->hom_id, p->ele_id,
@@ -518,6 +518,26 @@ int32 char_mmo_char_tosql(uint32 char_id, struct mmo_charstatus* p){
 			strcat(save_status, " hotkeys");
 	}
 #endif
+
+	if( p->zeny != cp->zeny ){
+		bool tx_started = false;
+		if( SQL_ERROR != Sql_Query(sql_handle, "START TRANSACTION") ){
+			tx_started = true;
+		}
+
+		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `login` SET `zeny`='%d' WHERE `account_id` = '%d'", p->zeny, p->account_id) ){
+			Sql_ShowDebug(sql_handle);
+			errors++;
+			if( tx_started )
+				Sql_Query(sql_handle, "ROLLBACK");
+		}else if( tx_started && SQL_ERROR == Sql_Query(sql_handle, "COMMIT") ){
+			Sql_ShowDebug(sql_handle);
+			errors++;
+			Sql_Query(sql_handle, "ROLLBACK");
+		}else{
+			strcat(save_status, " zeny");
+		}
+	}
 
 	if (save_status[0]!='\0' && charserv_config.save_log)
 		ShowInfo("Saved char %d - %s:%s.\n", char_id, p->name, save_status);
@@ -920,6 +940,19 @@ int32 char_mmo_chars_fromsql( char_session_data& sd, CHARACTER_INFO chars[], uin
 		sd.unban_time[i] = 0;
 	}
 
+
+	int32 shared_zeny = 0;
+	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT `zeny` FROM `login` WHERE `account_id`='%d'", sd.account_id) ) {
+		Sql_ShowDebug(sql_handle);
+		return 0;
+	}
+	if( SQL_SUCCESS == Sql_NextRow(sql_handle) ){
+		char* data = nullptr;
+		Sql_GetData(sql_handle, 0, &data, nullptr);
+		shared_zeny = data != nullptr ? atoi(data) : 0;
+	}
+	Sql_FreeResult(sql_handle);
+
 	// read char data
 	if( SQL_ERROR == stmt.Prepare( "SELECT "
 		"`char_id`,`char_num`,`name`,`class`,`base_level`,`job_level`,`base_exp`,`job_exp`,`zeny`,"
@@ -1003,6 +1036,7 @@ int32 char_mmo_chars_fromsql( char_session_data& sd, CHARACTER_INFO chars[], uin
 		sd.found_char[p.slot] = p.char_id;
 		sd.unban_time[p.slot] = p.unban_time;
 		p.sex = char_mmo_gender( &sd, &p, sex[0] );
+		p.zeny = shared_zeny;
 		j += char_mmo_char_tobuf( chars[i], p );
 
 		// Addon System
@@ -1037,6 +1071,7 @@ int32 char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_
 	memset(p, 0, sizeof(struct mmo_charstatus));
 
 	if (charserv_config.save_log) ShowInfo("Char load request (%d)\n", char_id);
+
 
 	// read char data
 	if( SQL_ERROR == stmt.Prepare( "SELECT "
@@ -1141,8 +1176,19 @@ int32 char_mmo_char_fromsql(uint32 char_id, struct mmo_charstatus* p, bool load_
 	}
 	p->sex = char_mmo_gender(nullptr, p, sex[0]);
 
-	StringBuf_Init(&msg_buf);
+StringBuf_Init(&msg_buf);
 	StringBuf_AppendStr(&msg_buf, " status");
+
+	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT `zeny` FROM `login` WHERE `account_id`='%d'", p->account_id) ){
+		Sql_ShowDebug(sql_handle);
+		return 0;
+	}
+	if( SQL_SUCCESS == Sql_NextRow(sql_handle) ){
+		char* data = nullptr;
+		Sql_GetData(sql_handle, 0, &data, nullptr);
+		p->zeny = data != nullptr ? atoi(data) : 0;
+	}
+	Sql_FreeResult(sql_handle);
 
 	if (!load_everything) // For quick selection of data when displaying the char menu
 	{
@@ -1500,15 +1546,21 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 	}
 #endif
 
+	if( SQL_ERROR == Sql_Query(sql_handle, "START TRANSACTION") ) {
+		Sql_ShowDebug(sql_handle);
+		return -2;
+	}
+
 	//Insert the new char entry to the database
 	if( SQL_ERROR == Sql_Query(sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `class`, `zeny`, `status_point`, `str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
 		"`max_sp`, `sp`, `hair`, `hair_color`, `last_map`, `last_x`, `last_y`, `save_map`, `save_x`, `save_y`, `sex`, `last_instanceid`, `body`) VALUES ("
-		"'%d', '%d', '%s', '%d', '%d',  '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%u', '%u', '%u', '%u', '%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%c', '0', '%d')",
-		schema_config.char_db, sd->account_id , slot, esc_name, start_job, charserv_config.start_zeny, status_points, str, agi, vit, int_, dex, luk,
+		"'%d', '%d', '%s', '%d', '0',  '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%u', '%u', '%u', '%u', '%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%c', '0', '%d')",
+		schema_config.char_db, sd->account_id , slot, esc_name, start_job, status_points, str, agi, vit, int_, dex, luk,
 		(40 * (100 + vit)/100) , (40 * (100 + vit)/100 ),  (11 * (100 + int_)/100), (11 * (100 + int_)/100), hair_style, hair_color,
 		tmp_start_point[start_point_idx].map, tmp_start_point[start_point_idx].x, tmp_start_point[start_point_idx].y, tmp_start_point[start_point_idx].map, tmp_start_point[start_point_idx].x, tmp_start_point[start_point_idx].y, sex, start_job ) )
 	{
 		Sql_ShowDebug(sql_handle);
+		Sql_Query(sql_handle, "ROLLBACK");
 		return -2; //No, stop the procedure!
 	}
 
@@ -1518,6 +1570,18 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 	for (k = 0; k <= MAX_STARTITEM && tmp_start_items[k].nameid != 0; k++) {
 		if( SQL_ERROR == Sql_Query(sql_handle, "INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `equip`, `identify`) VALUES ('%d', '%u', '%hu', '%u', '%d')", schema_config.inventory_db, char_id, tmp_start_items[k].nameid, tmp_start_items[k].amount, tmp_start_items[k].pos, 1) )
 			Sql_ShowDebug(sql_handle);
+	}
+
+	if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `login` SET `zeny`=`zeny` + '%d' WHERE `account_id` = '%d'", charserv_config.start_zeny, sd->account_id) ) {
+		Sql_ShowDebug(sql_handle);
+		Sql_Query(sql_handle, "ROLLBACK");
+		return -2;
+	}
+
+	if( SQL_ERROR == Sql_Query(sql_handle, "COMMIT") ) {
+		Sql_ShowDebug(sql_handle);
+		Sql_Query(sql_handle, "ROLLBACK");
+		return -2;
 	}
 
 	ShowInfo("Created char: account: %d, char: %d, slot: %d, name: %s\n", sd->account_id, char_id, slot, name);
@@ -3267,6 +3331,18 @@ bool CharacterServer::initialize( int32 argc, char *argv[] ){
 	//guildmemberdb clean
 	if( SQL_ERROR == Sql_Query(sql_handle, "DELETE FROM `%s` WHERE `guild_id` = '0' AND `char_id` = '0'", schema_config.guild_member_db) )
 		Sql_ShowDebug(sql_handle);
+
+	if (SQL_SUCCESS != Sql_Query(sql_handle, "SHOW COLUMNS FROM `login` LIKE 'zeny'")) {
+		Sql_ShowDebug(sql_handle);
+		return false;
+	}
+	if (Sql_NumRows(sql_handle) == 0) {
+		if (SQL_SUCCESS != Sql_Query(sql_handle, "ALTER TABLE `login` ADD `zeny` INT(11) UNSIGNED NOT NULL DEFAULT '0'")) {
+			Sql_ShowDebug(sql_handle);
+			return false;
+		}
+	}
+	Sql_FreeResult(sql_handle);
 
 	set_defaultparse(chclif_parse);
 

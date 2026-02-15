@@ -822,7 +822,14 @@ static TIMER_FUNC(bg_on_ready_expire)
 		return 1;
 	}
 
-	std::string bg_name = battleground_db.find(queue->id)->name;
+	std::shared_ptr<s_battleground_type> bg = battleground_db.find(queue->id);
+	if (bg == nullptr) {
+		ShowError("bg_on_ready_expire: Couldn't find battleground ID %d in battlegrounds database.\n", queue->id);
+		bg_queue_clear(queue, true);
+		return 1;
+	}
+
+	std::string bg_name = bg->name;
 
 	for (const auto &sd : queue->teama_members) {
 		clif_bg_queue_apply_result(BG_APPLY_QUEUE_FINISHED, bg_name.c_str(), sd);
@@ -1259,11 +1266,15 @@ void bg_queue_clear(std::shared_ptr<s_battleground_queue> queue, bool ended)
 			queue->map = nullptr;
 		}
 
-		for (const auto &sd : queue->teama_members)
-			sd->bg_queue_id = 0;
+		for (const auto &sd : queue->teama_members) {
+			if (sd != nullptr)
+				sd->bg_queue_id = 0;
+		}
 
-		for (const auto &sd : queue->teamb_members)
-			sd->bg_queue_id = 0;
+		for (const auto &sd : queue->teamb_members) {
+			if (sd != nullptr)
+				sd->bg_queue_id = 0;
+		}
 
 		queue->teama_members.clear();
 		queue->teamb_members.clear();
@@ -1343,6 +1354,11 @@ bool bg_queue_leave(map_session_data *sd, bool apply_sc)
  */
 bool bg_queue_on_ready(const char *name, std::shared_ptr<s_battleground_queue> queue)
 {
+	if (queue == nullptr) {
+		ShowError("bg_queue_on_ready: Invalid battleground queue.\n");
+		return false;
+	}
+
 	std::shared_ptr<s_battleground_type> bg = battleground_db.find(queue->id);
 
 	if (!bg) {
@@ -1372,11 +1388,15 @@ bool bg_queue_on_ready(const char *name, std::shared_ptr<s_battleground_queue> q
 	queue->state = QUEUE_STATE_SETUP_DELAY;
 	queue->tid_expire = add_timer(gettick() + 20000, bg_on_ready_expire, 0, (intptr_t)queue->queue_id);
 
-	for (const auto &sd : queue->teama_members)
-		clif_bg_queue_lobby_notify(name, sd);
+	for (const auto &sd : queue->teama_members) {
+		if (sd != nullptr)
+			clif_bg_queue_lobby_notify(name, sd);
+	}
 
-	for (const auto &sd : queue->teamb_members)
-		clif_bg_queue_lobby_notify(name, sd);
+	for (const auto &sd : queue->teamb_members) {
+		if (sd != nullptr)
+			clif_bg_queue_lobby_notify(name, sd);
+	}
 
 	return true;
 }
@@ -1388,7 +1408,11 @@ bool bg_queue_on_ready(const char *name, std::shared_ptr<s_battleground_queue> q
  */
 void bg_join_active(map_session_data *sd, std::shared_ptr<s_battleground_queue> queue)
 {
-	if (sd == nullptr || queue == nullptr)
+	if (sd == nullptr || queue == nullptr || queue->map == nullptr)
+		return;
+
+	std::shared_ptr<s_battleground_type> bg = battleground_db.find(queue->id);
+	if (bg == nullptr)
 		return;
 
 	// Check player's current position for mapflag check
@@ -1410,7 +1434,7 @@ void bg_join_active(map_session_data *sd, std::shared_ptr<s_battleground_queue> 
 
 		if (bgteam_1 == nullptr) {
 			bg_queue_leave(sd);
-			clif_bg_queue_apply_result(BG_APPLY_RECONNECT, battleground_db.find(queue->id)->name.c_str(), sd);
+			clif_bg_queue_apply_result(BG_APPLY_RECONNECT, bg->name.c_str(), sd);
 			clif_bg_queue_entry_init(sd);
 			return;
 		}
@@ -1430,7 +1454,7 @@ void bg_join_active(map_session_data *sd, std::shared_ptr<s_battleground_queue> 
 
 		if (bgteam_2 == nullptr) {
 			bg_queue_leave(sd);
-			clif_bg_queue_apply_result(BG_APPLY_RECONNECT, battleground_db.find(queue->id)->name.c_str(), sd);
+			clif_bg_queue_apply_result(BG_APPLY_RECONNECT, bg->name.c_str(), sd);
 			clif_bg_queue_entry_init(sd);
 			return;
 		}
@@ -1450,12 +1474,14 @@ void bg_join_active(map_session_data *sd, std::shared_ptr<s_battleground_queue> 
  * @return True if the player is on a map with MF_NOWARP or false otherwise
  */
 bool bg_mapflag_check(std::shared_ptr<s_battleground_queue> queue) {
-	if (queue == nullptr || battle_config.bgqueue_nowarp_mapflag == 0)
+	if (queue == nullptr || queue->map == nullptr || battle_config.bgqueue_nowarp_mapflag == 0)
 		return false;
 
 	bool found = false;
 
 	for (const auto &sd : queue->teama_members) {
+		if (sd == nullptr)
+			continue;
 		if (map_getmapflag(sd->m, MF_NOWARP)) {
 			clif_messagecolor(sd, color_table[COLOR_LIGHT_GREEN], msg_txt(sd, 337), false, SELF); // You can't apply to a battleground queue from this map.
 			bg_queue_leave(sd);
@@ -1465,6 +1491,8 @@ bool bg_mapflag_check(std::shared_ptr<s_battleground_queue> queue) {
 	}
 
 	for (const auto &sd : queue->teamb_members) {
+		if (sd == nullptr)
+			continue;
 		if (map_getmapflag(sd->m, MF_NOWARP)) {
 			clif_messagecolor(sd, color_table[COLOR_LIGHT_GREEN], msg_txt(sd, 337), false, SELF); // You can't apply to a battleground queue from this map.
 			bg_queue_leave(sd);
@@ -1510,6 +1538,13 @@ void bg_queue_on_accept_invite(map_session_data *sd)
 		return;
 	}
 
+	if (queue->map == nullptr) {
+		ShowError("bg_queue_on_accept_invite: Queue %d has no reserved map.\n", queue->queue_id);
+		bg_queue_clear(queue, true);
+		clif_bg_queue_entry_init(sd);
+		return;
+	}
+
 	queue->accepted_players++;
 	clif_bg_queue_ack_lobby(true, mapindex_id2name(queue->map->mapindex), mapindex_id2name(queue->map->mapindex), sd);
 
@@ -1526,7 +1561,14 @@ void bg_queue_on_accept_invite(map_session_data *sd)
 			if (battle_config.bgqueue_nowarp_mapflag > 0 && bg_mapflag_check(queue))
 				return;
 
-			queue->tid_start = add_timer(gettick() + battleground_db.find(queue->id)->start_delay * 1000, bg_on_ready_start, 0, (intptr_t)queue->queue_id);
+			std::shared_ptr<s_battleground_type> bg = battleground_db.find(queue->id);
+			if (bg == nullptr) {
+				ShowError("bg_queue_on_accept_invite: Could not find battleground ID %d in battlegrounds database.\n", queue->id);
+				bg_queue_clear(queue, true);
+				return;
+			}
+
+			queue->tid_start = add_timer(gettick() + bg->start_delay * 1000, bg_on_ready_start, 0, (intptr_t)queue->queue_id);
 		}
 	}
 }
@@ -1539,6 +1581,12 @@ void bg_queue_start_battleground(std::shared_ptr<s_battleground_queue> queue)
 {
 	if (queue == nullptr)
 		return;
+
+	if (queue->map == nullptr) {
+		ShowError("bg_queue_start_battleground: Queue %d has no reserved map.\n", queue->queue_id);
+		bg_queue_clear(queue, true);
+		return;
+	}
 
 	std::shared_ptr<s_battleground_type> bg = battleground_db.find(queue->id);
 

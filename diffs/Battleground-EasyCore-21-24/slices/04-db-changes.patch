@@ -1,0 +1,36 @@
+diff --git a/db/achievement_db.yml b/db/achievement_db.yml
+index d32e93e61..cf479b639 100644
+--- a/db/achievement_db.yml
++++ b/db/achievement_db.yml
+@@ -52,3 +52,4 @@ Footer:
+   - Path: db/re/achievement_db.yml
+     Mode: Renewal
+   - Path: db/import/achievement_db.yml
++  - Path: db/import/achievement_db_bg.yml
+diff --git a/db/battleground_db.yml b/db/battleground_db.yml
+index f32700dc0..ce7a529a1 100644
+--- a/db/battleground_db.yml
++++ b/db/battleground_db.yml
+@@ -209,3 +209,4 @@ Body:
+ Footer:
+   Imports:
+   - Path: db/import/battleground_db.yml
++  - Path: db/import/battleground_db_ex.yml
+diff --git a/db/item_db.yml b/db/item_db.yml
+index 4b326a4a7..60d345913 100644
+--- a/db/item_db.yml
++++ b/db/item_db.yml
+@@ -95,3 +95,4 @@ Footer:
+   - Path: db/re/item_db.yml
+     Mode: Renewal
+   - Path: db/import/item_db.yml
++  - Path: db/import/item_db_bg.yml
+diff --git a/db/mob_db.yml b/db/mob_db.yml
+index bd483c92a..2d0b75862 100644
+--- a/db/mob_db.yml
++++ b/db/mob_db.yml
+@@ -87,3 +87,4 @@ Footer:
+   - Path: db/re/mob_db.yml
+     Mode: Renewal
+   - Path: db/import/mob_db.yml
++  - Path: db/import/mob_db_bg.yml

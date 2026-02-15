@@ -1201,6 +1201,7 @@ int32 mob_spawn (mob_data *md)
 		md->spotted_log[i] = 0;
 
 	md->dmglog.clear();
+	md->hitkill_count = 0;
 
 	if (md->lootitems)
 		memset(md->lootitems, 0, sizeof(*md->lootitems));
@@ -2780,6 +2781,9 @@ void mob_log_damage(mob_data* md, block_list* src, int64 damage, int64 damage_ta
 void mob_damage(mob_data *md, block_list *src, int32 damage)
 {
 	if (src != nullptr) { //Store total damage...
+		if (damage > 0)
+			md->hitkill_count++;
+
 		//Log damage
 		mob_log_damage(md, src, static_cast<int64>(damage));
 	}
@@ -3326,6 +3330,8 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 		}
 
 		// Regular mob drops drop after script-granted drops
+		const bool hitkill_bonus = (md->hitkill_count == 1 && battle_config.hitkill_rate > 0);
+
 		for( const std::shared_ptr<s_mob_drop>& entry : md->db->dropitem ){
 			if (entry->nameid == 0)
 				continue;
@@ -3336,6 +3342,12 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 				continue;
 
 			drop_rate = mob_getdroprate(src, md->db, entry->rate, drop_modifier, md);
+
+			if (hitkill_bonus && it->type == IT_CARD) {
+				drop_rate = min(drop_rate * battle_config.hitkill_rate / 100, 10000);
+			} else if (hitkill_bonus && itemdb_isequip2(it.get())) {
+				drop_rate = min(drop_rate * battle_config.hitkill_rate / 100, 10000);
+			}
 
 			// attempt to drop the item
 			if (rnd() % 10000 >= drop_rate)
@@ -3683,6 +3695,7 @@ void mob_revive(mob_data *md, uint32 hp)
 	md->last_pcneartime = 0;
 	//We reset the damage log and then set the already lost damage as self damage so players don't get exp for it [Playtester]
 	md->dmglog.clear();
+	md->hitkill_count = 0;
 	mob_log_damage(md, md, static_cast<int64>(md->status.max_hp - hp));
 	if (!md->prev){
 		if(map_addblock(md))

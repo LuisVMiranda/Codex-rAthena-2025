@@ -363,6 +363,7 @@ struct mob_data : public block_list {
 	} state;
 	struct guardian_data* guardian_data;
 	std::deque<s_dmglog> dmglog;
+	uint32 hitkill_count;
 	uint32 spotted_log[DAMAGELOG_SIZE];
 	struct spawn_data *spawn; //Spawn data.
 	int32 spawn_timer; //Required for Convex Mirror

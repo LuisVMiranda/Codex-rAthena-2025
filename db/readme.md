@@ -144,7 +144,11 @@ We cannot stress enough how helpful this system is for everyone. The majority of
 
 ### Status Changes (VIP status icon migration)
 ---
-When enabling the VIP status icon support, make sure the `VIPSTATE` entry from `db/import-tmpl/status.yml` is present in your active `db/import/status.yml`.
+When enabling VIP status icon support, follow the repository import workflow (do not assume `db/import/status.yml` already exists in every environment):
+
+1. Keep/merge your custom status entries in `db/import-tmpl/status.yml`.
+2. Create or update your active `db/import/status.yml` from the template set used by your deployment.
+3. Ensure this block exists in the active file:
 
 #### /db/import/status.yml
 
@@ -155,5 +159,5 @@ When enabling the VIP status icon support, make sure the `VIPSTATE` entry from `
         NoDispell: true
 ```
 
-If your project policy prefers changing the default database directly, add the same block to your active default status DB instead of import.
+If your project policy prefers changing the default database directly, add the same block to your active default status DB (`db/re/status.yml` or `db/pre-re/status.yml`) instead of import.
 

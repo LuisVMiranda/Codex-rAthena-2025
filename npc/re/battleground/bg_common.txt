@@ -27,3 +27,44 @@
 //============================================================
 
 //morocc,145,82,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit8	728
+
+// Extended BG rev24-compatible queue/reward helper.
+prontera,156,182,4	script	Extended Battle Recruiter	4_F_KAFRA1,{
+	mes "[Extended Battle Recruiter]";
+	mes "Queue modes from Extended BG are grouped here.";
+	next;
+	switch(select("Queue - Conquest:Queue - Capture The Flag:Claim Daily Queue Reward:View rev24 migration notes:Cancel")) {
+	case 1:
+		bg_queue_join("Conquest", 0, getcharid(CHAR_ID_CHAR));
+		close;
+	case 2:
+		bg_queue_join("Capture The Flag", 0, getcharid(CHAR_ID_CHAR));
+		close;
+	case 3:
+		if (#BG_DAILY_REWARD_DATE == gettime(DT_YYYYMMDD)) {
+			mes "[Extended Battle Recruiter]";
+			mes "You already claimed today's participation package.";
+			close;
+		}
+		getitem 7828, 10; // Battle Badge
+		#BG_DAILY_REWARD_DATE = gettime(DT_YYYYMMDD);
+		mes "[Extended Battle Recruiter]";
+		mes "Reward delivered. Return after server reset for the next claim.";
+		close;
+	case 4:
+		mes "[Extended Battle Recruiter]";
+		mes "See: doc/battleground-rev24-migration-matrix.md";
+		if (!$@bg_rev24_schema_ready) {
+			next;
+			mes "SQL migration not detected, so stat-heavy rev24 features remain gated.";
+		}
+		close;
+	default:
+		close;
+	}
+OnInit:
+	// Gate stat-heavy features when rev24 schema migrations are absent.
+	query_sql("SELECT COUNT(1) FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = 'char_bg' AND `COLUMN_NAME` IN ('rank_points','rank_games')", .@count);
+	$@bg_rev24_schema_ready = (.@count >= 2);
+	end;
+}

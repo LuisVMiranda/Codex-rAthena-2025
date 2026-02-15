@@ -277,6 +277,7 @@ struct char_session_data {
 };
 
 std::unordered_map<uint32, std::shared_ptr<struct mmo_charstatus>>& char_get_chardb();
+bool char_bg_stats_schema_ready();
 
 //Custom limits for the fame lists. [Skotlex]
 extern int32 fame_list_size_chemist;

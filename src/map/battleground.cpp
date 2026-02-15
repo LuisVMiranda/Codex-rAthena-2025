@@ -10,6 +10,7 @@
 #include <common/nullpo.hpp>
 #include <common/random.hpp>
 #include <common/showmsg.hpp>
+#include <common/socket.hpp>
 #include <common/strlib.hpp>
 #include <common/timer.hpp>
 #include <common/utilities.hpp>
@@ -32,6 +33,49 @@ BattlegroundDatabase battleground_db;
 std::unordered_map<int32, std::shared_ptr<s_battleground_data>> bg_team_db;
 std::vector<std::shared_ptr<s_battleground_queue>> bg_queues;
 int32 bg_queue_count = 1;
+
+static uint32 bg_player_ip(const map_session_data* sd) {
+    if (sd == nullptr || sd->fd <= 0 || session[sd->fd] == nullptr)
+        return 0;
+
+    return session[sd->fd]->client_addr;
+}
+
+static bool bg_queue_has_same_ip(const std::vector<map_session_data*>& members, uint32 ip) {
+    if (ip == 0)
+        return false;
+
+    for (const auto* member : members) {
+        if (member != nullptr && bg_player_ip(member) == ip)
+            return true;
+    }
+
+    return false;
+}
+
+static void bg_queue_send_progress(const char* name, const std::shared_ptr<s_battleground_queue>& queue) {
+    if (queue == nullptr)
+        return;
+
+    auto bg = battleground_db.find(queue->id);
+
+    if (bg == nullptr || !bg->queue_announce)
+        return;
+
+    char output[CHAT_SIZE_MAX];
+    safesnprintf(output, sizeof(output), "[BG Queue] %s: Team A %zu/%d, Team B %zu/%d (minimum %d)",
+        name, queue->teama_members.size(), bg->max_players, queue->teamb_members.size(), bg->max_players, bg->required_players);
+
+    for (auto* member : queue->teama_members) {
+        if (member != nullptr)
+            clif_messagecolor(member, color_table[COLOR_LIGHT_GREEN], output, false, SELF);
+    }
+
+    for (auto* member : queue->teamb_members) {
+        if (member != nullptr)
+            clif_messagecolor(member, color_table[COLOR_LIGHT_GREEN], output, false, SELF);
+    }
+}
 
 const std::string BattlegroundDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/battleground_db.yml";
@@ -215,6 +259,30 @@ uint64 BattlegroundDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			bg->party = true;
 			bg->guild = true;
 		}
+	}
+
+	if (this->nodeExists(node, "AllowSameIP")) {
+		bool active;
+
+		if (!this->asBool(node, "AllowSameIP", active))
+			return 0;
+
+		bg->allow_same_ip = active;
+	} else {
+		if (!exists)
+			bg->allow_same_ip = false;
+	}
+
+	if (this->nodeExists(node, "QueueAnnounce")) {
+		bool active;
+
+		if (!this->asBool(node, "QueueAnnounce", active))
+			return 0;
+
+		bg->queue_announce = active;
+	} else {
+		if (!exists)
+			bg->queue_announce = true;
 	}
 
 	if (this->nodeExists(node, "JobRestrictions")) {
@@ -1211,6 +1279,16 @@ void bg_queue_join_multi(const char *name, map_session_data *sd, std::vector <ma
 			if (!bg_queue_check_joinable(bg, sd2, name))
 				continue;
 
+			if (!bg->allow_same_ip) {
+				const uint32 ip = bg_player_ip(sd2);
+
+				if (bg_queue_has_same_ip(queue->teama_members, ip) || bg_queue_has_same_ip(queue->teamb_members, ip)) {
+					clif_bg_queue_apply_result(BG_APPLY_NONE, name, sd2);
+					clif_messagecolor(sd2, color_table[COLOR_LIGHT_GREEN], "You cannot join this queue because another member is already queued from your IP.", false, SELF);
+					continue;
+				}
+			}
+
 			sd2->bg_queue_id = queue->queue_id;
 			team->push_back(sd2);
 			clif_bg_queue_apply_result(BG_APPLY_ACCEPT, name, sd2);
@@ -1227,6 +1305,8 @@ void bg_queue_join_multi(const char *name, map_session_data *sd, std::vector <ma
 			}
 		} else if (queue->state == QUEUE_STATE_SETUP && queue->teamb_members.size() >= bg->required_players && queue->teama_members.size() >= bg->required_players) // Enough players have joined
 			bg_queue_on_ready(name, queue);
+
+		bg_queue_send_progress(name, queue);
 
 		return;
 	}

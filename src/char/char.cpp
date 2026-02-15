@@ -85,6 +85,55 @@ std::unordered_map<uint32, std::shared_ptr<struct auth_node>>& char_get_authdb()
 std::unordered_map<uint32, std::shared_ptr<struct online_char_data>>& char_get_onlinedb() { return online_char_db; }
 std::unordered_map<uint32, std::shared_ptr<struct mmo_charstatus>>& char_get_chardb() { return char_db; }
 
+
+static bool bg_stats_schema_ready = false;
+
+bool char_bg_stats_schema_ready() {
+	return bg_stats_schema_ready;
+}
+
+static bool char_bg_schema_has_column(const char* table_name, const char* column_name) {
+	if (SQL_ERROR == Sql_Query(sql_handle,
+		"SELECT 1 FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = '%s' AND `COLUMN_NAME` = '%s' LIMIT 1",
+		table_name, column_name)) {
+		Sql_ShowDebug(sql_handle);
+		return false;
+	}
+
+	return SQL_SUCCESS == Sql_NextRow(sql_handle);
+}
+
+static void char_bg_stats_detect_schema() {
+	static const char* required_columns[][2] = {
+		{"char_bg", "char_id"},
+		{"char_bg", "win"},
+		{"char_bg", "lost"},
+		{"char_bg", "tie"},
+		{"char_bg", "deserter"},
+		{"char_bg", "score"},
+		{"char_bg", "points"},
+		{"char_bg", "rank_points"},
+		{"char_bg", "rank_games"},
+		{"char_wstats", "char_id"},
+		{"char_wstats", "score"},
+		{"char_wstats", "points"},
+	};
+
+	bg_stats_schema_ready = true;
+
+	for (const auto& requirement : required_columns) {
+		if (!char_bg_schema_has_column(requirement[0], requirement[1])) {
+			bg_stats_schema_ready = false;
+			ShowWarning("Extended BG rev24 stats persistence disabled: missing `%s`.`%s` column.\n", requirement[0], requirement[1]);
+			break;
+		}
+	}
+
+	if (bg_stats_schema_ready)
+		ShowStatus("Extended BG rev24 stats schema detected (char_bg/char_wstats).\n");
+}
+
+
 online_char_data::online_char_data( uint32 account_id ){
 	this->account_id = account_id;
 	this->char_id = -1;
@@ -3319,6 +3368,7 @@ bool CharacterServer::initialize( int32 argc, char *argv[] ){
 		ShowFatalError("char : A tables is missing in sql-server, please fix it, see (sql-files main.sql for structure) \n");
 		return false;
 	}
+	char_bg_stats_detect_schema();
 	//Cleaning the tables for nullptr entrys @ startup [Sirius]
 	//Chardb clean
 	if( SQL_ERROR == Sql_Query(sql_handle, "DELETE FROM `%s` WHERE `account_id` = '0'", schema_config.char_db) )

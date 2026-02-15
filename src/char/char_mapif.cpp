@@ -266,6 +266,9 @@ int32 chmapif_parse_getmapname(int32 fd, int32 id){
 				id, map_server[id].maps.size(), CONVIP(map_server[id].ip), map_server[id].port);
 	ShowStatus("Map-server %d loading complete.\n", id);
 
+	if (!char_bg_stats_schema_ready())
+		ShowWarning("Map-server %d note: Extended BG rev24 stats persistence is disabled until char_bg/char_wstats schema is migrated.\n", id);
+
 	chmapif_send_misc(fd);
 	chmapif_send_fame_list(fd); //Send fame list.
 	chmapif_send_maps(fd, id, map_server[id].maps.size(), mapbuf);

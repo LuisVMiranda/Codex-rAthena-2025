@@ -1,0 +1,52 @@
+# This file extends Battleground queue definitions.
+# Copy this file to db/import/battleground_db_ex.yml and adjust as needed.
+
+Header:
+  Type: BATTLEGROUND_DB
+  Version: 1
+
+Body:
+  - Id: 6
+    Name: Conquest
+    MinPlayers: 5
+    MaxPlayers: 15
+    MinLevel: 80
+    QueueAnnounce: true
+    AllowSameIP: false
+    Locations:
+      - Map: schg_cas06
+        StartEvent: Conquest::OnStart
+        TeamA:
+          RespawnX: 264
+          RespawnY: 379
+          QuitEvent: Conquest::OnTeam1Quit
+          ActiveEvent: Conquest::OnTeam1Active
+          Variable: $@BG_Team1
+        TeamB:
+          RespawnX: 295
+          RespawnY: 379
+          QuitEvent: Conquest::OnTeam2Quit
+          ActiveEvent: Conquest::OnTeam2Active
+          Variable: $@BG_Team2
+  - Id: 7
+    Name: Capture The Flag
+    MinPlayers: 5
+    MaxPlayers: 15
+    MinLevel: 80
+    QueueAnnounce: true
+    AllowSameIP: false
+    Locations:
+      - Map: bat_b02
+        StartEvent: Flavius_CTF::OnStart
+        TeamA:
+          RespawnX: 390
+          RespawnY: 10
+          QuitEvent: Flavius_CTF::OnTeam1Quit
+          ActiveEvent: Flavius_CTF::OnTeam1Active
+          Variable: $@BG_Team1
+        TeamB:
+          RespawnX: 10
+          RespawnY: 290
+          QuitEvent: Flavius_CTF::OnTeam2Quit
+          ActiveEvent: Flavius_CTF::OnTeam2Active
+          Variable: $@BG_Team2

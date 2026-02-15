@@ -941,6 +941,11 @@ public:
 	} skill_keep_using;
 
 	struct {
+		int32 tid;
+		uint8 step;
+	} skill_animation;
+
+	struct {
 		std::shared_ptr<s_captcha_data> cd;
 		uint16 upload_size;
 	} captcha_upload;

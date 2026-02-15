@@ -2897,6 +2897,26 @@ enum sc_type skill_get_sc(int16 skill_id);
 void skill_reveal_trap_inarea(block_list *src, int32 range, int32 x, int32 y);
 int32 skill_get_time3(struct map_data *mapdata, uint16 skill_id, uint16 skill_lv);
 
+struct s_skill_animation_entry {
+	uint16 skill_id;
+	int32 start_delay;
+	uint16 interval;
+	uint16 motion_speed;
+	uint8 motion_count;
+	bool spin;
+};
+
+struct s_skill_animation_environment {
+	uint16 skill_id;
+	int32 target_id;
+	int8 base_dir;
+};
+
+const s_skill_animation_entry* skill_animation_get(uint16 skill_id);
+int32 skill_animation_step_direction(int32 base_dir, uint8 step);
+TIMER_FUNC(skill_play_animation);
+void skill_clear_animation(block_list* bl);
+
 /// Variable name of copied skill by Plagiarism
 #define SKILL_VAR_PLAGIARISM "CLONE_SKILL"
 /// Variable name of copied skill level by Plagiarism

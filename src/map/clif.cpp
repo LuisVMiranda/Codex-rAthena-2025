@@ -6055,6 +6055,81 @@ void clif_skill_cooldown( map_session_data &sd, uint16 skill_id, t_tick tick ){
 #endif
 }
 
+static void clif_skill_animation_start(const block_list& src, const block_list& dst, t_tick tick, int32 sdelay, uint16 skill_id){
+	if (src.type != BL_PC) {
+		return;
+	}
+
+	const s_skill_animation_entry* animation = skill_animation_get(skill_id);
+	if (animation == nullptr) {
+		return;
+	}
+
+	map_session_data* sd = BL_CAST(BL_PC, const_cast<block_list*>(&src));
+	if (sd == nullptr) {
+		return;
+	}
+	skill_clear_animation(&sd->bl);
+
+	int32 start = (animation->start_delay >= 0) ? animation->start_delay : sdelay;
+	if (start < 0) {
+		start = 0;
+	}
+
+	auto* env = new s_skill_animation_environment{};
+	env->skill_id = skill_id;
+	env->target_id = dst.id;
+	env->base_dir = static_cast<int8>(unit_getdir(&dst));
+
+	sd->skill_animation.step = 0;
+	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->bl.id, reinterpret_cast<intptr_t>(env));
+	if (sd->skill_animation.tid == INVALID_TIMER) {
+		delete env;
+		skill_clear_animation(&sd->bl);
+	}
+}
+
+void clif_skill_animation_motion(const block_list& src, int32 target_id, int32 motion_speed){
+#if PACKETVER_MAIN_NUM >= 20071113 || PACKETVER_RE_NUM >= 20071113 || defined(PACKETVER_ZERO)
+	PACKET_ZC_NOTIFY_ACT packet{};
+
+	packet.packetType = HEADER_ZC_NOTIFY_ACT;
+	packet.srcID = src.id;
+	packet.targetID = target_id;
+	packet.serverTick = client_tick(gettick());
+	packet.srcSpeed = motion_speed;
+	packet.dmgSpeed = 0;
+	packet.damage = 0;
+	packet.div = 1;
+	packet.type = DMG_CRITICAL;
+	packet.damage2 = 0;
+
+	clif_send(&packet, sizeof(packet), &src, AREA);
+#else
+	(void)src;
+	(void)target_id;
+	(void)motion_speed;
+#endif
+}
+
+void clif_skill_animation_dir(const block_list& src, int32 target_id, uint8 dir){
+#if PACKETVER_MAIN_NUM >= 20071113 || PACKETVER_RE_NUM >= 20071113 || defined(PACKETVER_ZERO)
+	PACKET_ZC_CHANGE_DIRECTION packet{};
+
+	packet.packetType = HEADER_ZC_CHANGE_DIRECTION;
+	packet.srcId = src.id;
+	packet.headDir = 0;
+	packet.dir = dir;
+
+	clif_send(&packet, sizeof(packet), &src, AREA);
+	(void)target_id;
+#else
+	(void)src;
+	(void)target_id;
+	(void)dir;
+#endif
+}
+
 /// Skill attack effect and damage.
 /// 0114 <skill id>.W <src id>.L <dst id>.L <tick>.L <src delay>.L <dst delay>.L <damage>.W <level>.W <div>.W <type>.B (ZC_NOTIFY_SKILL)
 /// 01de <skill id>.W <src id>.L <dst id>.L <tick>.L <src delay>.L <dst delay>.L <damage>.L <level>.W <div>.W <type>.B (ZC_NOTIFY_SKILL2)
@@ -6110,6 +6185,8 @@ void clif_skill_damage( const block_list& src, const block_list& dst, t_tick tic
 		}
 		clif_send( &packet, sizeof( packet ), &src, SELF );
 	}
+
+	clif_skill_animation_start(src, dst, tick, sdelay, skill_id);
 }
 
 

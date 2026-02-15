@@ -52,6 +52,7 @@
 #include "quest.hpp"
 #include "storage.hpp"
 #include "trade.hpp"
+#include "skill.hpp"
 
 using namespace rathena;
 using namespace rathena::server_map;
@@ -2246,6 +2247,8 @@ int32 map_quit(map_session_data *sd) {
 
 	if (sd->autotrade_tid != INVALID_TIMER)
 		delete_timer(sd->autotrade_tid, pc_autotrade_timer);
+
+	skill_clear_animation(&sd->bl);
 
 	if (sd->npc_id)
 		npc_event_dequeue(sd);

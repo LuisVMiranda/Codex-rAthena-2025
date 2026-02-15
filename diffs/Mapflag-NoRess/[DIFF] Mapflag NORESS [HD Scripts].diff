@@ -1,0 +1,66 @@
+diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
+index d60edbf..e1ed708 100644
+--- a/conf/msg_conf/map_msg.conf
++++ b/conf/msg_conf/map_msg.conf
+@@ -472,6 +472,8 @@
+ // Mensagem de retorno do pet ao ovo
+ 451: Voc<EA> n<E3>o pode retornar o seu bichinho de estima<E7><E3>o para o ovo pois o seu invent<E1>rio est<E1> lotado.
+
++452: Amuleto de Ziegfried proibido nesse mapa.
++
+ // Sistema de Mensagens
+ 460: Digite um idioma v<E1>lido (uso: @langtype <idioma>).
+ 461: O seu idioma agora est<E1> definido para %s.
+diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
+index 03e15bf..843ae78 100644
+--- a/src/map/atcommand.cpp
++++ b/src/map/atcommand.cpp
+@@ -4218,6 +4218,8 @@ ACMD_FUNC(mapinfo) {
+                strcat(atcmd_output, " NoTomb |");
+        if (map_getmapflag(m_id, MF_NOCOSTUME))
+                strcat(atcmd_output, " NoCostume |");
++       if (map_getmapflag(m_id, MF_NORESS))
++               strcat(atcmd_output, " NoRess |");
+        clif_displaymessage(fd, atcmd_output);
+
+        switch (list) {
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 5fa1912..0aaee22 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -14967,6 +14967,11 @@ void clif_parse_AutoRevive(int fd, struct map_session_data *sd)
+                        return;
+        }
+
++       if (map_getmapflag(sd->bl.m, MF_NORESS)) {
++               clif_displaymessage(sd->fd, msg_txt(sd, 452));
++               return;
++       }
++
+_HELLPOWER.
+                return;
+
+diff --git a/src/map/map.hpp b/src/map/map.hpp
+index e31fc32..7bb2712 100644
+--- a/src/map/map.hpp
++++ b/src/map/map.hpp
+@@ -581,6 +581,7 @@ enum e_mapflag : int16 {
+        MF_PRIVATEAIRSHIP_SOURCE,
+        MF_PRIVATEAIRSHIP_DESTINATION,
+        MF_SKILL_DURATION,
++       MF_NORESS,
+        MF_MAX
+ };
+
+diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
+index 843e44d..8120099 100644
+--- a/src/map/script_constants.hpp
++++ b/src/map/script_constants.hpp
+@@ -458,6 +458,7 @@
+        export_constant(MF_PRIVATEAIRSHIP_SOURCE);
+        export_constant(MF_PRIVATEAIRSHIP_DESTINATION);
+        export_constant(MF_SKILL_DURATION);
++       export_constant(MF_NORESS);
+
+        /* setcell types */
+        export_constant(CELL_WALKABLE);

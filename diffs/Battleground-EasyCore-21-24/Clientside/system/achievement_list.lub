@@ -1,0 +1,101 @@
+achievement_tbl = {
+	[220050] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Battleground Champion",
+		content = {
+			summary = "Enlist in the BG by @joinbg and win 50 matches.",
+			details = "Enlist in the BG by @joinbg and win 50 matches."
+		},
+		resource = { [1] = { text = "Win 50 times in any Arena.", count = 50 } },
+		reward = {},
+		score = 20
+	},
+	[220051] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Battleground Perseverant",
+		content = {
+			summary = "Enlist in the BG by @joinbg and lose 50 matches.",
+			details = "Enlist in the BG by @joinbg and lose 50 matches."
+		},
+		resource = { [1] = { text = "Lose 50 times in any Arena.", count = 50 } },
+		reward = {},
+		score = 5
+	},
+	[220052] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Battleground Tough",
+		content = {
+			summary = "Enlist in the BG by @joinbg and tie 50 matches.",
+			details = "Enlist in the BG by @joinbg and tie 50 matches."
+		},
+		resource = { [1] = { text = "Tie 50 times in any Arena.", count = 50 } },
+		reward = {},
+		score = 10
+	},
+	[220053] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Battleground Killer",
+		content = {
+			summary = "Enlist in the BG by @joinbg and kill 500 players.",
+			details = "Enlist in the BG by @joinbg and kill 500 players."
+		},
+		resource = { [1] = { text = "Kill 500 players in any Arena.", count = 500 } },
+		reward = {},
+		score = 20
+	},
+	[220054] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Battleground Victim",
+		content = {
+			summary = "Enlist in the BG by @joinbg and die 500 times.",
+			details = "Enlist in the BG by @joinbg and die 500 times."
+		},
+		resource = { [1] = { text = "Die 500 times in any Arena.", count = 500 } },
+		reward = {},
+		score = 5
+	},
+	[220055] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Combat Medic",
+		content = {
+			summary = "Enlist in the BG by @joinbg and heal 500,000 hitpoints.",
+			details = "Enlist in the BG by @joinbg and heal 500,000 hitpoints."
+		},
+		resource = { [1] = { text = "Heal 500,000 hitpoints to any ally in BG.", count = 500000 } },
+		reward = {},
+		score = 20
+	},
+	[220056] = {
+		UI_Type = 1,
+		group = "BATTLE",
+		major = 7,
+		minor = 0,
+		title = "Insane Fighter",
+		content = {
+			summary = "Enlist in the BG by @joinbg and damage 2,500,000 hitpoints.",
+			details = "Enlist in the BG by @joinbg and damage 2,500,000 hitpoints."
+		},
+		resource = { [1] = { text = "Damage 2,500,000 hitpoints to any enemy in BG.", count = 2500000 } },
+		reward = {},
+		score = 20
+	}
+	
+}

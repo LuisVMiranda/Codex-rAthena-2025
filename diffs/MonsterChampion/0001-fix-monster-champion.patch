@@ -1,0 +1,21 @@
+
+---
+ src/map/clif.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 402e470..4540807 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -10188,7 +10188,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+ 				safestrncpy( packet.position_name, md->guardian_data->castle->castle_name, NAME_LENGTH );
+ 
+ 				clif_send(&packet, sizeof(packet), src, target);
+-			}else if( battle_config.show_mob_info ){
++			}else if( battle_config.show_mob_info && !md->bl.champion_monster){
+ 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
+ 
+ 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;
+-- 
+2.21.0.windows.1
+

@@ -1,0 +1,34 @@
+tbl = {
+	-- COPY THE CONTENT OF BELOW --
+	[8965] = {
+		unidentifiedDisplayName = "Blue Skull",
+		unidentifiedResourceName = "blueskull",
+		unidentifiedDescriptionName = {
+		},
+		identifiedDisplayName = "Blue Skull",
+		identifiedResourceName = "blueskull",
+		identifiedDescriptionName = {
+			"A skull of a killed Guillaume Warrior.",
+			"Weight :^777777 0^000000",
+			"^FFA500Extended Battleground^000000"
+		},
+		slotCount = 0,
+		ClassNum = 0
+	},
+	[8966] = {
+		unidentifiedDisplayName = "Red Skull",
+		unidentifiedResourceName = "redskull",
+		unidentifiedDescriptionName = {
+		},
+		identifiedDisplayName = "Red Skull",
+		identifiedResourceName = "redskull",
+		identifiedDescriptionName = {
+			"A skull of a killed Croix Warrior..",
+			"Weight :^777777 0^000000",
+			"^FFA500Extended Battleground^000000"
+		},
+		slotCount = 0,
+		ClassNum = 0
+	},
+	-- COPY THE CONTENT OF ABOVE --
+}

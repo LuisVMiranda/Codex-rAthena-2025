@@ -1,0 +1,149 @@
+mapTbl = {
+	-- COPY THE CONTENT OF BELOW --
+	["schg_cas06.rsw"] = {
+		displayName = "Conquest Castle #1",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Himinn Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["schg_cas07.rsw"] = {
+		displayName = "Conquest Castle #2",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Andlangr Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["schg_cas08.rsw"] = {
+		displayName = "Conquest Castle #3",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Horn Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["arug_cas06.rsw"] = {
+		displayName = "Conquest Castle #4",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Mardol Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["arug_cas07.rsw"] = {
+		displayName = "Conquest Castle #5",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Cyr Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["arug_cas08.rsw"] = {
+		displayName = "Conquest Castle #6",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Horn Castle",
+			mainTitle = "Conquest"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["rush_cas01.rsw"] = {
+		displayName = "Rush Castle #1",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Swanhild Castle",
+			mainTitle = "Rush"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["rush_cas02.rsw"] = {
+		displayName = "Rush Castle #2",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Sacred Altar Castle",
+			mainTitle = "Rush"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["rush_cas03.rsw"] = {
+		displayName = "Rush Castle #3",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Rothenburg Castle",
+			mainTitle = "Rush"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["rush_cas04.rsw"] = {
+		displayName = "Rush Castle #4",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Yesnelph Castle",
+			mainTitle = "Rush"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["bat_b02.rsw"] = {
+		displayName = "Flavius CTF",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Capture the Flag"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["bat_b04.rsw"] = {
+		displayName = "Flavius SC",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Stone Control"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["bat_cc.rsw"] = {
+		displayName = "KVM TDM",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Team DeathMatch"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["bat_cc2.rsw"] = {
+		displayName = "KVM Bossnia",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Bossnia"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["bat_a04.rsw"] = {
+		displayName = "Tierra Domination",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Domination"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	["region_8.rsw"] = {
+		displayName = "Double Inferno",
+		notifyEnter = true, 
+		signName = {
+			subTitle = "Battleground Arena",
+			mainTitle = "Double Inferno"
+		},
+		backgroundBmp = "extended_bg"
+	},
+	-- COPY THE CONTENT OF ABOVE --
+}
+

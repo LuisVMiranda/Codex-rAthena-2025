@@ -1,0 +1,1113 @@
+diff --git a/conf/battle/misc.conf b/conf/battle/misc.conf
+index 5850705..d5d5aab 100644
+--- a/conf/battle/misc.conf
++++ b/conf/battle/misc.conf
+@@ -183,3 +183,6 @@ mail_delay: 1000
+ 
+ // Hides items from the player's favorite tab from being sold to a NPC. (Note 1)
+ hide_fav_sell: no
++
++//id do icone no cliente
++group_id_monster_champion: 13
+\ No newline at end of file
+diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
+index 4ef90a4..ac9e8f0 100644
+--- a/conf/msg_conf/map_msg.conf
++++ b/conf/msg_conf/map_msg.conf
+@@ -1824,6 +1824,7 @@
+ 2002: Campeão Batedor
+ 2003: Campeão Experiente
+ 2004: Campeão Precioso
++2005: $monster_champion_%d
+ 
+ //Custom translations
+ import: conf/msg_conf/import/map_msg_eng_conf.txt
+diff --git a/npc/custom/monstro_campeao.txt b/npc/custom/monstro_campeao.txt
+new file mode 100644
+index 0000000..3914b70
+--- /dev/null
++++ b/npc/custom/monstro_campeao.txt
+@@ -0,0 +1,266 @@
++-	script	Mob_Campeao	-1,{
++end;
++OnInit:
++	query_sql("truncate table `monstro_campeao`");
++end;
++OnNPCKillEvent:
++	setarray .@listaMvps[0],1038,1039,1046,1059,1086,1087,1112,1115,1147,1150,1157,1159,1190,1251,1252,1272,1312,1373,1389,1399,1418,1492,1511,1583,1623,1630,1646,1647,1648,1649,1650,1651,1658,1685,1688,1708,1719,1734,1751,1768,1779,1785,1832,1871,1874,1885,1917,1956,2022,2052,2068;
++	setarray .@listaMiniBoss[0],1088,1089,1096,1219,1283,1295,1388,1307,1302,1582,1091,1093,1205,1681,1120,1259,1626,1720,1090,1289,1262,1203,1204,1618,1092,1200,1705,1707,1706,1704,1765;
++	setarray .@effect_list[1],303,308,305,306;
++	.@mob_dead = killedrid;
++	//Bloqueio MvP
++	for(.@mvp=0; .@mvp <= getarraysize(.@listaMvps); .@mvp++)
++		if(killedrid == .@listaMvps[.@mvp])
++			end;
++	//Bloqueio Mini-Boss
++	for(.@minbs=0; .@minbs <= getarraysize(.@listaMiniBoss); .@minbs++)
++		if(killedrid == .@listaMiniBoss[.@minbs])
++			end;
++
++	.@chance_rand = rand(375);
++	if(.@chance_rand == 1)
++	{
++		
++		// 1 = Furioso
++		// 2 = Batedor
++		// 3 = Experiente
++		// 4 = Precioso
++		.@rand_mob_champ_type = rand(1,4);
++		
++		if(.@rand_mob_champ_type == 1)
++		{
++			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
++			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
++			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1 ,"",0,0,1);
++			getunitdata $@mobid,.@mob_champ_arr1;
++			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
++			{
++				if(.@raca_encontrada[.@i] == .@mob_champ_arr1[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
++				{
++					unitkill $@mobid;
++					set $monster_champion_1,0;
++					end;
++				}
++			}
++			setunitdata $@mobid,UMOB_MAXHP,.@mob_champ_arr1[UMOB_MAXHP] * 10;
++			setunitdata $@mobid,UMOB_STR,.@mob_champ_arr1[UMOB_STR] * 10;
++			set $monster_champion_1,$@mobid;
++			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr1[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
++			mapannounce strcharinfo(3), "Nasceu um "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Furioso nas coordenadas "+.@coord_x+" / "+.@coord_y,bc_map,"0xDC143C",FW_NORMAL,20;
++			.@mob_dead = 0;
++			.@chance_rand = 0;
++			.@rand_mob_champ_type = 0;
++			end;
++		}
++		if(.@rand_mob_champ_type == 2)
++		{
++			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
++			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
++			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0,2);
++			getunitdata $@mobid,.@mob_champ_arr2;
++			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
++			{
++				if(.@raca_encontrada[.@i] == .@mob_champ_arr2[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
++				{
++					unitkill $@mobid;
++					set $monster_champion_2,0;
++					end;
++				}
++			}
++			set $monster_champion_2,$@mobid;
++			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr2[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
++			mapannounce strcharinfo(3), "Nasceu um "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Batedor nas coordenadas "+.@coord_x+" / "+.@coord_y,bc_map,"0x00AA00",FW_NORMAL,20;
++			.@mob_dead = 0;
++			.@chance_rand = 0;
++			.@rand_mob_champ_type = 0;
++			end;
++		}
++		if(.@rand_mob_champ_type == 3)
++		{
++			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
++			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
++			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0, 3);
++			getunitdata $@mobid,.@mob_champ_arr3;
++			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
++			{
++				if(.@raca_encontrada[.@i] == .@mob_champ_arr3[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
++				{					
++					unitkill $@mobid;
++					set $monster_champion_3,0;
++					end;
++				}
++			}
++			set $monster_champion_3,$@mobid;
++			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr3[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
++			mapannounce strcharinfo(3), "Nasceu um "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Experiente nas coordenadas "+.@coord_x+" / "+.@coord_y,bc_map,"0x1E90FF",FW_NORMAL,20;
++			.@mob_dead = 0;
++			.@chance_rand = 0;
++			.@rand_mob_champ_type = 0;
++			end;
++		}
++		if(.@rand_mob_champ_type == 4)
++		{
++			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
++			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
++			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0, 4);
++			getunitdata $@mobid,.@mob_champ_arr4;
++			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
++			{
++				if(.@raca_encontrada[.@i] == .@mob_champ_arr4[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
++				{
++					unitkill $@mobid;
++					set $monster_champion_4,0;
++					end;
++				}
++			}
++			set $monster_champion_4,$@mobid;
++			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr4[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
++			mapannounce strcharinfo(3), "Nasceu um "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Precioso nas coordenadas "+.@coord_x+" / "+.@coord_y,bc_map,"0xFFD700",FW_NORMAL,20;
++			.@mob_dead = 0;
++			.@chance_rand = 0;
++			.@rand_mob_champ_type = 0;
++			end;
++		}
++	}
++	.@mob_dead = 0;
++	.@chance_rand = 0;
++	.@rand_mob_champ_type = 0;
++end;
++}
++
++-	script	Mob_Campeao_Control	-1,{
++end;
++OnNPCKillEvent:
++	.@mob_dead_id = killedrid;
++	.@mob_dead_gid = killedgid;
++	.@nome_killer$ = strcharinfo(0);
++	.@pid_killer = getcharid(1);
++	.@aid_killer = getcharid(3);
++	.@cid_killer = getcharid(0);
++	attachrid(.@aid_killer);
++
++	query_sql("SELECT mob_gid, tipo FROM `monstro_campeao`", .@gid_confirm_list, .@tipo_confirm_list);
++	for(.@g=0;.@g <= getarraysize(.@gid_confirm_list);.@g++)
++	{
++		//Furioso
++		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 1)
++		{
++			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");			
++		}
++		//=======================================================================================================================
++		//Batedor
++		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 2)
++		{
++			getmapxy(.@mapname$, .@coord_x, .@coord_y, BL_PC, .@nome_killer$);
++			for(.@i=0; .@i < 8;.@i++)
++			{
++				sleep 1100;
++				$@mobid = monster(.@mapname$, .@coord_x + 1, .@coord_y + 1, getmonsterinfo(.@mob_dead_id,MOB_NAME), .@mob_dead_id, 1);
++				specialeffect3 EF_LOUD,AREA,$@mobid;
++				setunitdata $@mobid,UMOB_MODE,0x3695;
++			}
++			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
++			detachrid;
++		}
++		//=======================================================================================================================
++		//Experiente
++		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 3)
++		{
++			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
++		}
++		//=======================================================================================================================
++		//Precioso
++		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 4)
++		{
++			if(getmobdrops(.@mob_dead_id))
++			{
++				.@quant_itens = $@MobDrop_count;
++				copyarray .@item[0],$@MobDrop_item[0],.@quant_itens;
++				copyarray .@rate[0],$@MobDrop_rate[0],.@quant_itens;
++				getmapxy(.@map$,.@x,.@y,BL_PC);
++				for(.@q=0; .@q < 10; .@q++)
++				{
++					specialeffect2 268,AREA,.@nome_killer$;
++					champion_drop .@map$,.@x,.@y,.@mob_dead_id,.@cid_killer;
++					sleep 1000;
++				}
++			}
++			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
++		}
++	}
++	.@gid_confirm_list = 0;
++	.@tipo_confirm_list = 0;
++	.@mob_dead_id = 0;
++	.@mob_dead_gid = 0;
++	.@nome_killer$ = "";
++	.@pid_killer = 0;
++	.@aid_killer = 0;
++	.@cid_killer = 0;
++	detachrid;
++end;
++}
++
++-	script	Mob_Campeao_Thread_Sub	-1,{
++end;
++OnInit:
++statusmes "[Monster Champion] - Sistema de Timer iniciado!";
++OnThreadMobChSub:
++	freeloop(1);
++	sleep 60000;
++	query_sql("SELECT mob_gid FROM `monstro_campeao` WHERE timer > 0", .@gid_mob_list);
++	if(.@gid_mob_list)
++	{
++		for(.@i=0; .@i <= getarraysize(.@gid_mob_list);.@i++)
++		{
++			if(.@gid_mob_list[.@i])
++			{
++				query_sql("UPDATE `monstro_campeao` SET timer = timer - 1 WHERE timer > 0");
++				.@gid_mob_list = 0;
++				goto OnThreadMobChSub;
++			}
++			else
++			{
++				.@gid_mob_list = 0;
++				goto OnThreadMobChSub;
++			}
++		}
++	} else {
++		.@gid_mob_list = 0;
++		goto OnThreadMobChSub;
++	}
++}
++
++-	script	Mob_Campeao_Thread_Del	-1,{
++end;
++OnInit:
++statusmes "[Monster Champion] - Sistema de Remocao iniciado!";
++OnThreadMobChDel:
++	freeloop(1);
++	sleep 60000;
++	query_sql("SELECT mob_gid,tipo FROM `monstro_campeao` WHERE timer < 1", .@gid_mob_list,.@tipo);
++	if(.@gid_mob_list)
++	{
++		for(.@i=0; .@i < getarraysize(.@gid_mob_list);.@i++)
++		{
++			if(unitexists(.@gid_mob_list[.@i]) == 1)
++			{			
++				infomes "[Monster Champion] - Remocao realizada: "+.@gid_mob_list[.@i];
++				unitkill .@gid_mob_list[.@i];
++				if(.@tipo == 1)
++					set $monster_champion_1,0;
++				if(.@tipo == 12)
++					set $monster_champion_2,0;
++				if(.@tipo == 3)
++					set $monster_champion_3,0;
++				if(.@tipo == 4)
++					set $monster_champion_4,0;
++				.@gid_mob_list = 0;
++			}
++		}
++		query_sql("DELETE FROM `monstro_campeao` WHERE timer < 1");
++		goto OnThreadMobChDel;
++	} else {
++		.@gid_mob_list = 0;
++		goto OnThreadMobChDel;
++	}
++}
+diff --git a/npc/scripts_custom.conf b/npc/scripts_custom.conf
+index fb46627..228cd21 100644
+--- a/npc/scripts_custom.conf
++++ b/npc/scripts_custom.conf
+@@ -19,6 +19,7 @@
+ //npc: npc/custom/card_remover.txt
+ //npc: npc/custom/item_signer.txt
+ //npc: npc/custom/woe_controller.txt
++npc: npc/custom/monstro_campeao.txt
+ 
+ // ----------------------- Other Scripts -----------------------
+ // -- Private MVP & Branch Room
+diff --git a/src/map/battle.cpp b/src/map/battle.cpp
+index 01b3c8a..cd44193 100644
+--- a/src/map/battle.cpp
++++ b/src/map/battle.cpp
+@@ -10888,6 +10888,8 @@ static const struct _battle_data {
+ 	{ "feature.instance_allow_reconnect",   &battle_config.instance_allow_reconnect,        0,      0,      1,              },
+ #endif
+ 
++	{ "group_id_monster_champion",   &battle_config.group_id_monster_champion,        0,      0,     INT_MAX,              },
++
+ #include <custom/battle_config_init.inc>
+ };
+ 
+diff --git a/src/map/battle.hpp b/src/map/battle.hpp
+index 600e627..700085a 100644
+--- a/src/map/battle.hpp
++++ b/src/map/battle.hpp
+@@ -732,6 +732,8 @@ struct Battle_Config
+ 	int feature_banking_state_enforce;
+ 	int instance_allow_reconnect;
+ 
++	int group_id_monster_champion;
++
+ #include <custom/battle_config_struct.inc>
+ };
+ 
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 103a6fa..cfffe26 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -1748,6 +1748,7 @@ int clif_spawn( struct block_list *bl, bool walking ){
+ 				clif_specialeffect(&md->bl,EF_BABYBODY2,AREA);
+ 			if ( md->special_state.ai == AI_ABR || md->special_state.ai == AI_BIONIC )
+ 				clif_summon_init(*md);
++			clif_hat_effect_npc(&md->bl, bl, true, SELF);
+ 		}
+ 		break;
+ 	case BL_NPC:
+@@ -1759,6 +1760,7 @@ int clif_spawn( struct block_list *bl, bool walking ){
+ 				clif_specialeffect(&nd->bl,EF_BABYBODY2,AREA);
+ 			clif_efst_status_change_sub(bl, bl, AREA);
+ 			clif_progressbar_npc_area(nd);
++			clif_hat_effect_npc(&nd->bl, bl, true, SELF);
+ 		}
+ 		break;
+ 	case BL_PET:
+@@ -1769,6 +1771,22 @@ int clif_spawn( struct block_list *bl, bool walking ){
+ 	return 0;
+ }
+ 
++void clif_hat_effect_single_npc( struct block_list* bl, uint16 effectId, bool enable ){
++#if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++	nullpo_retv(bl);
++ 
++ 	struct PACKET_ZC_EQUIPMENT_EFFECT* p = (struct PACKET_ZC_EQUIPMENT_EFFECT*)packet_buffer;
++ 
++ 	p->packetType = HEADER_ZC_EQUIPMENT_EFFECT;
++ 	p->packetLength = (int16)( sizeof( struct PACKET_ZC_EQUIPMENT_EFFECT ) + sizeof( int16 ) );
++	p->aid = bl->id;
++ 	p->status = enable;
++ 	p->effects[0] = effectId;
++ 
++	clif_send( p, p->packetLength, bl, AREA );
++#endif
++}
++
+ /// Sends information about owned homunculus to the client . [orn]
+ /// 022e <name>.24B <modified>.B <level>.W <hunger>.W <intimacy>.W <equip id>.W <atk>.W <matk>.W <hit>.W <crit>.W <def>.W <mdef>.W <flee>.W <aspd>.W <hp>.W <max hp>.W <sp>.W <max sp>.W <exp>.L <max exp>.L <skill points>.W <atk range>.W	(ZC_PROPERTY_HOMUN)
+ /// 09f7 <name>.24B <modified>.B <level>.W <hunger>.W <intimacy>.W <equip id>.W <atk>.W <matk>.W <hit>.W <crit>.W <def>.W <mdef>.W <flee>.W <aspd>.W <hp>.L <max hp>.L <sp>.W <max sp>.W <exp>.L <max exp>.L <skill points>.W <atk range>.W (ZC_PROPERTY_HOMUN_2)
+@@ -5120,6 +5138,7 @@ void clif_getareachar_unit( map_session_data* sd,struct block_list *bl ){
+ 				clif_specialeffect_single(bl,EF_BABYBODY2,sd->fd);
+ 			clif_efst_status_change_sub(&sd->bl, bl, SELF);
+ 			clif_progressbar_npc(nd, sd);
++			clif_hat_effect_npc(&sd->bl, bl, true, SELF);
+ 		}
+ 		break;
+ 	case BL_MOB:
+@@ -5135,6 +5154,8 @@ void clif_getareachar_unit( map_session_data* sd,struct block_list *bl ){
+ 				for(i = 0; i < DAMAGELOG_SIZE; i++)// must show hp bar to all char who already hit the mob.
+ 					if( md->dmglog[i].id == sd->status.char_id )
+ 						clif_monster_hp_bar(md, sd->fd);
++					
++				clif_hat_effect_npc(&sd->bl, bl, true, SELF);
+ 			}
+ #endif
+ 		}
+@@ -5146,6 +5167,33 @@ void clif_getareachar_unit( map_session_data* sd,struct block_list *bl ){
+ 	}
+ }
+ 
++void clif_hat_effect_npc(struct block_list* src, struct block_list* bl, bool enable, enum send_target target ){
++ #if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++	struct unit_data* ud;
++	
++	if (!src || !bl || !(ud = unit_bl2ud(bl)))
++ 		return;
++	
++	if (ud->hatEffects.empty() || map_getmapdata(src->m)->getMapFlag(MF_NOCOSTUME)) {
++ 		return;
++ 	}
++	
++ 	struct PACKET_ZC_EQUIPMENT_EFFECT* p = (struct PACKET_ZC_EQUIPMENT_EFFECT*)packet_buffer;
++ 
++ 	p->packetType = HEADER_ZC_EQUIPMENT_EFFECT;
++	
++	p->packetLength = (int16)( sizeof( struct PACKET_ZC_EQUIPMENT_EFFECT ) + sizeof( int16 ) * ud->hatEffects.size() );
++	p->aid = bl->id;
++	p->status = enable;
++	
++	for (size_t i = 0; i < ud->hatEffects.size(); i++) {
++		p->effects[i] = ud->hatEffects[i];
++ 	}
++	
++	clif_send(p, p->packetLength, src, target);
++#endif
++}
++
+ //Modifies the type of damage according to status changes [Skotlex]
+ //Aegis data specifies that: 4 endure against single hit sources, 9 against multi-hit.
+ static enum e_damage_type clif_calc_delay(enum e_damage_type type, int div, int64 damage, int delay)
+@@ -10127,6 +10175,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+ 			break;
+ 		case BL_MOB: {
+ 			mob_data *md = (mob_data *)bl;
++			map_session_data *sd = (map_session_data *)bl;
+ 
+ 			if( md->guardian_data && md->guardian_data->guild_id ){
+ 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
+@@ -10167,22 +10216,48 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+ 
+ 				clif_send(&packet, sizeof(packet), src, target);
+ 			} else {
+-				PACKET_ZC_ACK_REQNAMEALL_NPC packet = { 0 };
++				if(md->bl.champion_monster){
++					unit_data *ud = unit_bl2ud(bl);
++					if (ud != nullptr) {
++						if(md->bl.champion_monster){
++							md->ud.group_id = battle_config.group_id_monster_champion;
++							unit_refresh(bl);
++						}
++					    if (ud->group_id) {
++					        PACKET_ZC_ACK_REQNAMEALL_NPC packet = { 0 };
++					        packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
++					        packet.gid = bl->id;
++							char mobhp[100], * str_p = mobhp;
++							safestrncpy(ud->title, msg_txt(sd,2000+md->bl.champion_monster), NAME_LENGTH);
++							memcpy(packet.name, ud->title, NAME_LENGTH);
++							str_p += sprintf(str_p, "%s (HP: %u%%) | ", md->name, get_percentage(md->status.hp, md->status.max_hp));
++							if (str_p != mobhp) {
++								*(str_p - 3) = '\0'; //Remove trailing space + pipe.
++							}
++							safestrncpy(packet.title, mobhp, NAME_LENGTH);
++							packet.groupId = ud->group_id;
++					        packet.groupId = ud->group_id;
++					        clif_send(&packet, sizeof(packet), src, target);
++					    }
++					}
++				}else{
++					PACKET_ZC_ACK_REQNAMEALL_NPC packet = { 0 };
+ 
+-				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
+-				packet.gid = bl->id;
+-				safestrncpy(packet.name, md->name, NAME_LENGTH);
++					packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
++					packet.gid = bl->id;
++					safestrncpy(packet.name, md->name, NAME_LENGTH);
+ 
+ #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
+-				unit_data *ud = unit_bl2ud(bl);
++					unit_data *ud = unit_bl2ud(bl);
+ 
+-				if (ud != nullptr) {
+-					memcpy(packet.title, ud->title, NAME_LENGTH);
+-					packet.groupId = ud->group_id;
+-				}
++					if (ud != nullptr) {
++						memcpy(packet.title, ud->title, NAME_LENGTH);
++						packet.groupId = ud->group_id;
++					}
+ #endif
+-
+-				clif_send(&packet, sizeof(packet), src, target);
++					clif_send(&packet, sizeof(packet), src, target);
++				}
++				
+ 			}
+ 		}
+ 			break;
+diff --git a/src/map/clif.hpp b/src/map/clif.hpp
+index 9155b92..d69ab5d 100644
+--- a/src/map/clif.hpp
++++ b/src/map/clif.hpp
+@@ -1254,4 +1254,7 @@ void clif_macro_reporter_status(map_session_data &sd, e_macro_report_status styp
+ 
+ void clif_dynamicnpc_result( map_session_data& sd, e_dynamicnpc_result result );
+ 
++void clif_hat_effect_single_npc(struct block_list* bl, uint16 effectId, bool enable);
++void clif_hat_effect_npc(struct block_list* src, struct block_list* bl, bool enable, enum send_target target );
++
+ #endif /* CLIF_HPP */
+diff --git a/src/map/map.cpp b/src/map/map.cpp
+index d2afef1..37355ee 100644
+--- a/src/map/map.cpp
++++ b/src/map/map.cpp
+@@ -127,7 +127,7 @@ static struct block_list *bl_list[BL_LIST_MAX];
+ static int bl_list_count = 0;
+ 
+ #ifndef MAP_MAX_MSG
+-	#define MAP_MAX_MSG 1550
++	#define MAP_MAX_MSG 3000
+ #endif
+ 
+ struct map_data map[MAX_MAP_PER_SERVER];
+diff --git a/src/map/map.hpp b/src/map/map.hpp
+index 13f1f29..297fe31 100644
+--- a/src/map/map.hpp
++++ b/src/map/map.hpp
+@@ -446,6 +446,7 @@ struct block_list {
+ 	int id;
+ 	int16 m,x,y;
+ 	enum bl_type type;
++	int champion_monster; /* flag Monstro campeão*/
+ };
+ 
+ 
+diff --git a/src/map/mob.cpp b/src/map/mob.cpp
+index 9920a3f..23205dd 100644
+--- a/src/map/mob.cpp
++++ b/src/map/mob.cpp
+@@ -9,6 +9,9 @@
+ #include <stdlib.h>
+ #include <unordered_map>
+ #include <vector>
++#include <iostream>
++#include <chrono>
++#include <thread>
+ 
+ #include <common/cbasetypes.hpp>
+ #include <common/db.hpp>
+@@ -40,6 +43,7 @@
+ #include "pc.hpp"
+ #include "pet.hpp"
+ #include "quest.hpp"
++#include "mapreg.hpp"
+ 
+ using namespace rathena;
+ 
+@@ -462,6 +466,7 @@ struct mob_data* mob_spawn_dataset(struct spawn_data *data)
+ 	md->mob_id = data->id;
+ 	md->state.boss = data->state.boss;
+ 	md->db = mob_db.find(md->mob_id);
++
+ 	if (data->level > 0)
+ 		md->level = data->level;
+ 	memcpy(md->name, data->name, NAME_LENGTH);
+@@ -620,7 +625,7 @@ bool mob_ksprotected (struct block_list *src, struct block_list *target)
+ 	return false;
+ }
+ 
+-struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, unsigned int size, enum mob_ai ai)
++struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, unsigned int size, enum mob_ai ai, int champion )
+ {
+ 	struct spawn_data data;
+ 
+@@ -663,7 +668,7 @@ struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int
+ /*==========================================
+  * Spawn a single mob on the specified coordinates.
+  *------------------------------------------*/
+-int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai)
++int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai, int champion )
+ {
+ 	struct mob_data* md = nullptr;
+ 	int count, lv;
+@@ -676,7 +681,7 @@ int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y, const char*
+ 	for (count = 0; count < amount; count++)
+ 	{
+ 		int c = (mob_id >= 0) ? mob_id : mob_get_random_id(-mob_id - 1, (battle_config.random_monster_checklv) ? static_cast<e_random_monster_flags>(RMF_DB_RATE|RMF_CHECK_MOB_LV) : RMF_DB_RATE, lv);
+-		md = mob_once_spawn_sub((sd) ? &sd->bl : NULL, m, x, y, mobname, c, event, size, ai);
++		md = mob_once_spawn_sub((sd) ? &sd->bl : NULL, m, x, y, mobname, c, event, size, ai, champion);
+ 
+ 		if (!md)
+ 			continue;
+@@ -702,8 +707,20 @@ int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y, const char*
+ 			}
+ 		}	// end addition [Valaris]
+ 
++		//Monstro CampiÃƒÂ£o
++		if(champion > 0){
++			md->bl.champion_monster = champion;
++		}else
++			md->bl.champion_monster = 0;
++
+ 		mob_spawn(md);
+ 
++		//ativa os effeitos nos mostros campeÃ¯Â¿Â½es
++		if(md->bl.champion_monster){
++			int champion_effect[] = {303, 308, 305, 306};
++			unit_hateffect(&md->bl,champion_effect[md->bl.champion_monster-1],true,true);
++		}
++
+ 		if (mob_id < 0 && battle_config.dead_branch_active)
+ 			//Behold Aegis's masterful decisions yet again...
+ 			//"I understand the "Aggressive" part, but the "Can Move" and "Can Attack" is just stupid" - Poki#3
+@@ -716,7 +733,7 @@ int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y, const char*
+ /*==========================================
+  * Spawn mobs in the specified area.
+  *------------------------------------------*/
+-int mob_once_spawn_area(map_session_data* sd, int16 m, int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai)
++int mob_once_spawn_area(map_session_data* sd, int16 m, int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai, int champion)
+ {
+ 	int i, max, id = 0;
+ 	int lx = -1, ly = -1;
+@@ -762,7 +779,7 @@ int mob_once_spawn_area(map_session_data* sd, int16 m, int16 x0, int16 y0, int16
+ 		lx = x;
+ 		ly = y;
+ 
+-		id = mob_once_spawn(sd, m, x, y, mobname, mob_id, 1, event, size, ai);
++		id = mob_once_spawn(sd, m, x, y, mobname, mob_id, 1, event, size, ai, champion);
+ 	}
+ 
+ 	return id; // id of last spawned mob
+@@ -2251,6 +2268,7 @@ TIMER_FUNC(mob_timer_delete){
+ 	return 0;
+ }
+ 
++
+ /*==========================================
+  *
+  *------------------------------------------*/
+@@ -2612,6 +2630,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
+ 			case MDLF_PET:    dmgbltypes|= BL_PET; break;
+ 		}
+ 	}
++	// puxa o valor da variavel
++	char key[256];
++	sprintf(key, "$monster_champion_%d", md->bl.champion_monster);
++	int champion = static_cast<int>(mapreg_readreg(add_str(key)));
++
+ 
+ 	// determines, if the monster was killed by homunculus' damage only
+ 	homkillonly = (bool)( ( dmgbltypes&BL_HOM ) && !( dmgbltypes&~BL_HOM ) );
+@@ -2767,6 +2790,25 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
+ 								job_exp = (t_exp)cap_value(apply_rate(job_exp, rate), 1, MAX_EXP);
+ 						}
+ #endif
++						//bonus exp monstro campeÃ£o
++						if(md->bl.champion_monster && champion == md->bl.id){
++							if(md->bl.champion_monster  == 1){
++								t_exp exp_base_monster_champion;
++								t_exp exp_job_monster_champion;
++								exp_base_monster_champion = base_exp*10/100;
++								exp_job_monster_champion = job_exp*10/100;
++								base_exp += exp_base_monster_champion;
++								job_exp += exp_job_monster_champion;
++							}
++							if(md->bl.champion_monster  == 3){
++								t_exp exp_base_monster_champion;
++								t_exp exp_job_monster_champion;
++								exp_base_monster_champion = base_exp*100/100;
++								exp_job_monster_champion = job_exp*100/100;
++								base_exp += exp_base_monster_champion;
++								job_exp += exp_job_monster_champion;
++							}
++						}
+ 						pc_gainexp(tmpsd[i], &md->bl, base_exp, job_exp, 0);
+ 					}
+ 				}
+@@ -2838,6 +2880,12 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
+ 			mob_item_drop(md, dlist, ditem, 0, battle_config.autoloot_adjust ? drop_rate : md->db->dropitem[i].rate, homkillonly || merckillonly);
+ 		}
+ 
++		//limpa a variavel monstro campeÃ£o
++		if(md->bl.champion_monster && champion == md->bl.id){
++			//limpa a variavel
++			mapreg_setreg(add_str(key),0);
++		}
++
+ 		// Ore Discovery [Celest]
+ 		if (sd == mvp_sd && pc_checkskill(sd,BS_FINDINGORE)>0 && battle_config.finding_ore_rate/10 >= rnd()%10000) {
+ 			struct s_mob_drop mobdrop = {};
+diff --git a/src/map/mob.hpp b/src/map/mob.hpp
+index 37162ba..5ced9df 100644
+--- a/src/map/mob.hpp
++++ b/src/map/mob.hpp
+@@ -485,13 +485,13 @@ struct view_data* mob_get_viewdata(int mob_id);
+ void mob_set_dynamic_viewdata( struct mob_data* md );
+ void mob_free_dynamic_viewdata( struct mob_data* md );
+ 
+-struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, unsigned int size, enum mob_ai ai);
++struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int16 y, const char *mobname, int mob_id, const char *event, unsigned int size, enum mob_ai ai, int champion = 0);
+ 
+ int mob_once_spawn(map_session_data* sd, int16 m, int16 x, int16 y,
+-	const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai);
++	const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai, int champion = 0);
+ 
+ int mob_once_spawn_area(map_session_data* sd, int16 m,
+-	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai);
++	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, enum mob_ai ai,int champion = 0);
+ 
+ bool mob_ksprotected (struct block_list *src, struct block_list *target);
+ 
+@@ -553,6 +553,7 @@ int mob_getdroprate(struct block_list *src, std::shared_ptr<s_mob_db> mob, int b
+ // MvP Tomb System
+ int mvptomb_setdelayspawn(struct npc_data *nd);
+ TIMER_FUNC(mvptomb_delayspawn);
++TIMER_FUNC(mob_champion_timer);
+ void mvptomb_create(struct mob_data *md, char *killer, time_t time);
+ void mvptomb_destroy(struct mob_data *md);
+ 
+diff --git a/src/map/pc.hpp b/src/map/pc.hpp
+index 22e2c8a..01cae3b 100644
+--- a/src/map/pc.hpp
++++ b/src/map/pc.hpp
+@@ -941,6 +941,8 @@ public:
+ 	s_macro_detect macro_detect;
+ 
+ 	std::vector<uint32> party_booking_requests;
++
++	t_tick monster_champion_tick;
+ };
+ 
+ extern struct eri *pc_sc_display_ers; /// Player's SC display table
+diff --git a/src/map/script.cpp b/src/map/script.cpp
+index bb817be..d798ec7 100644
+--- a/src/map/script.cpp
++++ b/src/map/script.cpp
+@@ -30,6 +30,7 @@
+ #include <common/timer.hpp>
+ #include <common/utilities.hpp>
+ #include <common/utils.hpp>
++#include <common/ers.hpp>
+ 
+ #include "achievement.hpp"
+ #include "atcommand.hpp"
+@@ -11116,6 +11117,7 @@ BUILDIN_FUNC(monster)
+ 	int class_;
+ 	int amount			= script_getnum(st,7);
+ 	const char* event	= "";
++	int monster_chapion = (script_hasdata(st, 11) ? script_getnum(st,11):0);
+ 	unsigned int size	= SZ_SMALL;
+ 	enum mob_ai ai		= AI_NONE;
+ 
+@@ -11174,7 +11176,7 @@ BUILDIN_FUNC(monster)
+ 	TBL_MOB* md;
+ 
+ 	for(i = 0; i < amount; i++) { //not optimised
+-		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai);
++		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai, monster_chapion);
+ 
+ 		if (mobid > 0) {
+ 			md = map_id2md(mobid);
+@@ -27171,6 +27173,162 @@ BUILDIN_FUNC(preg_match) {
+ #endif
+ }
+ 
++BUILDIN_FUNC(hateffect_npc){
++ #if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++ 	int16 effectID = script_getnum(st,2);
++ 	bool enable = script_getnum(st,3) ? true : false;
++ 
++	struct block_list* bl;
++	bool send = true;
++ 
++	if (script_hasdata(st, 4)) {
++		bl = map_id2bl(script_getnum(st, 4));
++ 	}
++	else {
++		bl = map_id2bl(st->rid);
++		map_session_data* sd = BL_CAST(BL_PC, bl);
++ 
++		if (sd && sd->state.connect_new) {
++			send = false;
++		}
++ 	}
++ 
++	unit_hateffect(bl, effectID, enable, send);
++ #endif
++ 	return SCRIPT_CMD_SUCCESS;
++}
++
++BUILDIN_FUNC( statusmes ){
++	ShowStatus( "%s\n", script_getstr( st, 2 ) );
++	return SCRIPT_CMD_SUCCESS;
++}
++
++BUILDIN_FUNC( infomes ){
++	ShowInfo( "%s\n", script_getstr( st, 2 ) );
++	return SCRIPT_CMD_SUCCESS;
++}
++
++BUILDIN_FUNC(specialeffect3)
++{
++	struct block_list *bl = NULL;
++	int id = 0;
++	int type = script_getnum(st,2);
++	enum send_target target = script_hasdata(st,3) ? (send_target)script_getnum(st,3) : AREA;
++
++	if (script_hasdata(st,4)) {
++		id = script_getnum(st,4);
++		bl = map_id2bl(id);
++	}
++	else {
++		bl = st->rid ? map_id2bl(st->rid) : map_id2bl(st->oid);
++	}
++
++	if(bl == NULL)
++		return SCRIPT_CMD_SUCCESS;
++
++	if( type <= EF_NONE || type >= EF_MAX ){
++		ShowError( "buildin_specialeffect: unsupported effect id %d\n", type );
++		return SCRIPT_CMD_FAILURE;
++	}
++
++	if (target == SELF) {
++		TBL_PC *sd;
++		if (script_rid2sd(sd))
++			clif_specialeffect_single(bl,type,sd->fd);
++	} else {
++		clif_specialeffect(bl, type, target);
++	}
++	return SCRIPT_CMD_SUCCESS;
++}
++
++//<map>,x,y,mob_id,<CHAR_ID>
++BUILDIN_FUNC(champion_drop) {
++	map_session_data* sd;
++	static struct eri *item_drop_ers; //For loot drops delay structures.
++	static struct eri *item_drop_list_ers;
++	int x, y;
++	char mapname[MAP_NAME_LENGTH];
++	//struct block_list* bl;
++	uint16 flag = 0;
++	//struct item item_tmp;
++	bool canShowEffect = false;
++
++	if (!script_hasdata(st, 5)) {
++		ShowError("buildin_champion_drop: mob_id is null  %d\n", script_getnum(st, 5));
++		return SCRIPT_CMD_FAILURE;
++	}
++
++	if (!script_charid2sd(6, sd)) {
++		ShowError("buildin_champion_drop: player not atached  \n");
++		return SCRIPT_CMD_FAILURE;
++	}
++
++	std::shared_ptr<s_mob_db> md = mob_db.find(script_getnum(st, 5));
++	if (md == nullptr) {
++		ShowError("buildin_champion_drop: mob_id not found: %d\n", script_getnum(st, 5));
++		return SCRIPT_CMD_FAILURE;
++	}
++
++	if (!script_isstring(st, 2)) {
++		ShowError("buildin_champion_drop: mapname is not a string: %d\n", script_getnum(st, 2));
++		return SCRIPT_CMD_FAILURE;
++	}
++
++	strcpy(mapname, script_getstr(st, 2));
++	x = script_getnum(st, 3);
++	y = script_getnum(st, 4);
++	int drop_modifier = 100;
++	struct s_mob_drop mdrop[MAX_MOB_DROP_TOTAL];
++	int temp;
++
++	memset(&mdrop,0,sizeof(mdrop));
++	//Normal order
++	for(int i = 0; i < MAX_MVP_DROP_TOTAL; i++) {
++		if (md->dropitem[i].nameid > 0)
++			memcpy(&mdrop[i],&md->dropitem[i],sizeof(mdrop[i]));
++	}
++
++	for (int i = 0; i < MAX_MOB_DROP_TOTAL; i++) {
++		if(mdrop[i].nameid == 0)
++			continue;
++
++		std::shared_ptr<item_data> i_data = item_db.find(mdrop[i].nameid);
++
++		if (i_data == nullptr)
++			continue;
++
++		int droprate = mob_getdroprate(&sd->bl, md, mdrop[i].rate, drop_modifier);
++
++		if (rnd() % 10000 >= droprate)
++			continue;
++
++		if (sd && i_data->type == IT_PETEGG) {
++			pet_create_egg(sd, mdrop[i].nameid);
++			continue;
++		}
++
++		// A Rare Drop Global Announce
++		if (sd && md->dropitem[i].rate <= battle_config.rare_drop_announce) {
++			char message[128];
++			sprintf(message, msg_txt(NULL, 541), sd->status.name, md->name.c_str(), i_data->ename, (float)droprate / 100);
++			// MSG: "'%s' won %s's %s (chance: %0.02f%%)"
++			intif_broadcast(message, strlen(message) + 1, BC_DEFAULT);
++		}
++		struct item item = {};
++		item.nameid=mdrop[i].nameid;
++		item.identify= itemdb_isidentified(item.nameid);
++		
++		mob_setdropitem_option(&item, &mdrop[i]);
++		
++		//if((temp = pc_additem(sd,&item,1,LOG_TYPE_PICKDROP_PLAYER)) != 0) {
++		//	clif_additem(sd,0,0,temp);
++			map_addflooritem(&item,1, map_mapname2mapid(mapname),x,y,sd->status.char_id,0,0,1,0,true);
++		//}		
++	}
++	return SCRIPT_CMD_SUCCESS;
++}
++
++
+ /// script command definitions
+ /// for an explanation on args, see add_buildin_func
+ struct script_function buildin_func[] = {
+@@ -27322,7 +27480,7 @@ struct script_function buildin_func[] = {
+ 	BUILDIN_DEF(itemskill,"vi?"),
+ 	BUILDIN_DEF(produce,"i"),
+ 	BUILDIN_DEF(cooking,"i"),
+-	BUILDIN_DEF(monster,"siisvi???"),
++	BUILDIN_DEF(monster,"siisvi????"),
+ 	BUILDIN_DEF(getmobdrops,"i"),
+ 	BUILDIN_DEF(areamonster,"siiiisvi???"),
+ 	BUILDIN_DEF(killmonster,"ss?"),
+@@ -27883,6 +28041,12 @@ struct script_function buildin_func[] = {
+ 	BUILDIN_DEF(autoloot,"??"),
+ 	BUILDIN_DEF(opentips, "i?"),
+ 
++	BUILDIN_DEF(hateffect_npc,"ii?"),
++	BUILDIN_DEF(statusmes,"s"),
++	BUILDIN_DEF(infomes,"s"),
++	BUILDIN_DEF(specialeffect3,"i??"),
++
++	BUILDIN_DEF(champion_drop,"siii?"),
+ #include <custom/script_def.inc>
+ 
+ 	{NULL,NULL,NULL},
+diff --git a/src/map/script.hpp b/src/map/script.hpp
+index af08607..8d0dfe0 100644
+--- a/src/map/script.hpp
++++ b/src/map/script.hpp
+@@ -2128,6 +2128,97 @@ enum e_hat_effects : int16{
+ 	HAT_EF_C_BABY_GLOOM,
+ 	HAT_EF_WINTERNIGHTBELLS,
+ 	HAT_EF_NIGHTSKYOFRUTIE,
++	HAT_EF_CM_RED_AURA,
++	HAT_EF_CM_GRAY_AURA,
++	HAT_EF_CM_BLUE_AURA,
++	HAT_EF_CM_YELLOW_AURA,
++	HAT_EF_CM_PINK_AURA,
++	HAT_EF_CM_GREEN_AURA,
++	HAT_EF_CM_FURIOUS,
++	HAT_EF_CM_BEATER,
++	HAT_EF_CM_EXPERIENT,
++	HAT_EF_CM_PRECIOUS,
++	HAT_EF_CM_CHALLENGER,
+ 	HAT_EF_MAX
+ };
+ 
+diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
+index d1f1451..c098e74 100644
+--- a/src/map/script_constants.hpp
++++ b/src/map/script_constants.hpp
+@@ -9629,6 +9629,97 @@
+ 	export_constant(HAT_EF_C_BABY_GLOOM);
+ 	export_constant(HAT_EF_WINTERNIGHTBELLS);
+ 	export_constant(HAT_EF_NIGHTSKYOFRUTIE);
++	export_constant(HAT_EF_CM_RED_AURA);
++	export_constant(HAT_EF_CM_GRAY_AURA);
++	export_constant(HAT_EF_CM_BLUE_AURA);
++	export_constant(HAT_EF_CM_YELLOW_AURA);
++	export_constant(HAT_EF_CM_PINK_AURA);
++	export_constant(HAT_EF_CM_GREEN_AURA);
++	export_constant(HAT_EF_CM_FURIOUS);
++	export_constant(HAT_EF_CM_BEATER);
++	export_constant(HAT_EF_CM_EXPERIENT);
++	export_constant(HAT_EF_CM_PRECIOUS);
++	export_constant(HAT_EF_CM_CHALLENGER);
+ 
+ 	/* pet catch */
+ 	export_constant(PET_CATCH_UNIVERSAL);
+diff --git a/src/map/status.cpp b/src/map/status.cpp
+index f3dafd2..a824523 100644
+--- a/src/map/status.cpp
++++ b/src/map/status.cpp
+@@ -35,6 +35,7 @@
+ #include "pc_groups.hpp"
+ #include "pet.hpp"
+ #include "script.hpp"
++#include "mapreg.hpp"
+ 
+ using namespace rathena;
+ 
+@@ -1572,7 +1573,20 @@ int status_damage(struct block_list *src,struct block_list *target,int64 dhp, in
+ 	**/
+ 	switch (target->type) {
+ 		case BL_PC:  flag = pc_dead((TBL_PC*)target,src); break;
+-		case BL_MOB: flag = mob_dead((TBL_MOB*)target, src, flag&4?3:0); break;
++		case BL_MOB: {
++			flag = mob_dead((TBL_MOB*)target, src, flag & 4 ? 3 : 0);
++			// puxa o valor da variavel
++			char key[256];
++			sprintf(key, "$monster_champion_%d", ((TBL_MOB*)target)->bl.champion_monster);
++			int champion = static_cast<int>(mapreg_readreg(add_str(key)));
++			if (champion && ((TBL_MOB*)target)->bl.champion_monster == 4) {
++				for (int i = 0; i < 10; i++) {
++					clif_specialeffect(&((TBL_PC*)target)->bl, 268, AREA);
++					mob_dead((TBL_MOB*)target, src, flag & 4 ? 3 : 0);
++				}
++			}
++		}
++			break;
+ 		case BL_HOM: flag = hom_dead((TBL_HOM*)target); break;
+ 		case BL_MER: flag = mercenary_dead((TBL_MER*)target); break;
+ 		case BL_ELEM: flag = elemental_dead((TBL_ELEM*)target); break;
+diff --git a/src/map/unit.cpp b/src/map/unit.cpp
+index 562c928..06ce00e 100644
+--- a/src/map/unit.cpp
++++ b/src/map/unit.cpp
+@@ -2969,6 +2969,9 @@ void unit_dataset(struct block_list *bl)
+ 	ud->attackabletime =
+ 	ud->canact_tick    =
+ 	ud->canmove_tick   = gettick();
++#if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++	ud->hatEffects = {};
++#endif	
+ }
+ 
+ /**
+@@ -3649,6 +3652,12 @@ int unit_free(struct block_list *bl, clr_type clrtype)
+ 			status_change_clear(bl,1);
+ 			break;
+ 		}
++	}	
++ 
++	if (ud) {
++#if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++		ud->hatEffects.clear();
++#endif
+ 	}
+ 
+ 	map_deliddb(bl);
+@@ -3661,6 +3670,37 @@ int unit_free(struct block_list *bl, clr_type clrtype)
+ 	return 0;
+ }
+ 
++void unit_hateffect(struct block_list* bl, int16 effectID, bool enable, bool send)
++{
++	struct unit_data* ud;
++	map_session_data* sd;
++
++	if (!bl || !(ud = unit_bl2ud(bl)))
++		return;
++
++	sd = BL_CAST(BL_PC, bl);
++	auto it = util::vector_get(ud->hatEffects, effectID);
++
++	if (enable) {
++		if (it != ud->hatEffects.end()) {
++			return;
++		}
++
++		ud->hatEffects.push_back(effectID);
++	}
++	else {
++		if (it == ud->hatEffects.end()) {
++			return;
++		}
++
++		util::vector_erase_if_exists(ud->hatEffects, effectID);
++	}
++
++	if (send || !enable) {
++		clif_hat_effect_single_npc(bl, effectID, enable);
++	}
++}
++
+ static TIMER_FUNC(unit_shadowscar_timer) {
+ 	block_list *bl = map_id2bl(id);
+ 
+diff --git a/src/map/unit.hpp b/src/map/unit.hpp
+index cfd9326..904e64f 100644
+--- a/src/map/unit.hpp
++++ b/src/map/unit.hpp
+@@ -65,6 +65,11 @@ struct unit_data {
+ 	int32 group_id;
+ 
+ 	std::vector<int> shadow_scar_timer;
++
++#if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
++	std::vector<int16> hatEffects;
++#endif
++
+ };
+ 
+ struct view_data {
+@@ -180,4 +185,6 @@ void unit_addshadowscar(unit_data &ud, int interval);
+ void do_init_unit(void);
+ void do_final_unit(void);
+ 
++void unit_hateffect(struct block_list* bl, int16 effectID, bool enable, bool send);
++
+ #endif /* UNIT_HPP */
+-- 
+2.21.0.windows.1
+

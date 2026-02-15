@@ -1,0 +1,127 @@
+From bd16bc8411fe213662b77de19d76cbd832946732 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] System - Vip Status + Icon
+ db/import/status.yml         | 97 ++++++++++++++++++++++++++++++++++++
+ src/map/chrif.cpp            |  6 +++
+ src/map/clif.cpp             |  6 +++
+ src/map/script_constants.hpp |  9 +++-
+ src/map/status.hpp           |  6 ++-
+ 5 files changed, 122 insertions(+), 2 deletions(-)
+
+diff --git a/db/import/status.yml b/db/import/status.yml
+index afcb672..576e8c2 100644
+--- a/db/import/status.yml
++++ b/db/import/status.yml
+@@ -7,3 +7,10 @@
+ Header:
+   Type: STATUS_DB
+   Version: 2
++
++Body:
++#Vip
++  - Status: VIPSTATE
++    Icon: EFST_VIPSTATE
++    Flags:
++      NoDispell: true
+\ No newline at end of file
+diff --git a/src/map/chrif.cpp b/src/map/chrif.cpp
+index 7e6c251..21452bb 100644
+--- a/src/map/chrif.cpp
++++ b/src/map/chrif.cpp
+@@ -1598,6 +1598,10 @@ void chrif_parse_ack_vipActive(int fd) {
+ 		if((flag&0x1)) { //isvip
+ 			sd->vip.enabled = 1;
+ 			sd->vip.time = vip_time;
++
++			// vip_time is in epoch timestamp which are in seconds,  while sc_start requires milliseconds
++			sc_start(NULL, &sd->bl, SC_VIPSTATE, 100, 1, (vip_time-time(NULL)) * 1000);
++
+ 			// Increase storage size for VIP.
+ 			sd->storage.max_amount = battle_config.vip_storage_increase + MIN_STORAGE;
+ 			if (sd->storage.max_amount > MAX_STORAGE) {
+@@ -1607,6 +1611,8 @@ void chrif_parse_ack_vipActive(int fd) {
+ 		} else if (sd->vip.enabled) {
+ 			sd->vip.enabled = 0;
+ 			sd->vip.time = 0;
++			status_change_end(&sd->bl, SC_VIPSTATE, INVALID_TIMER);
++
+ 			sd->storage.max_amount = MIN_STORAGE;
+ 			sd->special_state.no_gemstone = 0;
+ 			clif_displaymessage(sd->fd,msg_txt(sd,438));
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 2948a36..31d585e 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -10967,6 +10967,12 @@ void clif_parse_LoadEndAck(int fd,struct map_session_data *sd)
+ 		if (!sd->state.autotrade) { // Don't trigger NPC event or opening vending/buyingstore will be failed
+ 			//Login Event
+ 			npc_script_event(sd, NPCE_LOGIN);
++#ifdef VIP_ENABLE
++			// force VIP reset on login
++			status_change_end(&sd->bl, SC_VIPSTATE, INVALID_TIMER);
++			if(sd->vip.time > 0)
++				sc_start(NULL, &sd->bl, SC_VIPSTATE, 100, 1, (sd->vip.time-time(NULL)) * 1000);
++#endif
+ 		}
+ 
+ 		// Set facing direction before check below to update client
+diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
+index 9d53b83..5fcb970 100644
+--- a/src/map/script_constants.hpp
++++ b/src/map/script_constants.hpp
+@@ -1866,6 +1866,9 @@
+ 	export_constant(SC_BEEF_RIB_STEW);
+ 	export_constant(SC_PORK_RIB_STEW);
+ 	export_constant(SC_WEAPONBREAKER);
++	
++	// Vip System
++	export_constant(SC_VIPSTATE);
+ 
+ 	// Member Club
+ 	export_constant(SC_CLUBVIP);
+@@ -1885,7 +1888,8 @@
+ 
+ 	// Member Club
+ 	export_constant(SC_InfinityGlover);
+-	
++
++
+ #ifdef RENEWAL
+ 	export_constant(SC_EXTREMITYFIST2);
+ #endif
+@@ -4043,6 +4047,9 @@
+ 	export_constant(EFST_SBUNSHIN);
+ 	export_constant(EFST_MTP_W_POTION_100);
+ 	
++	// Vip System
++	export_constant(EFST_VIPSTATE);	
++
+ 	/* Member Level Status */
+ 	export_constant(EFST_CLUBVIP);
+ 
+diff --git a/src/map/status.hpp b/src/map/status.hpp
+index 6ceb956..84a5898 100644
+--- a/src/map/status.hpp
++++ b/src/map/status.hpp
+@@ -1276,7 +1276,9 @@ enum sc_type : int16 {
+ 
+ 	/* Thanos Glove */
+ 	SC_InfinityGlover,
+-	
++
++	SC_VIPSTATE,
++
+ #ifdef RENEWAL
+ 	SC_EXTREMITYFIST2, //! NOTE: This SC should be right before SC_MAX, so it doesn't disturb if RENEWAL is disabled
+ #endif
+@@ -2636,6 +2638,8 @@ enum efst_type : short{
+ 	EFST_SBUNSHIN = 1415,
+ 
+ 	EFST_MTP_W_POTION_100 = 1418,
++	// Vip System
++	EFST_VIPSTATE = 1500,
+ 
+ 	/* Member Level Status */
+ 	EFST_CLUBVIP = 1659,
+-- 
+2.21.0.windows.1
+

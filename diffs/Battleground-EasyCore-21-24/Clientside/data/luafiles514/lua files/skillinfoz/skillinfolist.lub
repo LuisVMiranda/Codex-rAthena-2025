@@ -1,0 +1,26 @@
+SKILL_INFO_LIST = {
+	[SKID.CS_EQUIPMENT] = {
+		"CS_EQUIPMENT",
+		SkillName = "Check Equipment Info",
+		MaxLv = 1,
+		SpAmount = { 0 },
+		bSeperateLv = false,
+		AttackRange = { 1 }
+	},
+	[SKID.CS_BG] = {
+		"CS_BG",
+		SkillName = "Battleground Stats",
+		MaxLv = 1,
+		SpAmount = { 0 },
+		bSeperateLv = false,
+		AttackRange = { 1 }
+	},
+	[SKID.CS_WOE] = {
+		"CS_WOE",
+		SkillName = "War of Emperium Stats",
+		MaxLv = 1,
+		SpAmount = { 0 },
+		bSeperateLv = false,
+		AttackRange = { 1 }
+	},
+}

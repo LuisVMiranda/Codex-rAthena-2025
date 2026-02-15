@@ -1,0 +1,75 @@
+#####	 Battle.c
+	} //End of target SC_ check
+
++	// Yumi 
++	if (status_get_race2(bl) == RC2_GREENAURA) {
++		if (status_get_race2(src) != RC2_GREENAURA) // This is for MvP vs MvP event purposes. (damage doesn't get reduced when attacking eachother)
++			damage = damage > 100 ? damage * (100 - battle_config.greenaura_reduction_rate) / 100 : 1; // Reduces damage received by the amount specified in conf/battle/monster.conf	
++	}
+
+	//SC effects from caster side.
+	sc = status_get_sc(src);
+	
+	#1545 #8611
+	
+	{ "monster_stuck_warning",              &battle_config.mob_stuck_warning,               0,      0,      1,              },
++	{ "greenaura_reduction_rate",           &battle_config.greenaura_reduction_rate,        0,      0,      100,            },
+	{ "skill_eightpath_algorithm",          &battle_config.skill_eightpath_algorithm,       1,      0,      1,              },
+	
+	
+####	Battle H.pp	
+	int mob_stuck_warning; //Show warning if a monster is stuck too long
++	int greenaura_reduction_rate;
+	int skill_eightpath_algorithm; //Official path algorithm
+	
+####	Map.h	
+	RC2_OGH_HIDDEN,
++	RC2_GREENAURA,
+	RC2_MAX
+};
+
+
+####	Script_constatns.hpp
+	
+	export_constant(RC2_OGH_HIDDEN);
++	export_constant(RC2_GREENAURA);
+	export_constant(RC2_MAX);
+	
+	
+#####	import battle.conf
++// Green Aura Reduction: (Note 2)
++// How much damage MVPs with a green aura (RC2_GREENAURA) ignore.
++// 0: Disabled/Take full damage
++// 1~100: % of the damage they ignore (official is 90)
++greenaura_reduction_rate: 90
+
+
+// PATCH
+####	system/monster_size effects
+
+tbl = {
++	[21002] = { MonsterSize = 1.2, MonsterEff = EFFECT.EF_GREEN99_5 },
+	[2603] = { MonsterSize = 1.2, MonsterEff = EFFECT.EF_BOTTOM_DE },
+	
+	
+	
+	
+####	mob.cpp
+	
+	
+		// filter out entries not eligible for exp distribution
+	memset(tmpsd,0,sizeof(tmpsd));
+	for(i = 0, count = 0, mvp_damage = 0; i < DAMAGELOG_SIZE && md->dmglog[i].id; i++) {
+		struct map_session_data* tsd = NULL;
++		if(md->level >= 500 && status_has_mode(&md->status,MD_MVP)){
++			mapreg_setreg(reference_uid(add_str("$@damage_cid"), i), md->dmglog[i].id);
++			mapreg_setreg(reference_uid(add_str("$@damage_done"), i), md->dmglog[i].dmg);
++		}
+		if (md->dmglog[i].flag == MDLF_SELF) {
+			//Self damage counts as exp tap
+			count++;
+			continue;
+		}
+	
+#include "map.hpp"
++#include "mapreg.hpp"

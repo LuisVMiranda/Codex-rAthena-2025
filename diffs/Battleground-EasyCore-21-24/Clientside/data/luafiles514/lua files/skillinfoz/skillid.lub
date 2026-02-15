@@ -1,0 +1,5 @@
+SKID = {
+	CS_EQUIPMENT = 794,
+	CS_BG = 795,
+	CS_WOE = 796,
+}

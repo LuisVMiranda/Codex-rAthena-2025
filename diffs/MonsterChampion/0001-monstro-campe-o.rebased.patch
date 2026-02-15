@@ -1,0 +1,36 @@
+diff --git a/conf/battle/misc.conf b/conf/battle/misc.conf
+index 145b0a9..cfb4736 100644
+--- a/conf/battle/misc.conf
++++ b/conf/battle/misc.conf
+@@ -184,6 +184,9 @@ mail_delay: 1000
+ // Hides items from the player's favorite tab from being sold to a NPC. (Note 1)
+ hide_fav_sell: no
+ 
++//id do icone no cliente
++group_id_monster_champion: 13
++
+ // When searching for a random position on the map, how much of the border of the map shall not be considered?
+ // Officially the 15 tiles from the edge of the map on each side are not considered as target cells.
+ // On some maps like in Pyramids this causes there to be very few monsters in the outer areas. This also
+diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
+index adf1cf4..96dc70a 100644
+--- a/conf/msg_conf/map_msg.conf
++++ b/conf/msg_conf/map_msg.conf
+@@ -1836,4 +1836,5 @@
+ 1540: Appearance is already set to default.
+ 
+ //Custom translations
++2005: $monster_champion_%d
+ import: conf/msg_conf/import/map_msg_eng_conf.txt
+diff --git a/npc/scripts_custom.conf b/npc/scripts_custom.conf
+index fb46627..228cd21 100644
+--- a/npc/scripts_custom.conf
++++ b/npc/scripts_custom.conf
+@@ -19,6 +19,7 @@
+ //npc: npc/custom/card_remover.txt
+ //npc: npc/custom/item_signer.txt
+ //npc: npc/custom/woe_controller.txt
++npc: npc/custom/monstro_campeao.txt
+ 
+ // ----------------------- Other Scripts -----------------------
+ // -- Private MVP & Branch Room

@@ -1,0 +1,39 @@
+diff --git a/conf/battle/drops.conf b/conf/battle/drops.conf
+index e86605b..9acd66b 100644
+--- a/conf/battle/drops.conf
++++ b/conf/battle/drops.conf
+@@ -212,6 +212,10 @@ drop_rate_cap_vip: 9000
+ // Displays a colored pillar effect for items dropped by monsters that contain random options.
+ rndopt_drop_pillar: on
+ 
++// Ao vencer o mob com apenas um hit, o drop de cartas e equipamentos recebe um bÃ´nus de 100% em suas rates,
++// ou seja, a chance de drop desses itens dobra. (PadrÃ£o 200)
++hitkill_rate: 200
++
+ // Do drop rate bonus increase the drop rate of map drops? (Note 1)
+ // Default: yes
+ enable_bonus_map_drops: yes
+diff --git a/src/map/battle.cpp b/src/map/battle.cpp
+index 6cc45e4..227e31a 100644
+--- a/src/map/battle.cpp
++++ b/src/map/battle.cpp
+@@ -10581,6 +10581,7 @@ static const struct _battle_data {
+ 	{ "refresh_song_icon",                  &battle_config.refresh_song_icon,               0,      0,      1,              },
+ 	{ "guild_maprespawn_clones",			&battle_config.guild_maprespawn_clones,			0,		0,		1,				},
+ 	{ "hide_fav_sell", 			&battle_config.hide_fav_sell,			0,      0,      1,              },
++	{ "hitkill_rate", 			&battle_config.hitkill_rate,			200,    0,      INT_MAX,        },
+ 	{ "mail_daily_count",					&battle_config.mail_daily_count,				100,	0,		INT32_MAX,		},
+ 	{ "mail_zeny_fee",						&battle_config.mail_zeny_fee,					2,		0,		100,			},
+ 	{ "mail_attachment_price",				&battle_config.mail_attachment_price,			2500,	0,		INT32_MAX,		},
+diff --git a/src/map/battle.hpp b/src/map/battle.hpp
+index 87e4013..64d22eb 100644
+--- a/src/map/battle.hpp
++++ b/src/map/battle.hpp
+@@ -667,6 +667,7 @@ struct Battle_Config
+ 	int32 refresh_song_icon; // Should the song icon duration be refreshed?
+ 	int32 guild_maprespawn_clones; // Should clones be killed by maprespawnguildid?
+ 	int32 hide_fav_sell;
++	int32 hitkill_rate;
+ 	int32 mail_daily_count;
+ 	int32 mail_zeny_fee;
+ 	int32 mail_attachment_price;

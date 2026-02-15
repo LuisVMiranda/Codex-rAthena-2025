@@ -1556,6 +1556,7 @@ void chrif_parse_ack_vipActive(int32 fd) {
 	uint8 flag = RFIFOB(fd,14);
 	map_session_data* sd = map_id2sd(aid);
 	bool changed = false;
+	time_t now = time(nullptr);
 
 	if(sd == nullptr) return;
 
@@ -1567,6 +1568,11 @@ void chrif_parse_ack_vipActive(int32 fd) {
 		if((flag&0x1)) { //isvip
 			sd->vip.enabled = 1;
 			sd->vip.time = vip_time;
+
+			status_change_end(&sd->bl, SC_VIPSTATE);
+			if (vip_time > static_cast<uint32>(now)) {
+				sc_start(nullptr, &sd->bl, SC_VIPSTATE, 100, 1, static_cast<t_tick>(vip_time - now) * 1000);
+			}
 			// Increase storage size for VIP.
 			sd->storage.max_amount = battle_config.vip_storage_increase + MIN_STORAGE;
 			if (sd->storage.max_amount > MAX_STORAGE) {
@@ -1574,12 +1580,15 @@ void chrif_parse_ack_vipActive(int32 fd) {
 				sd->storage.max_amount = MAX_STORAGE;
 			}
 			sd->special_state.no_gemstone = battle_config.vip_gemstone;
-		} else if (sd->vip.enabled) {
+		} else {
+			const bool had_vip = sd->vip.enabled != 0;
 			sd->vip.enabled = 0;
 			sd->vip.time = 0;
+			status_change_end(&sd->bl, SC_VIPSTATE);
 			sd->storage.max_amount = MIN_STORAGE;
 			sd->special_state.no_gemstone = 0;
-			clif_displaymessage(sd->fd,msg_txt(sd,438)); // You are no longer VIP.
+			if (had_vip)
+				clif_displaymessage(sd->fd,msg_txt(sd,438)); // You are no longer VIP.
 		}
 	}
 	// Show info if status changed

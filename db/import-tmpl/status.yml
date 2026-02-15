@@ -46,6 +46,8 @@ Header:
   Version: 4
 
 Body:
+  # VIP status icon is now handled by core code, but this status entry must still exist in your active import DB.
+  # Copy this block into db/import/status.yml (or db/{pre-re,re}/status.yml if your policy is to bake it into defaults).
   # Migrated from diffs/Sys-VipStatusIcon/0001-System-Vip-Status-Icon.patch
   - Status: VIPSTATE
     Icon: EFST_VIPSTATE

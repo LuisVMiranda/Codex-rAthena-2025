@@ -141,3 +141,19 @@ We want to add our own custom quests to the quest_db.
 
 
 We cannot stress enough how helpful this system is for everyone. The majority of git conflicts will simply go away if users make use of the `import/` system.
+
+### Status Changes (VIP status icon migration)
+---
+When enabling the VIP status icon support, make sure the `VIPSTATE` entry from `db/import-tmpl/status.yml` is present in your active `db/import/status.yml`.
+
+#### /db/import/status.yml
+
+```yml
+    - Status: VIPSTATE
+      Icon: EFST_VIPSTATE
+      Flags:
+        NoDispell: true
+```
+
+If your project policy prefers changing the default database directly, add the same block to your active default status DB instead of import.
+

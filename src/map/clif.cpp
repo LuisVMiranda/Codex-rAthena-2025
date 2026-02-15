@@ -11054,6 +11054,16 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 		status_calc_bl(sd->ed, { SCB_SPEED }); //Elemental mimic their master's speed on each map change
 	}
 
+#ifdef VIP_ENABLE
+	if (!sd->state.autotrade) {
+		const time_t now = time(nullptr);
+		status_change_end(&sd->bl, SC_VIPSTATE);
+		if (pc_isvip(sd) && sd->vip.time > static_cast<uint32>(now)) {
+			sc_start(nullptr, &sd->bl, SC_VIPSTATE, 100, 1, static_cast<t_tick>(sd->vip.time - now) * 1000);
+		}
+	}
+#endif
+
 	if(sd->state.connect_new) {
 		int32 lv;
 		guild_notice = true;

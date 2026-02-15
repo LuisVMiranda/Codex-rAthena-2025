@@ -1,0 +1,95 @@
+-\tscript\tMob_Campeao\t-1,{
+OnInit:
+	query_sql("CREATE TABLE IF NOT EXISTS `monstro_campeao` ( `mob_gid` INT(11) NOT NULL, `raca` SMALLINT(6) NOT NULL, `tipo` SMALLINT(6) NOT NULL, `mapa` VARCHAR(55) NOT NULL, `timer` TINYINT(4) NOT NULL DEFAULT 10, PRIMARY KEY (`mob_gid`) ) ENGINE=InnoDB");
+	query_sql("TRUNCATE TABLE `monstro_campeao`");
+	initnpctimer;
+	end;
+
+OnNPCKillEvent:
+	.@mob_id = killedrid;
+	.@mob_gid = killedgid;
+	.@map$ = strcharinfo(3);
+
+	// Champion death flow
+	if (query_sql("SELECT `tipo` FROM `monstro_campeao` WHERE `mob_gid` = '" + .@mob_gid + "'", .@champion_type)) {
+		query_sql("DELETE FROM `monstro_campeao` WHERE `mob_gid` = '" + .@mob_gid + "'");
+		if (getd("$monster_champion_" + .@champion_type) == .@mob_gid)
+			setd "$monster_champion_" + .@champion_type, 0;
+
+		if (.@champion_type == 2) {
+			getmapxy(.@kmap$, .@kx, .@ky, BL_PC);
+			for (.@i = 0; .@i < 8; .@i++) {
+				monster .@kmap$, .@kx + rand(-2,2), .@ky + rand(-2,2), getmonsterinfo(.@mob_id, MOB_NAME), .@mob_id, 1;
+				setunitdata $@mobid, UMOB_MODE, 0x3695;
+				specialeffect EF_LOUD, AREA, $@mobid;
+			}
+		}
+
+		if (.@champion_type == 4 && getmobdrops(.@mob_id)) {
+			getmapxy(.@kmap$, .@kx, .@ky, BL_PC);
+			for (.@rep = 0; .@rep < 10; .@rep++) {
+				specialeffect EF_BEGINSPELL6, AREA;
+				for (.@d = 0; .@d < $@MobDrop_count; .@d++) {
+					if (!$@MobDrop_item[.@d]) continue;
+					if (rand(10000) < $@MobDrop_rate[.@d])
+						makeitem $@MobDrop_item[.@d], 1, .@kmap$, .@kx, .@ky, getcharid(0);
+				}
+			}
+		}
+
+		if (.@champion_type == 1 || .@champion_type == 3) {
+			.@bonus = (.@champion_type == 1) ? 10 : 100;
+			.@base = getmonsterinfo(.@mob_id, MOB_BASEEXP) * getbattleflag("base_exp_rate") / 100;
+			.@job = getmonsterinfo(.@mob_id, MOB_JOBEXP) * getbattleflag("job_exp_rate") / 100;
+			getexp .@base * .@bonus / 100, .@job * .@bonus / 100;
+		}
+		end;
+	}
+
+	// Spawn flow exclusions
+	setarray .@mvp[0],1038,1039,1046,1059,1086,1087,1112,1115,1147,1150,1157,1159,1190,1251,1252,1272,1312,1373,1389,1399,1418,1492,1511,1583,1623,1630,1646,1647,1648,1649,1650,1651,1658,1685,1688,1708,1719,1734,1751,1768,1779,1785,1832,1871,1874,1885,1917,1956,2022,2052,2068;
+	setarray .@mini[0],1088,1089,1096,1219,1283,1295,1388,1307,1302,1582,1091,1093,1205,1681,1120,1259,1626,1720,1090,1289,1262,1203,1204,1618,1092,1200,1705,1707,1706,1704,1765;
+	for (.@i = 0; .@i < getarraysize(.@mvp); .@i++) if (.@mob_id == .@mvp[.@i]) end;
+	for (.@i = 0; .@i < getarraysize(.@mini); .@i++) if (.@mob_id == .@mini[.@i]) end;
+
+	if (rand(375) != 1) end;
+
+	.@champion_type = rand(1,4);
+	getfreecell(.@map$, .@x, .@y);
+	monster .@map$, .@x, .@y, getmonsterinfo(.@mob_id, MOB_NAME), .@mob_id, 1;
+	.@gid = $@mobid;
+	getunitdata .@gid, .@u;
+
+	if (query_sql("SELECT `mob_gid` FROM `monstro_campeao` WHERE `mapa` = '" + escape_sql(.@map$) + "' AND `raca` = '" + .@u[UMOB_RACE] + "' AND `tipo` = '" + .@champion_type + "'", .@dupe_gid)) {
+		unitkill .@gid;
+		end;
+	}
+
+	if (.@champion_type == 1) {
+		setunitdata .@gid, UMOB_MAXHP, .@u[UMOB_MAXHP] * 10;
+		setunitdata .@gid, UMOB_STR, .@u[UMOB_STR] * 10;
+	}
+
+	setunitdata .@gid, UMOB_GROUP_ID, getbattleflag("group_id_monster_champion");
+	setunittitle .@gid, getmessage(2000 + .@champion_type);
+	hateffect HAT_EF_CM_FURIOUS + (.@champion_type - 1), 1, .@gid;
+	setd "$monster_champion_" + .@champion_type, .@gid;
+
+	query_sql("INSERT INTO `monstro_campeao` (`mob_gid`,`raca`,`tipo`,`mapa`,`timer`) VALUES ('" + .@gid + "', '" + .@u[UMOB_RACE] + "', '" + .@champion_type + "', '" + escape_sql(.@map$) + "', '10')");
+	mapannounce .@map$, "A " + getmonsterinfo(.@mob_id, MOB_NAME) + " - " + getmessage(2000 + .@champion_type) + " appeared at " + .@x + " / " + .@y + ".", bc_map;
+	end;
+
+OnTimer60000:
+	query_sql("UPDATE `monstro_campeao` SET `timer` = `timer` - 1 WHERE `timer` > 0");
+	if (query_sql("SELECT `mob_gid`,`tipo` FROM `monstro_campeao` WHERE `timer` < 1", .@gid, .@tipo)) {
+		for (.@i = 0; .@i < getarraysize(.@gid); .@i++) {
+			if (unitexists(.@gid[.@i]))
+				unitkill .@gid[.@i];
+			if (getd("$monster_champion_" + .@tipo[.@i]) == .@gid[.@i])
+				setd "$monster_champion_" + .@tipo[.@i], 0;
+		}
+		query_sql("DELETE FROM `monstro_campeao` WHERE `timer` < 1");
+	}
+	setnpctimer 0;
+	end;
+}

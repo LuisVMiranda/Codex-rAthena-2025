@@ -6069,7 +6069,7 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	if (sd == nullptr) {
 		return;
 	}
-	skill_clear_animation(&sd->bl);
+	skill_clear_animation(sd);
 
 	int32 start = (animation->start_delay >= 0) ? animation->start_delay : sdelay;
 	if (start < 0) {
@@ -6082,10 +6082,10 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	env->base_dir = static_cast<int8>(unit_getdir(&dst));
 
 	sd->skill_animation.step = 0;
-	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->bl.id, reinterpret_cast<intptr_t>(env));
+	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->id, reinterpret_cast<intptr_t>(env));
 	if (sd->skill_animation.tid == INVALID_TIMER) {
 		delete env;
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 	}
 }
 
@@ -10184,7 +10184,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				safestrncpy( packet.position_name, md->guardian_data->castle->castle_name, NAME_LENGTH );
 
 				clif_send(&packet, sizeof(packet), src, target);
-			}else if( battle_config.show_mob_info ){
+			}else if( battle_config.show_mob_info && (unit_bl2ud(bl) == nullptr || unit_bl2ud(bl)->group_id != battle_config.group_id_monster_champion) ){
 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;

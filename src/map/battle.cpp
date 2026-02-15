@@ -10619,6 +10619,7 @@ static const struct _battle_data {
 	{ "refresh_song_icon",                  &battle_config.refresh_song_icon,               0,      0,      1,              },
 	{ "guild_maprespawn_clones",			&battle_config.guild_maprespawn_clones,			0,		0,		1,				},
 	{ "hide_fav_sell", 			&battle_config.hide_fav_sell,			0,      0,      1,              },
+	{ "group_id_monster_champion",	&battle_config.group_id_monster_champion,	13,     0,      INT_MAX,        },
 	{ "hitkill_rate", 			&battle_config.hitkill_rate,			200,    0,      INT_MAX,        },
 	{ "mail_daily_count",					&battle_config.mail_daily_count,				100,	0,		INT32_MAX,		},
 	{ "mail_zeny_fee",						&battle_config.mail_zeny_fee,					2,		0,		100,			},

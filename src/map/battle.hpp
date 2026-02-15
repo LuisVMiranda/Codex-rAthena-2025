@@ -701,6 +701,7 @@ struct Battle_Config
 	int32 refresh_song_icon; // Should the song icon duration be refreshed?
 	int32 guild_maprespawn_clones; // Should clones be killed by maprespawnguildid?
 	int32 hide_fav_sell;
+	int32 group_id_monster_champion;
 	int32 hitkill_rate;
 	int32 mail_daily_count;
 	int32 mail_zeny_fee;

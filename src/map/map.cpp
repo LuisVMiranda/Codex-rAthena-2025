@@ -128,7 +128,7 @@ static block_list *bl_list[BL_LIST_MAX];
 static int32 bl_list_count = 0;
 
 #ifndef MAP_MAX_MSG
-	#define MAP_MAX_MSG 1550
+	#define MAP_MAX_MSG 3000
 #endif
 
 struct map_data map[MAX_MAP_PER_SERVER];
@@ -2248,7 +2248,7 @@ int32 map_quit(map_session_data *sd) {
 	if (sd->autotrade_tid != INVALID_TIMER)
 		delete_timer(sd->autotrade_tid, pc_autotrade_timer);
 
-	skill_clear_animation(&sd->bl);
+	skill_clear_animation(sd);
 
 	if (sd->npc_id)
 		npc_event_dequeue(sd);

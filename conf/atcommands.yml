@@ -133,6 +133,11 @@ Body:
       - at
     Help: |
       Allows you to vend while you are offline.
+  - Command: autovend
+    Aliases:
+      - av
+    Help: |
+      Allows vending-only offline mode and supports account-level autovend restrictions.
   - Command: ban
     Aliases:
       - banish

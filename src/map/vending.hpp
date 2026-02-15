@@ -31,5 +31,7 @@ void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8
 bool vending_search( const map_session_data* sd, t_itemid nameid );
 bool vending_searchall( const map_session_data* sd, const s_search_store_search* s );
 void vending_update(map_session_data &sd);
+bool vending_autovend_check(uint32 account_id);
+void vending_create_autovend(map_session_data& sd);
 
 #endif /* _VENDING_HPP_ */

@@ -6821,9 +6821,19 @@ ACMD_FUNC(autotrade) {
 		return -1;
 	}
 
+	if (vending_autovend_check(sd->status.account_id)) {
+		clif_displaymessage(fd, "You already have an active @autovend on this account.");
+		return -1;
+	}
+
 	if( !sd->state.vending && !sd->state.buyingstore ) { //check if player is vending or buying
 		clif_displaymessage(fd, msg_txt(sd,549)); // "You should have a shop open to use @autotrade."
 		return -1;
+	}
+
+	if (sd->state.vending && battle_config.autovend_enable && battle_config.autovend_all_vending) {
+		vending_create_autovend(*sd);
+		return 0;
 	}
 
 	sd->state.autotrade = 1;
@@ -6849,6 +6859,38 @@ ACMD_FUNC(autotrade) {
 
 	chrif_save(sd, CSAVE_AUTOTRADE);
 
+	return 0;
+}
+
+ACMD_FUNC(autovend) {
+	nullpo_retr(-1, sd);
+
+	if (!battle_config.autovend_enable) {
+		clif_displaymessage(fd, "Autovend is disabled.");
+		return -1;
+	}
+
+	if (map_getmapflag(sd->m, MF_AUTOTRADE) != battle_config.autotrade_mapflag) {
+		clif_displaymessage(fd, "Autovend is not allowed on this map.");
+		return -1;
+	}
+
+	if (pc_isdead(sd)) {
+		clif_displaymessage(fd, "You cannot autovend when dead.");
+		return -1;
+	}
+
+	if (!sd->state.vending) {
+		clif_displaymessage(fd, msg_txt(sd,549)); // "You should have a shop open to use @autotrade."
+		return -1;
+	}
+
+	if (vending_autovend_check(sd->status.account_id)) {
+		clif_displaymessage(fd, "You already have an active @autovend on this account.");
+		return -1;
+	}
+
+	vending_create_autovend(*sd);
 	return 0;
 }
 
@@ -11814,6 +11856,8 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(partybuff),
 		ACMD_DEF2("spb", partybuff),
 		ACMD_DEF(autotrade),
+		ACMD_DEF(autovend),
+		ACMD_DEF2("av", autovend),
 		ACMD_DEF(changegm),
 		ACMD_DEF(changeleader),
 		ACMD_DEF(partyoption),

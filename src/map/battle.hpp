@@ -624,6 +624,15 @@ struct Battle_Config
 	int32 feature_autotrade_head_direction;
 	int32 feature_autotrade_sit;
 	int32 feature_autotrade_open_delay;
+	int32 extended_vending_enable;
+	int32 extended_vending_report;
+	int32 extended_vending_broadcast;
+	int32 extended_vending_showboard;
+	int32 autovend_enable;
+	int32 autovend_same_account;
+	int32 autovend_all_vending;
+	int32 autovend_save_onlycart;
+	int32 autovend_show_effect;
 
 	// Fame points
 	int32 fame_taekwon_mission;

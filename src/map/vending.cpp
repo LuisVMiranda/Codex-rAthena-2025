@@ -33,6 +33,44 @@ static DBMap *vending_autotrader_db; /// Holds autotrader info: char_id -> struc
 static void vending_autotrader_remove(struct s_autotrader *at, bool remove);
 static int32 vending_autotrader_free(DBKey key, DBData *data, va_list ap);
 
+bool vending_autovend_check(uint32 account_id)
+{
+	if (!battle_config.autovend_enable || battle_config.autovend_same_account)
+		return false;
+
+	if (Sql_Query(mmysql_handle, "SELECT 1 FROM `%s` WHERE `account_id` = %u AND `autotrade` = 2 LIMIT 1", vendings_table, account_id) != SQL_SUCCESS) {
+		Sql_ShowDebug(mmysql_handle);
+		return false;
+	}
+
+	bool found = Sql_NumRows(mmysql_handle) > 0;
+	Sql_FreeResult(mmysql_handle);
+
+	return found;
+}
+
+void vending_create_autovend(map_session_data& sd)
+{
+	sd.state.autotrade = 2;
+
+	if (battle_config.autotrade_monsterignore)
+		sd.state.block_action |= PCBLOCK_IMMUNE;
+
+	vending_update(sd);
+
+	if (battle_config.at_timeout) {
+		status_change_start(nullptr, &sd, SC_AUTOTRADE, 10000, 0, 0, 0, 0, battle_config.at_timeout * 60000, SCSTART_NONE);
+	}
+
+	if (battle_config.at_logout_event)
+		npc_script_event(sd, NPCE_LOGOUT);
+
+	channel_pcquit(&sd, 0xF);
+	clif_authfail_fd(sd.fd, 15);
+
+	chrif_save(&sd, CSAVE_AUTOTRADE);
+}
+
 /**
  * Lookup to get the vending_db outside module
  * @return the vending_db
@@ -551,7 +589,7 @@ void vending_reopen( map_session_data& sd )
 		}
 
 		sd.state.prevend = 1; // Set him into a hacked prevend state
-		sd.state.autotrade = 1;
+		sd.state.autotrade |= 2;
 
 		// Make sure abort all NPCs
 		npc_event_dequeue(&sd);
@@ -596,9 +634,9 @@ void do_init_vending_autotrade(void)
 {
 	if (battle_config.feature_autotrade) {
 		if (Sql_Query(mmysql_handle,
-			"SELECT `id`, `account_id`, `char_id`, `sex`, `title`, `body_direction`, `head_direction`, `sit` "
+			"SELECT `id`, `account_id`, `char_id`, `sex`, `title`, `body_direction`, `head_direction`, `sit`, `autotrade` "
 			"FROM `%s` "
-			"WHERE `autotrade` = 1 AND (SELECT COUNT(`vending_id`) FROM `%s` WHERE `vending_id` = `id`) > 0 "
+			"WHERE `autotrade` IN (1,2) AND (SELECT COUNT(`vending_id`) FROM `%s` WHERE `vending_id` = `id`) > 0 "
 			"ORDER BY `id`;",
 			vendings_table, vending_items_table ) != SQL_SUCCESS )
 		{
@@ -626,6 +664,8 @@ void do_init_vending_autotrade(void)
 				Sql_GetData(mmysql_handle, 5, &data, nullptr); at->dir = atoi(data);
 				Sql_GetData(mmysql_handle, 6, &data, nullptr); at->head_dir = atoi(data);
 				Sql_GetData(mmysql_handle, 7, &data, nullptr); at->sit = atoi(data);
+				Sql_GetData(mmysql_handle, 8, &data, nullptr);
+				uint8 autotrade = static_cast<uint8>(atoi(data));
 				at->count = 0;
 
 				if (battle_config.feature_autotrade_direction >= 0)
@@ -639,7 +679,7 @@ void do_init_vending_autotrade(void)
 				CREATE(at->sd, map_session_data, 1); // TODO: Dont use Memory Manager allocation anymore and rely on the C++ container
 				new (at->sd) map_session_data();
 				pc_setnewpc(at->sd, at->account_id, at->char_id, 0, gettick(), at->sex, 0);
-				at->sd->state.autotrade = 1|2;
+				at->sd->state.autotrade = autotrade | 2;
 				if (battle_config.autotrade_monsterignore)
 					at->sd->state.block_action |= PCBLOCK_IMMUNE;
 				else

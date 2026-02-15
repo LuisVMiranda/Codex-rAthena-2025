@@ -727,6 +727,7 @@ public:
 
 	bool party_creating; // whether the char is requesting party creation
 	bool party_joining; // whether the char is accepting party invitation
+	bool showrecovery;
 	int32 party_invite, party_invite_account; // for handling party invitation (holds party id and account id)
 	int32 adopt_invite; // Adoption
 

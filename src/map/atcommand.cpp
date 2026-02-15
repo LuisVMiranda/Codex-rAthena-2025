@@ -4914,6 +4914,8 @@ ACMD_FUNC(mapinfo) {
 		strcat(atcmd_output, " NoTomb |");
 	if (map_getmapflag(m_id, MF_NOCOSTUME))
 		strcat(atcmd_output, " NoCostume |");
+	if (map_getmapflag(m_id, MF_NORESS))
+		strcat(atcmd_output, " NoRess |");
 	if (map_getmapflag(m_id, MF_NOBANK))
 		strcat(atcmd_output, " NoBank |");
 	if (map_getmapflag(m_id, MF_NOCASHSHOP))
@@ -11545,6 +11547,19 @@ ACMD_FUNC(macrochecker){
 	if( count > 0 ){
 		mapdata->last_macrocheck = gettick();
 	}
+
+	return 0;
+}
+
+ACMD_FUNC(showrecovery)
+{
+	sd->showrecovery = !sd->showrecovery;
+	pc_setglobalreg(sd, add_str("AT_showrecovery"), sd->showrecovery);
+
+	if (sd->showrecovery)
+		clif_displaymessage(fd, "Hp/sp recovery numbers is visible");
+	else
+		clif_displaymessage(fd, "Hp/sp recovery numbers is hidden");
 
 	return 0;
 }

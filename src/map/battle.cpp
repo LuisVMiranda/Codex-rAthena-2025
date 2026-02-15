@@ -1958,6 +1958,11 @@ int64 battle_calc_damage(block_list *src,block_list *bl,struct Damage *d,int64 d
 
 	} //End of target SC_ check
 
+	if (util::vector_exists(status_get_race2(bl), RC2_GREENAURA)) {
+		if (!util::vector_exists(status_get_race2(src), RC2_GREENAURA))
+			damage = damage > 100 ? damage * (100 - battle_config.greenaura_reduction_rate) / 100 : 1;
+	}
+
 	//SC effects from caster side.
 	status_change* sc = status_get_sc(src);
 
@@ -10585,6 +10590,7 @@ static const struct _battle_data {
 	{ "save_body_style",                    &battle_config.save_body_style,                 1,      0,      1,              },
 	{ "monster_eye_range_bonus",            &battle_config.mob_eye_range_bonus,             0,      0,      10,             },
 	{ "monster_stuck_warning",              &battle_config.mob_stuck_warning,               0,      0,      1,              },
+	{ "greenaura_reduction_rate",           &battle_config.greenaura_reduction_rate,        0,      0,      100,            },
 	{ "skill_eightpath_algorithm",          &battle_config.skill_eightpath_algorithm,       1,      0,      1,              },
 	{ "skill_eightpath_same_cell",          &battle_config.skill_eightpath_same_cell,       1,      0,      1,              },
 	{ "death_penalty_maxlv",                &battle_config.death_penalty_maxlv,             0,      0,      3,              },
@@ -10602,6 +10608,7 @@ static const struct _battle_data {
 	{ "refresh_song_icon",                  &battle_config.refresh_song_icon,               0,      0,      1,              },
 	{ "guild_maprespawn_clones",			&battle_config.guild_maprespawn_clones,			0,		0,		1,				},
 	{ "hide_fav_sell", 			&battle_config.hide_fav_sell,			0,      0,      1,              },
+	{ "hitkill_rate", 			&battle_config.hitkill_rate,			200,    0,      INT_MAX,        },
 	{ "mail_daily_count",					&battle_config.mail_daily_count,				100,	0,		INT32_MAX,		},
 	{ "mail_zeny_fee",						&battle_config.mail_zeny_fee,					2,		0,		100,			},
 	{ "mail_attachment_price",				&battle_config.mail_attachment_price,			2500,	0,		INT32_MAX,		},

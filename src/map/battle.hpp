@@ -672,6 +672,7 @@ struct Battle_Config
 	int32 save_body_style;
 	int32 mob_eye_range_bonus; //Vulture's Eye and Snake's Eye range bonus
 	int32 mob_stuck_warning; //Show warning if a monster is stuck too long
+	int32 greenaura_reduction_rate;
 	int32 skill_eightpath_algorithm; //Official path algorithm
 	int32 skill_eightpath_same_cell;
 	int32 death_penalty_maxlv;
@@ -689,6 +690,7 @@ struct Battle_Config
 	int32 refresh_song_icon; // Should the song icon duration be refreshed?
 	int32 guild_maprespawn_clones; // Should clones be killed by maprespawnguildid?
 	int32 hide_fav_sell;
+	int32 hitkill_rate;
 	int32 mail_daily_count;
 	int32 mail_zeny_fee;
 	int32 mail_attachment_price;

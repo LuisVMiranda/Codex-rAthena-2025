@@ -1148,6 +1148,7 @@ CREATE TABLE IF NOT EXISTS `vendings` (
   `body_direction` CHAR( 1 ) NOT NULL DEFAULT '4',
   `head_direction` CHAR( 1 ) NOT NULL DEFAULT '0',
   `sit` CHAR( 1 ) NOT NULL DEFAULT '1',
+  `extended_vending_item` int(10) unsigned NOT NULL DEFAULT '0',
   `autotrade` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM;

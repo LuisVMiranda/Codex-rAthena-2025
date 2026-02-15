@@ -1,0 +1,15 @@
+Header:
+  Type: ITEM_DB
+  Version: 3
+
+Body:
+  - Id: 41005
+    AegisName: Zeny
+    Name: Zeny
+    Type: Etc
+    Weight: 1
+  - Id: 41006
+    AegisName: Cash
+    Name: Cash
+    Type: Etc
+    Weight: 1

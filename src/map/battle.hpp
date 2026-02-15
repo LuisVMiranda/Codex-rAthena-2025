@@ -624,6 +624,8 @@ struct Battle_Config
 	int32 feature_autotrade_head_direction;
 	int32 feature_autotrade_sit;
 	int32 feature_autotrade_open_delay;
+	int32 item_zeny;
+	int32 item_cash;
 	int32 extended_vending_enable;
 	int32 extended_vending_report;
 	int32 extended_vending_broadcast;

@@ -1093,6 +1093,9 @@ void achievement_update_objective(map_session_data *sd, enum e_achievement_group
 		return;
 
 	if (sd) {
+		if (sd->state.autotrade == 2)
+			return;
+
 		va_list ap;
 		std::array<int32, MAX_ACHIEVEMENT_OBJECTIVES> count = {};
 

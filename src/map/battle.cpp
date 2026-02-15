@@ -10544,6 +10544,8 @@ static const struct _battle_data {
 	{ "feature.autotrade_head_direction",	&battle_config.feature_autotrade_head_direction,0,		-1,		2,				},
 	{ "feature.autotrade_sit",				&battle_config.feature_autotrade_sit,			1,		-1,		1,				},
 	{ "feature.autotrade_open_delay",		&battle_config.feature_autotrade_open_delay,	5000,	1000,	INT_MAX,		},
+	{ "item_zeny",					&battle_config.item_zeny,				41005,	0,		INT32_MAX,		},
+	{ "item_cash",					&battle_config.item_cash,				41006,	0,		INT32_MAX,		},
 	{ "extended_vending_enable",			&battle_config.extended_vending_enable,		1,		0,		1,				},
 	{ "extended_vending_report",			&battle_config.extended_vending_report,		1,		0,		1,				},
 	{ "extended_vending_broadcast",		&battle_config.extended_vending_broadcast,	1,		0,		1,				},

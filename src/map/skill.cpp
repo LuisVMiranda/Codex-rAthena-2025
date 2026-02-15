@@ -21416,30 +21416,30 @@ TIMER_FUNC(skill_play_animation){
 	sd->skill_animation.tid = INVALID_TIMER;
 
 	const s_skill_animation_entry* animation = skill_animation_get(env->skill_id);
-	if (animation == nullptr || sd->bl.prev == nullptr) {
-		skill_clear_animation(&sd->bl);
+	if (animation == nullptr || sd->prev == nullptr) {
+		skill_clear_animation(sd);
 		return 0;
 	}
 
-	clif_skill_animation_motion(sd->bl, env->target_id, animation->motion_speed);
+	clif_skill_animation_motion(*sd, env->target_id, animation->motion_speed);
 	if (env->base_dir >= 0) {
 		int32 dir = animation->spin ? skill_animation_step_direction(env->base_dir, sd->skill_animation.step) : env->base_dir;
 		if (dir >= 0) {
-			clif_skill_animation_dir(sd->bl, env->target_id, static_cast<uint8>(dir));
+			clif_skill_animation_dir(*sd, env->target_id, static_cast<uint8>(dir));
 		}
 	}
 
 	sd->skill_animation.step++;
 	if (sd->skill_animation.step >= animation->motion_count) {
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 		return 0;
 	}
 
 	auto* next_env = new s_skill_animation_environment(*env);
-	sd->skill_animation.tid = add_timer(tick + animation->interval, skill_play_animation, sd->bl.id, reinterpret_cast<intptr_t>(next_env));
+	sd->skill_animation.tid = add_timer(tick + animation->interval, skill_play_animation, sd->id, reinterpret_cast<intptr_t>(next_env));
 	if (sd->skill_animation.tid == INVALID_TIMER) {
 		delete next_env;
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 	}
 
 	return 0;

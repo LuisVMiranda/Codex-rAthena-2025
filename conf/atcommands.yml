@@ -1266,6 +1266,16 @@ Body:
     Help: |
       Params: <quest ID>
       Activates the quest with quest ID <quest ID>.
+  - Command: hidepet
+    Aliases:
+      - hidepetall
+    Help: |
+      Hides or shows pets around you.
+      @hidepet hides other players' pets.
+      @hidepetall hides all pets, including yours.
+  - Command: spbar
+    Help: |
+      Toggles party SP bar updates for supported clients.
   - Command: showdelay
     Help: |
       Shows/hides the "There is a delay after this skill" message.

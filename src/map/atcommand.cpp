@@ -9189,6 +9189,71 @@ ACMD_FUNC(showdelay)
 	return 0;
 }
 
+static int32 atcommand_hidepet_sub(block_list* bl, va_list ap) {
+	map_session_data* sd = va_arg(ap, map_session_data*);
+	const bool hide_all = va_arg(ap, int32) != 0;
+
+	nullpo_ret(sd);
+	nullpo_ret(bl);
+
+	if (!hide_all && sd->pd != nullptr && sd->pd->bl.id == bl->id) {
+		return 0;
+	}
+
+	clif_clearunit_single(bl->id, CLR_OUTSIGHT, *sd);
+	return 0;
+}
+
+ACMD_FUNC(hidepet) {
+	nullpo_retr(-1, sd);
+
+	const char* base_command = command;
+	if (base_command != nullptr && (*base_command == atcommand_symbol || *base_command == charcommand_symbol)) {
+		++base_command;
+	}
+
+	base_command = atcommand_alias_db.checkAlias(base_command != nullptr ? base_command : "hidepet");
+	const bool hide_all = base_command != nullptr && strcmpi(base_command, "hidepetall") == 0;
+	const uint8 previous_state = sd->state.hidepet;
+
+	switch (sd->state.hidepet) {
+		case 0: sd->state.hidepet = hide_all ? 2 : 1; break;
+		case 1: sd->state.hidepet = hide_all ? 2 : 0; break;
+		default: sd->state.hidepet = hide_all ? 0 : 1; break;
+	}
+
+	if (sd->state.hidepet == 0) {
+		map_foreachinallrange(clif_insight, &sd->bl, AREA_SIZE, BL_PET, &sd->bl);
+		if (previous_state == 2 && sd->pd != nullptr) {
+			clif_spawn(&sd->pd->bl, true);
+		}
+		clif_displaymessage(fd, "All pets are visible.");
+	} else {
+		map_foreachinallrange(atcommand_hidepet_sub, &sd->bl, AREA_SIZE, BL_PET, &sd->bl, hide_all ? 1 : 0);
+		clif_displaymessage(fd, hide_all ? "All pets are hidden." : "All pets except yours are hidden.");
+	}
+
+	return 0;
+}
+
+ACMD_FUNC(spbar) {
+	nullpo_retr(-1, sd);
+
+	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
+
+	struct s_mapiterator* iter = mapit_getallusers();
+	for (map_session_data* pl_sd = static_cast<map_session_data*>(mapit_first(iter)); mapit_exists(iter); pl_sd = static_cast<map_session_data*>(mapit_next(iter))) {
+		if (pl_sd == nullptr) {
+			continue;
+		}
+		clif_refresh(*pl_sd);
+	}
+	mapit_free(iter);
+
+	clif_displaymessage(fd, battle_config.party_sp_on ? "Party SP bar is enabled." : "Party SP bar is disabled.");
+	return 0;
+}
+
 /*==========================================
  * Duel organizing functions [LuzZza]
  *
@@ -11708,6 +11773,9 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(showexp),
 		ACMD_DEF(showzeny),
 		ACMD_DEF(showdelay),
+		ACMD_DEF(hidepet),
+		ACMD_DEF2("hidepetall", hidepet),
+		ACMD_DEF(spbar),
 		ACMD_DEF(autotrade),
 		ACMD_DEF(changegm),
 		ACMD_DEF(changeleader),

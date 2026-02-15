@@ -4,6 +4,7 @@
 
 #include "clif.hpp"
 
+#include <array>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -421,6 +422,8 @@ static int32 clif_send_sub(block_list *bl, va_list ap)
 	switch(type) {
 	case AREA_WOS:
 		if (bl == src_bl)
+			return 0;
+		if (src_bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == src_bl->id))))
 			return 0;
 	break;
 	case AREA_WOC:
@@ -3514,7 +3517,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
 	nullpo_ret(tsd);
 
 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
-		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
+		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, 0, 0 );
 	}
 	return 0;
 }
@@ -5005,11 +5008,12 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
 		clif_servantball( *dstsd, sd, SELF );
 	if (dstsd->abyssball > 0)
 		clif_abyssball( *dstsd, sd, SELF );
-	if( (sd->status.party_id && dstsd->status.party_id == sd->status.party_id) || //Party-mate, or hpdisp setting.
+	const bool is_party_member = sd->status.party_id && dstsd->status.party_id == sd->status.party_id;
+	if( is_party_member || //Party-mate, or hpdisp setting.
 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
 	)
-	clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
+		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, is_party_member ? dstsd->battle_status.sp : 0, is_party_member ? dstsd->battle_status.max_sp : 0 );
 
 	// display link (sd - dstsd) to sd
 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
@@ -5040,6 +5044,10 @@ void clif_getareachar_unit( map_session_data* sd,block_list *bl ){
 
 	// Hide NPC from Maya Purple card
 	if( clif_npc_mayapurple( *bl ) ){
+		return;
+	}
+
+	if (bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == bl->id)))) {
 		return;
 	}
 
@@ -8107,6 +8115,10 @@ void clif_party_hp( const map_session_data& sd ){
 #else
 	p.hp = sd.battle_status.hp;
 	p.maxhp = sd.battle_status.max_hp;
+#if PACKETVER_ZERO_NUM >= 20210504
+	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
+	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
+#endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
@@ -8144,7 +8156,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
 /*==========================================
  * Sends HP bar to a single fd. [Skotlex]
  *------------------------------------------*/
-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
 
 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
@@ -8161,6 +8173,10 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #else
 	p.hp = hp;
 	p.maxhp = maxhp;
+#if PACKETVER_ZERO_NUM >= 20210504
+	p.sp = battle_config.party_sp_on ? sp : 0;
+	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
+#endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, SELF );
@@ -10071,7 +10087,17 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
 				const unit_data* ud = unit_bl2ud(bl);
 
-				if (ud != nullptr) {
+				if (battle_config.mob_ele_view) {
+					static constexpr std::array<const char*, ELE_MAX> ele_names = { "Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Shadow", "Ghost", "Undead" };
+					if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX) {
+						char output[NAME_LENGTH] = {};
+						safesnprintf(output, sizeof(output), "%s Lv: %d", ele_names[md->status.def_ele], md->status.ele_lv);
+						memcpy(packet.title, output, NAME_LENGTH);
+						packet.groupId = 51 + md->status.def_ele;
+					}
+				}
+
+				if (ud != nullptr && packet.title[0] == '\0') {
 					memcpy(packet.title, ud->title, NAME_LENGTH);
 					packet.groupId = ud->group_id;
 				}

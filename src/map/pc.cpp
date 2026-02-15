@@ -2169,6 +2169,8 @@ bool pc_authok(map_session_data *sd, uint32 login_id2, time_t expiration_time, i
 
 	if (!(battle_config.display_skill_fail&2))
 		sd->state.showdelay = 1;
+	if (battle_config.hide_pet > 0)
+		sd->state.hidepet = static_cast<uint8>(battle_config.hide_pet);
 
 	memset(&sd->inventory, 0, sizeof(struct s_storage));
 	memset(&sd->cart, 0, sizeof(struct s_storage));

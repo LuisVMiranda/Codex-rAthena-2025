@@ -543,6 +543,28 @@ struct Battle_Config
 	int32 bg_magic_damage_rate;
 	int32 bg_misc_damage_rate;
 	int32 bg_flee_penalty;
+	int32 bg_rotation_mode;
+	int32 bg_idle_announce;
+	int32 bg_idle_autokick;
+	int32 bg_reward_rates;
+	int32 bg_reward_rates_vip;
+	int32 bg_reportafk_leaderonly;
+	int32 bg_queue_onlytowns;
+	int32 bg_reserved_char_id;
+	int32 woe_reserved_char_id;
+	int32 bg_can_trade;
+	int32 bg_double_login;
+	int32 bg_extended_check_equip;
+	int32 bg_queue_confirmation;
+	int32 bg_queue_interface;
+	int32 bg_remove_buffs;
+	int32 bg_buffs_on_leave;
+	int32 bg_balance_teams;
+	int32 bg_monsters_skillimmune;
+
+	int32 hide_pet;
+	int32 party_sp_on;
+	int32 mob_ele_view;
 
 	// rAthena
 	int32 max_third_parameter;

@@ -8257,26 +8257,6 @@ void clif_party_hp( const map_session_data& sd ){
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
-
-	if( battle_config.party_sp_on ) {
-		struct PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP {
-			int16 PacketType;
-			uint32 AID;
-			int hp;
-			int maxhp;
-			int sp;
-			int maxsp;
-		} __attribute__((packed));
-
-		PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP ps{};
-		ps.PacketType = 0x0bab;
-		ps.AID = sd.status.account_id;
-		ps.hp = sd.battle_status.hp;
-		ps.maxhp = sd.battle_status.max_hp;
-		ps.sp = sd.battle_status.sp;
-		ps.maxsp = sd.battle_status.max_sp;
-		clif_send(&ps, sizeof(ps), &sd, PARTY);
-	}
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -8335,26 +8315,6 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, SELF );
-
-	if( battle_config.party_sp_on ) {
-		struct PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP {
-			int16 PacketType;
-			uint32 AID;
-			int hp;
-			int maxhp;
-			int sp;
-			int maxsp;
-		} __attribute__((packed));
-
-		PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP ps{};
-		ps.PacketType = 0x0bab;
-		ps.AID = id;
-		ps.hp = hp;
-		ps.maxhp = maxhp;
-		ps.sp = sp;
-		ps.maxsp = maxsp;
-		clif_send(&ps, sizeof(ps), &sd, SELF);
-	}
 }
 
 

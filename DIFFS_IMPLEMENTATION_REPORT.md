@@ -180,3 +180,21 @@ Body:
 | `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after party-packet and vending-display mapping changes. | `src/map/clif.cpp`, `src/map/packets_struct.hpp`, `src/map/vending.cpp` |
 | `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
 | `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |
+
+## Hotfix 4: rollback malformed party packet injection
+
+### Root cause
+- The prior attempt sent a raw hardcoded `0x0bab` packet unconditionally for party HP/SP updates. On clients/protocol branches that do not parse that packet in this context, packet-stream desynchronization can occur, causing broad client UI/input disruptions.
+
+### Fix
+- Removed the auxiliary raw `0x0bab` injection from `clif_party_hp()` and `clif_hpmeter_single()`.
+- Kept upstream-compatible packet delivery only; this restores stable HP packet/UI behavior and prevents keyboard/UI lockups.
+- Retained extended-vending display mapping changes (`DisplayItem`/`DisplayAegisName`/`DisplayName`) and cancel-freeze fixes.
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after removing raw packet injection. | `src/map/clif.cpp` |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |

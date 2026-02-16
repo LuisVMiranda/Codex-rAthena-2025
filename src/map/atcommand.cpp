@@ -11903,6 +11903,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(hidepet),
 		ACMD_DEF2("hidepetall", hidepet),
 		ACMD_DEF(spbar),
+		ACMD_DEF2("showpartysp", spbar),
 		ACMD_DEF(joinbg),
 		ACMD_DEF(partybuff),
 		ACMD_DEF(showrecovery),

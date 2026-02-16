@@ -1,13 +1,139 @@
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 97ccf29..328bb43 100644
+index 328bb43..ef3a7dc 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
-@@ -10217,7 +10217,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+@@ -10191,18 +10191,11 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 					default: return "Unknown";
+ 				}
+ 			};
+-			auto get_mob_race_name = [](int32 race) -> const char* {
+-				switch (race) {
+-					case RC_FORMLESS: return "Formless";
+-					case RC_UNDEAD: return "Undead";
+-					case RC_BRUTE: return "Brute";
+-					case RC_PLANT: return "Plant";
+-					case RC_INSECT: return "Insect";
+-					case RC_FISH: return "Fish";
+-					case RC_DEMON: return "Demon";
+-					case RC_DEMIHUMAN: return "DemiHuman";
+-					case RC_ANGEL: return "Angel";
+-					case RC_DRAGON: return "Dragon";
++			auto get_mob_size_name = [](int32 size) -> const char* {
++				switch (size) {
++					case SZ_SMALL: return "Small";
++					case SZ_MEDIUM: return "Medium";
++					case SZ_BIG: return "Large";
+ 					default: return "Unknown";
+ 				}
+ 			};
+@@ -10217,7 +10210,29 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
  				safestrncpy( packet.position_name, md->guardian_data->castle->castle_name, NAME_LENGTH );
  
  				clif_send(&packet, sizeof(packet), src, target);
--			}else if( battle_config.show_mob_info ){
-+			}else if( battle_config.show_mob_info || battle_config.mob_ele_view ){
+-			}else if( battle_config.show_mob_info || battle_config.mob_ele_view ){
++#if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
++			}else if( battle_config.mob_ele_view ){
++				PACKET_ZC_ACK_REQNAMEALL_NPC packet = { 0 };
++
++				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
++				packet.gid = bl->id;
++
++				char name_line[NAME_LENGTH] = {};
++				if( battle_config.show_mob_info & 1 )
++					safesnprintf( name_line, sizeof(name_line), "%s [%u/%u]", md->name, md->status.hp, md->status.max_hp );
++				else
++					safesnprintf( name_line, sizeof(name_line), "%s [%u%%]", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
++				safestrncpy( packet.name, name_line, NAME_LENGTH );
++
++				char title_line[NAME_LENGTH] = {};
++				safesnprintf( title_line, sizeof(title_line), "%s Lv.%d | %s", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_size_name(md->status.size) );
++				memcpy( packet.title, title_line, NAME_LENGTH );
++
++				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
++					packet.groupId = 51 + md->status.def_ele;
++
++				clif_send(&packet, sizeof(packet), src, target);
++			}else if( battle_config.show_mob_info ){
  				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
  
  				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;
+@@ -10226,49 +10241,56 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 
+ 				char mobhp[128], *str_p = mobhp;
+ 
+-				if( battle_config.show_mob_info&4 ){
++				if( battle_config.show_mob_info&4 )
+ 					str_p += sprintf( str_p, "Lv. %d | ", md->level );
+-				}
+-
+-				if( battle_config.show_mob_info&1 ){
++				if( battle_config.show_mob_info&1 )
+ 					str_p += sprintf( str_p, "HP: %u/%u | ", md->status.hp, md->status.max_hp );
+-				}
+-
+-				if( battle_config.show_mob_info&2 ){
++				if( battle_config.show_mob_info&2 )
+ 					str_p += sprintf( str_p, "HP: %u%% | ", get_percentage( md->status.hp, md->status.max_hp ) );
+-				}
+ 
+-				if( battle_config.mob_ele_view ){
+-					str_p += sprintf( str_p, "Ele: %s %d | Race: %s | ", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_race_name(md->status.race) );
++				if( str_p != mobhp ){
++					*(str_p-3) = '\0';
++					safestrncpy( packet.party_name, mobhp, NAME_LENGTH );
+ 				}
+ 
+-				// Even thought mobhp ain't a name, we send it as one so the client can parse it. [Skotlex]
++				clif_send(&packet, sizeof(packet), src, target);
++#else
++			}else if( battle_config.show_mob_info || battle_config.mob_ele_view ){
++				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
++
++				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;
++				packet.gid = bl->id;
++				safestrncpy( packet.name, md->name, NAME_LENGTH );
++
++				char mobhp[128], *str_p = mobhp;
++
++				if( battle_config.show_mob_info&4 )
++					str_p += sprintf( str_p, "Lv. %d | ", md->level );
++				if( battle_config.show_mob_info&1 )
++					str_p += sprintf( str_p, "HP: %u/%u | ", md->status.hp, md->status.max_hp );
++				if( battle_config.show_mob_info&2 )
++					str_p += sprintf( str_p, "HP: %u%% | ", get_percentage( md->status.hp, md->status.max_hp ) );
++				if( battle_config.mob_ele_view )
++					str_p += sprintf( str_p, "Ele: %s %d | Size: %s | ", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_size_name(md->status.size) );
++
+ 				if( str_p != mobhp ){
+-					*(str_p-3) = '\0'; //Remove trailing space + pipe.
++					*(str_p-3) = '\0';
+ 					safestrncpy( packet.party_name, mobhp, NAME_LENGTH );
+ 				}
+ 
+ 				clif_send(&packet, sizeof(packet), src, target);
++#endif
+ 			} else {
+ 				PACKET_ZC_ACK_REQNAMEALL_NPC packet = { 0 };
+ 
+ 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
+ 				packet.gid = bl->id;
+-				safestrncpy(packet.name, md->name, NAME_LENGTH);
++				safestrncpy(packet.name, md->name, NAME_LENGTH );
+ 
+ #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
+ 				const unit_data* ud = unit_bl2ud(bl);
+ 
+-				if (battle_config.mob_ele_view) {
+-					char output[NAME_LENGTH] = {};
+-					safesnprintf(output, sizeof(output), "%s Lv:%d | %s", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_race_name(md->status.race));
+-					memcpy(packet.title, output, NAME_LENGTH);
+-
+-					if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
+-						packet.groupId = 51 + md->status.def_ele;
+-				}
+-
+-				if (ud != nullptr && packet.title[0] == '\0') {
++				if (ud != nullptr) {
+ 					memcpy(packet.title, ud->title, NAME_LENGTH);
+ 					packet.groupId = ud->group_id;
+ 				}

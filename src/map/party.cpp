@@ -1214,7 +1214,7 @@ TIMER_FUNC(party_send_xy_timer){
 				p->data[i].y = sd->y;
 			}
 
-			if (battle_config.party_hp_mode && (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp))) { // perform hp/sp update
+			if (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp)) { // perform hp/sp update
 				clif_party_hp( *sd );
 				p->data[i].hp = sd->battle_status.hp;
 				p->data[i].sp = sd->battle_status.sp;

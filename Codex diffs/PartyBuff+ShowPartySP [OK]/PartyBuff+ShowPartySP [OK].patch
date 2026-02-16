@@ -1,29 +1,13 @@
-diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
-index 8394749..19c7b52 100644
---- a/src/map/atcommand.cpp
-+++ b/src/map/atcommand.cpp
-@@ -9284,11 +9284,6 @@ ACMD_FUNC(hidepet) {
- ACMD_FUNC(spbar) {
- 	nullpo_retr(-1, sd);
+diff --git a/src/map/party.cpp b/src/map/party.cpp
+index 0a7c540..c795707 100644
+--- a/src/map/party.cpp
++++ b/src/map/party.cpp
+@@ -1214,7 +1214,7 @@ TIMER_FUNC(party_send_xy_timer){
+ 				p->data[i].y = sd->y;
+ 			}
  
--#if !(PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103)
--	clif_displaymessage(fd, "Party SP bars are not supported by this packet version.");
--	return -1;
--#endif
--
- 	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
- 
- 	struct s_mapiterator* iter = mapit_getallusers();
-diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 97ccf29..328bb43 100644
---- a/src/map/clif.cpp
-+++ b/src/map/clif.cpp
-@@ -3544,7 +3544,7 @@ static int32 clif_hpmeter( const map_session_data* sd )
- void clif_update_hp( const map_session_data &sd ) {
- 	if (map_getmapdata(sd.m)->hpmeter_visible)
- 		clif_hpmeter(&sd);
--	if (!battle_config.party_hp_mode && sd.status.party_id)
-+	if (sd.status.party_id)
- 		clif_party_hp( sd );
- 	if (sd.bg_id)
- 		clif_bg_hp(&sd);
+-			if (battle_config.party_hp_mode && (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp))) { // perform hp/sp update
++			if (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp)) { // perform hp/sp update
+ 				clif_party_hp( *sd );
+ 				p->data[i].hp = sd->battle_status.hp;
+ 				p->data[i].sp = sd->battle_status.sp;

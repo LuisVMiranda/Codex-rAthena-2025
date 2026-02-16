@@ -92,3 +92,24 @@ Validation run performed in this workspace after the rename/diff integration pas
 ### Notes
 - Extended vending diagnostics were iterated in two passes: first compile failure identified invalid battle-config references from legacy assumptions, then reworked to current-tree-compatible currency selection storage and purchase flow.
 - `src/custom/*` scaffold headers/includes remain present and are now prepared to be versioned for deterministic builds in this branch.
+
+## Follow-up: ExtendedVending DB/prefix + ShowPartySP/SPB diagnostics
+
+### Findings and implementation notes
+- Extended Vending currency menu is now constrained to currencies listed in `db/import/item_db_extended_vending.yml` (loaded by a dedicated runtime DB in `vending.cpp`).
+- Added `StorePrefix` support per currency entry; prefix is injected into shop title on vending-open (example: `[Z] My Shop`).
+- `@reloaditemdb` now reloads both the normal item DB and the extended-vending currency DB (`extended_vending_db.reload()`).
+- Added import templates and tracked import files for:
+  - `db/import/item_db_extended_vending.yml`
+  - `db/import/item_db_bg.yml`
+- SPB stale-message issue on buff expiration was traced to update ordering around status-end handling; party refresh now runs before the status-display removal messaging path.
+- ShowPartySP limitation diagnosis: in this source tree, party SP fields are available only in packet `ZC_NOTIFY_HP_TO_GROUPM` variant `0x0bab` (`PACKETVER_ZERO >= 20210504`). For non-ZERO packetvers, the packet has HP-only fields, so blue SP bars cannot be rendered by stock client protocol.
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake -S . -B build` | **PASS** | Configure/generate completed successfully. | Global CMake configuration |
+| `cmake --build build -j$(nproc)` | **PASS** | Full build succeeded; `map-server` linked with updated vending/status/atcommand changes. | `src/map/vending.cpp`, `src/map/status.cpp`, `src/map/atcommand.cpp` |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 30s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, and unavailable MySQL (`127.0.0.1:3306`). | Runtime environment prerequisites |

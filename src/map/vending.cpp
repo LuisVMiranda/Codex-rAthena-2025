@@ -4,7 +4,10 @@
 #include "vending.hpp"
 
 #include <cstdlib> // atoi
+#include <vector>
+#include <algorithm>
 
+#include <common/database.hpp>
 #include <common/malloc.hpp> // aMalloc, aFree
 #include <common/nullpo.hpp>
 #include <common/showmsg.hpp> // ShowInfo
@@ -33,6 +36,60 @@ static DBMap *vending_db; ///DB holder the vender : charid -> map_session_data
 static DBMap *vending_autotrader_db; /// Holds autotrader info: char_id -> struct s_autotrader
 static void vending_autotrader_remove(struct s_autotrader *at, bool remove);
 static int32 vending_autotrader_free(DBKey key, DBData *data, va_list ap);
+
+ExtendedVendingDatabase extended_vending_db;
+
+const std::string ExtendedVendingDatabase::getDefaultLocation()
+{
+	return std::string(db_path) + "/import/item_db_extended_vending.yml";
+}
+
+uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
+{
+	std::shared_ptr<s_extended_vending_currency> entry;
+	t_itemid nameid = 0;
+
+	if( this->nodeExists(node, "Id") ){
+		if( !this->asUInt32(node, "Id", nameid) ){
+			return 0;
+		}
+	}else if( this->nodeExists(node, "AegisName") ){
+		std::string aegis_name;
+		if( !this->asString(node, "AegisName", aegis_name) ){
+			return 0;
+		}
+		std::shared_ptr<item_data> item = item_db.search_aegisname(aegis_name.c_str());
+		if( item == nullptr ){
+			this->invalidWarning(node["AegisName"], "Unknown item '%s', skipping.\n", aegis_name.c_str());
+			return 0;
+		}
+		nameid = item->nameid;
+	}else{
+		this->invalidWarning(node, "Missing 'Id' or 'AegisName', skipping.\n");
+		return 0;
+	}
+
+	entry = this->find(nameid);
+	bool exists = entry != nullptr;
+	if( !exists ){
+		entry = std::make_shared<s_extended_vending_currency>();
+		entry->nameid = nameid;
+		entry->storePrefix = (nameid == 0 ? "[Z]" : "");
+	}
+
+	if( this->nodeExists(node, "StorePrefix") ){
+		if( !this->asString(node, "StorePrefix", entry->storePrefix) ){
+			return 0;
+		}
+	}
+
+	if( !exists ){
+		this->put(nameid, entry);
+	}
+
+	return 1;
+}
+
 
 bool vending_autovend_check(uint32 account_id)
 {
@@ -151,15 +208,22 @@ static double vending_calc_tax(map_session_data *sd, double zeny)
 	return zeny;
 }
 
+const char* vending_store_prefix(t_itemid nameid)
+{
+	std::shared_ptr<s_extended_vending_currency> currency = extended_vending_db.find(nameid);
+	if( currency == nullptr )
+		return "";
+
+	return currency->storePrefix.c_str();
+}
+
+
 static bool vending_is_currency_allowed(t_itemid nameid)
 {
 	if (!battle_config.extended_vending_enable)
 		return false;
 
-	if (nameid == 0)
-		return true;
-
-	return item_db.find(nameid) != nullptr;
+	return extended_vending_db.find(nameid) != nullptr;
 }
 
 void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
@@ -177,24 +241,22 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
 	packet->packetLength = sizeof(*packet);
 
 	int32 count = 0;
-	
-	for (int32 i = 0; i < MAX_INVENTORY; ++i) {
-		t_itemid nameid = sd.inventory.u.items_inventory[i].nameid;
-		if (!nameid)
+
+	std::vector<t_itemid> currencies;
+	for( const auto& [nameid, currency] : extended_vending_db ) {
+		if( currency == nullptr )
 			continue;
-		if (!sd.inventory.u.items_inventory[i].identify)
-			continue;
-		if (!itemdb_cantrade(&sd.inventory.u.items_inventory[i], pc_get_group_level(&sd), pc_get_group_level(&sd)))
-			continue;
-		bool already = false;
-		for (int32 k = 0; k < count; ++k) {
-			if (packet->items[k].itemId == nameid) {
-				already = true;
-				break;
-			}
+		currencies.push_back(nameid);
+	}
+	std::sort(currencies.begin(), currencies.end());
+
+	for( t_itemid nameid : currencies ) {
+		if( nameid > 0 ) {
+			int16 idx = pc_search_inventory(&sd, nameid);
+			if( idx < 0 )
+				continue;
 		}
-		if (already)
-			continue;
+
 		packet->items[count++].itemId = nameid;
 		packet->packetLength += sizeof(packet->items[0]);
 	}
@@ -353,7 +415,7 @@ void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8
 		it.identify = 1;
 		it.amount = (int16)z;
 		pc_additem(vsd, &it, it.amount, LOG_TYPE_VENDING);
-		} else {
+	} else {
 		pc_payzeny(sd, (int32)z, LOG_TYPE_VENDING, vsd->status.char_id);
 		achievement_update_objective(sd, AG_SPEND_ZENY, 1, (int32)z);
 		z = vending_calc_tax(sd, z);
@@ -539,8 +601,13 @@ int8 vending_openvending( map_session_data& sd, const char* message, const uint8
 	sd.state.workinprogress = WIP_DISABLE_NONE;
 	sd.vender_id = vending_getuid();
 	sd.vend_num = i;
-	safestrncpy(sd.message, message, MESSAGE_SIZE);
-	
+	const char* store_prefix = vending_store_prefix(sd.extended_vend.nameid);
+	if( battle_config.extended_vending_enable && store_prefix[0] != '\0' ) {
+		snprintf(sd.message, sizeof(sd.message), "%s %s", store_prefix, message);
+	}else{
+		safestrncpy(sd.message, message, MESSAGE_SIZE);
+	}
+
 	Sql_EscapeString( mmysql_handle, message_sql, sd.message );
 
 	if( Sql_Query( mmysql_handle, "INSERT INTO `%s`(`id`, `account_id`, `char_id`, `sex`, `map`, `x`, `y`, `title`, `autotrade`, `body_direction`, `head_direction`, `sit`) "
@@ -905,6 +972,7 @@ void do_final_vending(void)
 {
 	db_destroy(vending_db);
 	vending_autotrader_db->destroy(vending_autotrader_db, vending_autotrader_free);
+	extended_vending_db.clear();
 }
 
 /**
@@ -916,4 +984,5 @@ void do_init_vending(void)
 	vending_db = idb_alloc(DB_OPT_BASE);
 	vending_autotrader_db = uidb_alloc(DB_OPT_BASE);
 	vending_nextid = 0;
+	extended_vending_db.load();
 }

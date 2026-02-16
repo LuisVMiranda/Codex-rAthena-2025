@@ -13536,10 +13536,16 @@ int32 status_change_end( block_list* bl, enum sc_type type, int32 tid ){
 		status_calc_state( *bl, *sc, scdb, false );
 	}
 
+	map_session_data* sd = BL_CAST( BL_PC, bl );
+	if( sd != nullptr && sd->status.party_id > 0 && status_should_refresh_party_buffs(type) ){
+		party_data* p = party_search(sd->status.party_id);
+		if( p != nullptr )
+			clif_party_info(*p, nullptr);
+	}
+
 	if (scdb->flag[SCF_DISPLAYPC] || scdb->flag[SCF_DISPLAYNPC])
 		status_display_remove(bl,type);
 
-	map_session_data* sd = BL_CAST( BL_PC, bl );
 	view_data* vd = status_get_viewdata( bl );
 	std::bitset<SCB_MAX> calc_flag = scdb->calc_flag;
 	status_data* status = status_get_status_data(*bl);

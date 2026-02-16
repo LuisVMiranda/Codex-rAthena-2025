@@ -97,3 +97,4 @@ Footer:
   - Path: db/import/item_db.yml
   - Path: db/import/item_db_extended_vending.yml
   - Path: db/import/item_db_bg.yml
+  - Path: db/import/item_db_extended_vending.yml

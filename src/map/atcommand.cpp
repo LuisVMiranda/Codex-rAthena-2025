@@ -4353,6 +4353,7 @@ ACMD_FUNC(reloaditemdb){
 	nullpo_retr(-1, sd);
 
 	itemdb_reload();
+	extended_vending_db.reload();
 	clif_displaymessage(fd, msg_txt(sd,97)); // Item database has been reloaded.
 
 	return 0;
@@ -9282,6 +9283,11 @@ ACMD_FUNC(hidepet) {
 
 ACMD_FUNC(spbar) {
 	nullpo_retr(-1, sd);
+
+#if !(PACKETVER_ZERO_NUM >= 20210504)
+	clif_displaymessage(fd, "Party SP bars require a PACKETVER_ZERO client >= 2021-05-04 (packet 0x0bab with SP fields).");
+	return -1;
+#endif
 
 	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
 

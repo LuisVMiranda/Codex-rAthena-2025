@@ -745,6 +745,10 @@ public:
 	int32 vender_id;
 	int32 vend_num;
 	uint16 vend_skill_lv;
+	struct s_extended_vend {
+		t_itemid nameid;
+		uint16 level;
+	} extended_vend;
 	char message[MESSAGE_SIZE];
 	struct s_vending vending[MAX_VENDING];
 

@@ -1,0 +1,192 @@
+diff --git a/db/import-tmpl/item_db_extended_vending.yml b/db/import-tmpl/item_db_extended_vending.yml
+index 8286c71..1bb6cbc 100644
+--- a/db/import-tmpl/item_db_extended_vending.yml
++++ b/db/import-tmpl/item_db_extended_vending.yml
+@@ -1,26 +1,22 @@
+ # This file configures which currencies are available to Extended Vending.
+ # Copy to: db/import/item_db_extended_vending.yml
+ #
+-# Header.Type must be ITEM_EXTENDED_VENDING_DB.
++# Header.Type must be ITEM_VENDING_DB.
+ #
+ # Supported keys:
+-# - Id: Item ID used as vending currency. Use 0 for Zeny.
+-# - AegisName: Alternative to Id (optional).
++# - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
++# - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
+ # - StorePrefix: Prefix injected before the opened shop name.
+-#
+-# Example entries:
+-# - Zeny with [Z]
+-# - Cash Point Item with [CASH]
+ 
+ Header:
+-  Type: ITEM_EXTENDED_VENDING_DB
++  Type: ITEM_VENDING_DB
+   Version: 1
+ 
+ Body:
+-  # Zeny example (StorePrefix is optional; default is [Z] for Id: 0)
+-  - Id: 0
++  # Zeny example
++  - Item: Zeny
+     StorePrefix: "[Z]"
+ 
+-  # Custom item currency example
+-  # - AegisName: Blue_Gemstone
+-  #   StorePrefix: "[BG]"
++  # Item currency example
++  # - Item: Hydra_Card
++  #   StorePrefix: "[HYDRA]"
+diff --git a/db/import/item_db_extended_vending.yml b/db/import/item_db_extended_vending.yml
+index 8286c71..1bb6cbc 100644
+--- a/db/import/item_db_extended_vending.yml
++++ b/db/import/item_db_extended_vending.yml
+@@ -1,26 +1,22 @@
+ # This file configures which currencies are available to Extended Vending.
+ # Copy to: db/import/item_db_extended_vending.yml
+ #
+-# Header.Type must be ITEM_EXTENDED_VENDING_DB.
++# Header.Type must be ITEM_VENDING_DB.
+ #
+ # Supported keys:
+-# - Id: Item ID used as vending currency. Use 0 for Zeny.
+-# - AegisName: Alternative to Id (optional).
++# - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
++# - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
+ # - StorePrefix: Prefix injected before the opened shop name.
+-#
+-# Example entries:
+-# - Zeny with [Z]
+-# - Cash Point Item with [CASH]
+ 
+ Header:
+-  Type: ITEM_EXTENDED_VENDING_DB
++  Type: ITEM_VENDING_DB
+   Version: 1
+ 
+ Body:
+-  # Zeny example (StorePrefix is optional; default is [Z] for Id: 0)
+-  - Id: 0
++  # Zeny example
++  - Item: Zeny
+     StorePrefix: "[Z]"
+ 
+-  # Custom item currency example
+-  # - AegisName: Blue_Gemstone
+-  #   StorePrefix: "[BG]"
++  # Item currency example
++  # - Item: Hydra_Card
++  #   StorePrefix: "[HYDRA]"
+diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
+index 31f50b3..c7e8290 100644
+--- a/src/map/atcommand.cpp
++++ b/src/map/atcommand.cpp
+@@ -9284,11 +9284,6 @@ ACMD_FUNC(hidepet) {
+ ACMD_FUNC(spbar) {
+ 	nullpo_retr(-1, sd);
+ 
+-#if !(PACKETVER_ZERO_NUM >= 20210504)
+-	clif_displaymessage(fd, "Party SP bars require a PACKETVER_ZERO client >= 2021-05-04 (packet 0x0bab with SP fields).");
+-	return -1;
+-#endif
+-
+ 	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
+ 
+ 	struct s_mapiterator* iter = mapit_getallusers();
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 63bc244..45d5125 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -8250,7 +8250,7 @@ void clif_party_hp( const map_session_data& sd ){
+ #else
+ 	p.hp = sd.battle_status.hp;
+ 	p.maxhp = sd.battle_status.max_hp;
+-#if PACKETVER_ZERO_NUM >= 20210504
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+ 	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
+ 	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
+ #endif
+@@ -8308,7 +8308,7 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
+ #else
+ 	p.hp = hp;
+ 	p.maxhp = maxhp;
+-#if PACKETVER_ZERO_NUM >= 20210504
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+ 	p.sp = battle_config.party_sp_on ? sp : 0;
+ 	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
+ #endif
+diff --git a/src/map/packets_struct.hpp b/src/map/packets_struct.hpp
+index 52d1555..210cce7 100644
+--- a/src/map/packets_struct.hpp
++++ b/src/map/packets_struct.hpp
+@@ -5117,7 +5117,7 @@ struct PACKET_ZC_NOTIFY_POSITION_TO_GROUPM {
+ } __attribute__((packed));
+ DEFINE_PACKET_HEADER(ZC_NOTIFY_POSITION_TO_GROUPM, 0x0107);
+ 
+-#if PACKETVER_ZERO_NUM >= 20210504
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+ struct PACKET_ZC_NOTIFY_HP_TO_GROUPM {
+ 	int16 PacketType;
+ 	uint32 AID;
+@@ -5184,7 +5184,7 @@ struct PACKET_ZC_ACK_TAKEOFF_EQUIP_ALL {
+ DEFINE_PACKET_HEADER(ZC_ACK_TAKEOFF_EQUIP_ALL, 0x0bae);
+ #endif  // PACKETVER_MAIN_NUM >= 20210818 || PACKETVER_RE_NUM >= 20211103 || PACKETVER_ZERO_NUM >= 20221024
+ 
+-#if PACKETVER_ZERO_NUM >= 20210504
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+ struct PACKET_ZC_BATTLEFIELD_NOTIFY_HP {
+ 	int16 PacketType;
+ 	uint32 AID;
+diff --git a/src/map/vending.cpp b/src/map/vending.cpp
+index 529a234..43248a3 100644
+--- a/src/map/vending.cpp
++++ b/src/map/vending.cpp
+@@ -53,19 +53,25 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
+ 		if( !this->asUInt32(node, "Id", nameid) ){
+ 			return 0;
+ 		}
+-	}else if( this->nodeExists(node, "AegisName") ){
+-		std::string aegis_name;
+-		if( !this->asString(node, "AegisName", aegis_name) ){
++	}else if( this->nodeExists(node, "AegisName") || this->nodeExists(node, "Item") ){
++		std::string item_name;
++		const char* key = this->nodeExists(node, "AegisName") ? "AegisName" : "Item";
++		if( !this->asString(node, key, item_name) ){
+ 			return 0;
+ 		}
+-		std::shared_ptr<item_data> item = item_db.search_aegisname(aegis_name.c_str());
+-		if( item == nullptr ){
+-			this->invalidWarning(node["AegisName"], "Unknown item '%s', skipping.\n", aegis_name.c_str());
+-			return 0;
++
++		if( item_name == "Zeny" || item_name == "zeny" ){
++			nameid = 0;
++		}else{
++			std::shared_ptr<item_data> item = item_db.search_aegisname(item_name.c_str());
++			if( item == nullptr ){
++				this->invalidWarning(node, "Unknown item '%s', skipping.\n", item_name.c_str());
++				return 0;
++			}
++			nameid = item->nameid;
+ 		}
+-		nameid = item->nameid;
+ 	}else{
+-		this->invalidWarning(node, "Missing 'Id' or 'AegisName', skipping.\n");
++		this->invalidWarning(node, "Missing 'Id', 'AegisName' or 'Item', skipping.\n");
+ 		return 0;
+ 	}
+ 
+diff --git a/src/map/vending.hpp b/src/map/vending.hpp
+index d4e7806..86e04b5 100644
+--- a/src/map/vending.hpp
++++ b/src/map/vending.hpp
+@@ -22,7 +22,7 @@ struct s_extended_vending_currency {
+ 
+ class ExtendedVendingDatabase : public TypesafeYamlDatabase<t_itemid, s_extended_vending_currency> {
+ public:
+-	ExtendedVendingDatabase() : TypesafeYamlDatabase("ITEM_EXTENDED_VENDING_DB", 1) {}
++	ExtendedVendingDatabase() : TypesafeYamlDatabase("ITEM_VENDING_DB", 1) {}
+ 
+ 	const std::string getDefaultLocation() override;
+ 	uint64 parseBodyNode(const ryml::NodeRef& node) override;

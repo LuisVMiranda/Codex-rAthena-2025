@@ -153,9 +153,9 @@ OnDoJoinSolo:
 	}
 	switch(.@x) {
 		default:
-		case 0: bg_queue_join($@BG_C_Name$,0); break;
-		case 1: bg_queue_join($@BG_C_Name$,1); break;
-		case 2: bg_queue_join($@BG_C_Name$,2); break;
+		case 0: bg_queue_join($@BG_C_Name$,0,getcharid(3)); break;
+		case 1: bg_queue_join($@BG_C_Name$,1,getcharid(3)); break;
+		case 2: bg_queue_join($@BG_C_Name$,2,getcharid(3)); break;
 	}
 	if (getcharqueue() != -1)
 		donpcevent "BG_Core::OnJoinQueue";

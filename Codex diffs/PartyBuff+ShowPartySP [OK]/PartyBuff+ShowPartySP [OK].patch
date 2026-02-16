@@ -1,35 +1,102 @@
 diff --git a/conf/battle/party.conf b/conf/battle/party.conf
-index 863e0d2..d7bdb52 100644
+index d7bdb52..863e0d2 100644
 --- a/conf/battle/party.conf
 +++ b/conf/battle/party.conf
 @@ -16,7 +16,7 @@ party_update_interval: 1000
  // Method used to update party-mate hp-bars:
  // 0: Aegis - bar is updated every time HP changes (bandwidth intensive)
  // 1: rAthena - bar is updated with the party map dots (up to 1 second delay)
--party_hp_mode: 0
-+party_hp_mode: 1
+-party_hp_mode: 1
++party_hp_mode: 0
  
  // Include SP values in party HP updates when supported by the client packet version. (Note 1)
  party_sp_on: yes
+diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
+index 31f50b3..b2e9de4 100644
+--- a/src/map/atcommand.cpp
++++ b/src/map/atcommand.cpp
+@@ -9284,8 +9284,8 @@ ACMD_FUNC(hidepet) {
+ ACMD_FUNC(spbar) {
+ 	nullpo_retr(-1, sd);
+ 
+-#if !(PACKETVER_ZERO_NUM >= 20210504)
+-	clif_displaymessage(fd, "Party SP bars require a PACKETVER_ZERO client >= 2021-05-04 (packet 0x0bab with SP fields).");
++#if !(PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103)
++	clif_displaymessage(fd, "Party SP bars are not supported by this packet version.");
+ 	return -1;
+ #endif
+ 
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 63bc244..45d5125 100644
+index 45d5125..d36f264 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
-@@ -8250,7 +8250,7 @@ void clif_party_hp( const map_session_data& sd ){
- #else
- 	p.hp = sd.battle_status.hp;
- 	p.maxhp = sd.battle_status.max_hp;
--#if PACKETVER_ZERO_NUM >= 20210504
-+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
- 	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
- 	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
- #endif
-@@ -8308,7 +8308,7 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
- #else
- 	p.hp = hp;
- 	p.maxhp = maxhp;
--#if PACKETVER_ZERO_NUM >= 20210504
-+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
- 	p.sp = battle_config.party_sp_on ? sp : 0;
- 	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
- #endif
+@@ -3912,6 +3912,9 @@ void clif_updatestatus( map_session_data& sd, enum _sp type ){
+ 			}
+ 			break;
+ 		case SP_HP:
++		case SP_SP:
++		case SP_MAXHP:
++		case SP_MAXSP:
+ 			clif_update_hp( sd );
+ 			break;
+ 	}
+diff --git a/src/map/party.cpp b/src/map/party.cpp
+index 2ebf318..0a7c540 100644
+--- a/src/map/party.cpp
++++ b/src/map/party.cpp
+@@ -633,6 +633,10 @@ void party_member_joined( map_session_data& sd ){
+ 
+ 	if (i < MAX_PARTY) {
+ 		p->data[i].sd = &sd;
++		p->data[i].hp = sd.battle_status.hp;
++		p->data[i].sp = sd.battle_status.sp;
++		p->data[i].x = sd.x;
++		p->data[i].y = sd.y;
+ 	} else
+ 		sd.status.party_id = 0; //He does not belongs to the party really?
+ }
+@@ -1037,6 +1041,12 @@ int32 party_recv_movemap( int32 party_id, uint32 account_id, uint32 char_id, int
+ 	m->lv = lv;
+ 	//Check if they still exist on this map server
+ 	p->data[i].sd = party_sd_check(party_id, account_id, char_id);
++	if( p->data[i].sd != nullptr ){
++		p->data[i].hp = p->data[i].sd->battle_status.hp;
++		p->data[i].sp = p->data[i].sd->battle_status.sp;
++		p->data[i].x = p->data[i].sd->x;
++		p->data[i].y = p->data[i].sd->y;
++	}
+ 
+ 	clif_party_info( *p );
+ 
+@@ -1204,9 +1214,10 @@ TIMER_FUNC(party_send_xy_timer){
+ 				p->data[i].y = sd->y;
+ 			}
+ 
+-			if (battle_config.party_hp_mode && p->data[i].hp != sd->battle_status.hp) { // perform hp update
++			if (battle_config.party_hp_mode && (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp))) { // perform hp/sp update
+ 				clif_party_hp( *sd );
+ 				p->data[i].hp = sd->battle_status.hp;
++				p->data[i].sp = sd->battle_status.sp;
+ 			}
+ 		}
+ 	}
+@@ -1226,6 +1237,7 @@ int32 party_send_xy_clear(struct party_data *p)
+ 			continue;
+ 
+ 		p->data[i].hp = 0;
++		p->data[i].sp = 0;
+ 		p->data[i].x = 0;
+ 		p->data[i].y = 0;
+ 	}
+diff --git a/src/map/party.hpp b/src/map/party.hpp
+index 55b338c..3034db1 100644
+--- a/src/map/party.hpp
++++ b/src/map/party.hpp
+@@ -19,6 +19,7 @@ struct item;
+ struct party_member_data {
+ 	map_session_data *sd;
+ 	uint32 hp; //For HP,x,y refreshing.
++	uint32 sp; //For SP refreshing.
+ 	uint16 x, y;
+ };
+ 

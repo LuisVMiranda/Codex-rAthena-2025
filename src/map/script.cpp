@@ -21720,6 +21720,102 @@ BUILDIN_FUNC(bg_info)
 	return SCRIPT_CMD_SUCCESS;
 }
 
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_percentheal(<bg_id>, <hp%>, <sp%>)
+BUILDIN_FUNC(bg_percentheal)
+{
+	int32 bg_id = script_getnum(st, 2);
+	int32 hp = script_getnum(st, 3);
+	int32 sp = script_getnum(st, 4);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		status_percent_heal(member.sd, static_cast<int8>(hp), static_cast<int8>(sp));
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_reward(<bg_id>, <item_id>, <amount>, ...)
+BUILDIN_FUNC(bg_reward)
+{
+	int32 bg_id = script_getnum(st, 2);
+	t_itemid item_id = static_cast<t_itemid>(script_getnum(st, 3));
+	int32 amount = script_getnum(st, 4);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr || item_id == 0 || amount <= 0 )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+
+		item it{};
+		it.nameid = item_id;
+		it.identify = 1;
+		it.amount = static_cast<int16>(cap_value(amount, 1, INT16_MAX));
+
+		pc_additem(member.sd, &it, it.amount, LOG_TYPE_SCRIPT);
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_queue_transfer_all(<old_name>, <new_name>)
+BUILDIN_FUNC(bg_queue_transfer_all)
+{
+	// Legacy no-op for compatibility with older script packs.
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_team_reveal(<bg_id>, <visible>)
+BUILDIN_FUNC(bg_team_reveal)
+{
+	int32 bg_id = script_getnum(st, 2);
+	bool visible = script_getnum(st, 3) != 0;
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+
+		if( visible ){
+			clif_bg_xy(member.sd);
+			clif_bg_hp(member.sd);
+		}else{
+			clif_bg_xy_remove(member.sd);
+		}
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_warp_cemetery(<bg_id>)
+BUILDIN_FUNC(bg_warp_cemetery)
+{
+	int32 bg_id = script_getnum(st, 2);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr || bg->cemetery.map == 0 )
+		return SCRIPT_CMD_SUCCESS;
+
+	bg_team_warp(bg_id, bg->cemetery.map, bg->cemetery.x, bg->cemetery.y);
+	return SCRIPT_CMD_SUCCESS;
+}
+
 /*==========================================
  * Instancing System
  *------------------------------------------*/
@@ -28418,6 +28514,11 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(bg_unbook,"s"),
 	BUILDIN_DEF(bg_info,"si"),
 	BUILDIN_DEF(bg_queue_join,"sii"),
+	BUILDIN_DEF(bg_percentheal,"iii"),
+	BUILDIN_DEF(bg_reward,"iii*"),
+	BUILDIN_DEF(bg_queue_transfer_all,"ss"),
+	BUILDIN_DEF(bg_team_reveal,"ii"),
+	BUILDIN_DEF(bg_warp_cemetery,"i"),
 	BUILDIN_DEF(getcharqueue,"i"),
 	BUILDIN_DEF(viewpointmap2,"siiiii"),
 

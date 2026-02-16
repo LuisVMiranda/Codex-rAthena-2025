@@ -1,103 +1,14 @@
 diff --git a/src/map/mob.cpp b/src/map/mob.cpp
-index bd5f45c..18cd14c 100644
+index 18cd14c..58fd0e9 100644
 --- a/src/map/mob.cpp
 +++ b/src/map/mob.cpp
-@@ -1201,6 +1201,7 @@ int32 mob_spawn (mob_data *md)
- 		md->spotted_log[i] = 0;
- 
- 	md->dmglog.clear();
-+	md->hitkill_count = 0;
- 
- 	if (md->lootitems)
- 		memset(md->lootitems, 0, sizeof(*md->lootitems));
-@@ -2780,6 +2781,9 @@ void mob_log_damage(mob_data* md, block_list* src, int64 damage, int64 damage_ta
- void mob_damage(mob_data *md, block_list *src, int32 damage)
- {
- 	if (src != nullptr) { //Store total damage...
-+		if (damage > 0)
-+			md->hitkill_count++;
-+
- 		//Log damage
- 		mob_log_damage(md, src, static_cast<int64>(damage));
- 	}
-@@ -3326,6 +3330,8 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
- 		}
+@@ -3331,6 +3331,9 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
  
  		// Regular mob drops drop after script-granted drops
-+		const bool hitkill_bonus = (md->hitkill_count == 1 && battle_config.hitkill_rate > 0);
-+
+ 		const bool hitkill_bonus = (md->hitkill_count == 1 && battle_config.hitkill_rate > 0);
++		if( hitkill_bonus ){
++			clif_specialeffect(md, EF_BASH3D6, AREA);
++		}
+ 
  		for( const std::shared_ptr<s_mob_drop>& entry : md->db->dropitem ){
  			if (entry->nameid == 0)
- 				continue;
-@@ -3337,6 +3343,12 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
- 
- 			drop_rate = mob_getdroprate(src, md->db, entry->rate, drop_modifier, md);
- 
-+			if (hitkill_bonus && it->type == IT_CARD) {
-+				drop_rate = min(drop_rate * battle_config.hitkill_rate / 100, 10000);
-+			} else if (hitkill_bonus && itemdb_isequip2(it.get())) {
-+				drop_rate = min(drop_rate * battle_config.hitkill_rate / 100, 10000);
-+			}
-+
- 			// attempt to drop the item
- 			if (rnd() % 10000 >= drop_rate)
- 				continue;
-@@ -3683,6 +3695,7 @@ void mob_revive(mob_data *md, uint32 hp)
- 	md->last_pcneartime = 0;
- 	//We reset the damage log and then set the already lost damage as self damage so players don't get exp for it [Playtester]
- 	md->dmglog.clear();
-+	md->hitkill_count = 0;
- 	mob_log_damage(md, md, static_cast<int64>(md->status.max_hp - hp));
- 	if (!md->prev){
- 		if(map_addblock(md))
-diff --git a/src/map/mob.hpp b/src/map/mob.hpp
-index 47e1a32..5a3e010 100644
---- a/src/map/mob.hpp
-+++ b/src/map/mob.hpp
-@@ -363,6 +363,7 @@ struct mob_data : public block_list {
- 	} state;
- 	struct guardian_data* guardian_data;
- 	std::deque<s_dmglog> dmglog;
-+	uint32 hitkill_count;
- 	uint32 spotted_log[DAMAGELOG_SIZE];
- 	struct spawn_data *spawn; //Spawn data.
- 	int32 spawn_timer; //Required for Convex Mirror
-
-diff --git a/conf/battle/drops.conf b/conf/battle/drops.conf
-index 6990da3..8a7dd90 100644
---- a/conf/battle/drops.conf
-+++ b/conf/battle/drops.conf
-@@ -213,3 +213,7 @@
- carddrop_equipment: no
- 
- mvp_itemdrop_ratio: 100
-+
-+// One-hit kill drop rate multiplier for cards/equipment.
-+// 100 = normal drop rate.
-+hitkill_rate: 200
-
-diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index 0f4a8bb..4a2c1f3 100644
---- a/src/map/battle.cpp
-+++ b/src/map/battle.cpp
-@@ -10619,6 +10619,7 @@
- 	{ "mvp_exp_no_share", 						&battle_config.mvp_exp_no_share, 				0, 		0, 		1, 				},
- 	{ "mvp_hp_rate", 							&battle_config.mvp_hp_rate, 				100, 		1, 		INT_MAX, 		},
- 	{ "mvp_itemdrop_ratio", 						&battle_config.mvp_itemdrop_ratio, 				100, 		1, 		10000, 			},
-+	{ "hitkill_rate", 			&battle_config.hitkill_rate,			200,    0,      INT_MAX,        },
- 	{ "pk_mode", 									&battle_config.pk_mode, 				0, 		0, 		2, 				},
- 	{ "pk_level_range", 						&battle_config.pk_level_range, 				0, 		0, 		MAX_LEVEL, 		},
- 	{ "pk_min_level", 							&battle_config.pk_min_level, 				55, 		1, 		MAX_LEVEL, 		},
-
-diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index 6ac1518..5ff2f32 100644
---- a/src/map/battle.hpp
-+++ b/src/map/battle.hpp
-@@ -702,6 +702,7 @@
- 	int32 mvp_exp_no_share;
- 	int32 mvp_hp_rate;
- 	int32 mvp_itemdrop_ratio;
-+	int32 hitkill_rate;
- 	int32 pk_mode;
- 	int32 pk_level_range;
- 	int32 pk_min_level;

@@ -9284,8 +9284,8 @@ ACMD_FUNC(hidepet) {
 ACMD_FUNC(spbar) {
 	nullpo_retr(-1, sd);
 
-#if !(PACKETVER_ZERO_NUM >= 20210504)
-	clif_displaymessage(fd, "Party SP bars require a PACKETVER_ZERO client >= 2021-05-04 (packet 0x0bab with SP fields).");
+#if !(PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103)
+	clif_displaymessage(fd, "Party SP bars are not supported by this packet version.");
 	return -1;
 #endif
 

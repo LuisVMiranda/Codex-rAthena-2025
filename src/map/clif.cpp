@@ -3912,6 +3912,9 @@ void clif_updatestatus( map_session_data& sd, enum _sp type ){
 			}
 			break;
 		case SP_HP:
+		case SP_SP:
+		case SP_MAXHP:
+		case SP_MAXSP:
 			clif_update_hp( sd );
 			break;
 	}

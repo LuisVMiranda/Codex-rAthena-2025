@@ -22,7 +22,7 @@ struct s_extended_vending_currency {
 
 class ExtendedVendingDatabase : public TypesafeYamlDatabase<t_itemid, s_extended_vending_currency> {
 public:
-	ExtendedVendingDatabase() : TypesafeYamlDatabase("ITEM_EXTENDED_VENDING_DB", 1) {}
+	ExtendedVendingDatabase() : TypesafeYamlDatabase("ITEM_VENDING_DB", 1) {}
 
 	const std::string getDefaultLocation() override;
 	uint64 parseBodyNode(const ryml::NodeRef& node) override;

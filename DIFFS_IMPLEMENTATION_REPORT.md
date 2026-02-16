@@ -113,3 +113,33 @@ Validation run performed in this workspace after the rename/diff integration pas
 | `cmake --build build -j$(nproc)` | **PASS** | Full build succeeded; `map-server` linked with updated vending/status/atcommand changes. | `src/map/vending.cpp`, `src/map/status.cpp`, `src/map/atcommand.cpp` |
 | `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
 | `timeout 30s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, and unavailable MySQL (`127.0.0.1:3306`). | Runtime environment prerequisites |
+
+## Hotfix: ITEM_VENDING_DB compatibility + 2022 party-SP packet path
+
+### What was corrected
+- Fixed extended vending DB header compatibility by aligning runtime DB type with `ITEM_VENDING_DB` and accepting legacy-friendly keys (`Item`, `AegisName`, `Id`).
+- Added parser support for `Item: Zeny` (mapped to `Id: 0`) and improved validation messages for unknown item names.
+- Updated template/example for `db/import/item_db_extended_vending.yml` to the expected structure and indentation.
+- Expanded party HP/SP packet struct guards to include modern non-zero packet branches so 2022 clients can receive party SP values through the same HP update flow.
+
+### Expected YAML format (working)
+```yml
+Header:
+  Type: ITEM_VENDING_DB
+  Version: 1
+
+Body:
+  - Item: Zeny
+    StorePrefix: "[Z]"
+
+  - Item: Hydra_Card
+    StorePrefix: "[HYDRA]"
+```
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after DB-type/parser and packet guard updates. | `src/map/vending.cpp`, `src/map/packets_struct.hpp`, `src/map/clif.cpp` |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |

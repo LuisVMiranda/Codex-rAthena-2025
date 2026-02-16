@@ -53,19 +53,25 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
 		if( !this->asUInt32(node, "Id", nameid) ){
 			return 0;
 		}
-	}else if( this->nodeExists(node, "AegisName") ){
-		std::string aegis_name;
-		if( !this->asString(node, "AegisName", aegis_name) ){
+	}else if( this->nodeExists(node, "AegisName") || this->nodeExists(node, "Item") ){
+		std::string item_name;
+		const char* key = this->nodeExists(node, "AegisName") ? "AegisName" : "Item";
+		if( !this->asString(node, key, item_name) ){
 			return 0;
 		}
-		std::shared_ptr<item_data> item = item_db.search_aegisname(aegis_name.c_str());
-		if( item == nullptr ){
-			this->invalidWarning(node["AegisName"], "Unknown item '%s', skipping.\n", aegis_name.c_str());
-			return 0;
+
+		if( item_name == "Zeny" || item_name == "zeny" ){
+			nameid = 0;
+		}else{
+			std::shared_ptr<item_data> item = item_db.search_aegisname(item_name.c_str());
+			if( item == nullptr ){
+				this->invalidWarning(node, "Unknown item '%s', skipping.\n", item_name.c_str());
+				return 0;
+			}
+			nameid = item->nameid;
 		}
-		nameid = item->nameid;
 	}else{
-		this->invalidWarning(node, "Missing 'Id' or 'AegisName', skipping.\n");
+		this->invalidWarning(node, "Missing 'Id', 'AegisName' or 'Item', skipping.\n");
 		return 0;
 	}
 

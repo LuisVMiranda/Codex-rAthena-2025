@@ -5,6 +5,7 @@
 
 #include "map/intif.hpp"
 #include "map/pc.hpp"
+#include "map/vending.hpp"
 
 SkillVending::SkillVending() : SkillImpl(MC_VENDING) {
 }
@@ -28,7 +29,7 @@ void SkillVending::castendNoDamageId(block_list *src, block_list *target, uint16
 			} else {
 				// Instantly open the vending UI
 				sd->state.pending_vending_ui = false;
-				clif_openvendingreq(*sd, 2 + skill_lv);
+				vending_openvendingreq(*sd, skill_lv);
 			}
 		}
 	}

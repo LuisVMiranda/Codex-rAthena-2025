@@ -16201,6 +16201,22 @@ BUILDIN_FUNC(message)
 	return SCRIPT_CMD_SUCCESS;
 }
 
+
+BUILDIN_FUNC(getmessage){
+	map_session_data* sd = nullptr;
+	(void)script_charid2sd(3, sd);
+	map_session_data* tsd = sd;
+
+	int32 msg_id = script_getnum(st,2);
+	if( tsd != nullptr )
+		script_pushstrcopy(st, msg_txt(tsd, msg_id));
+	else
+		script_pushconststr(st, "");
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+
 /**
  * npctalk("<message>"{,"<NPC name>","<flag>"});
  * @param flag: Specify target
@@ -28199,7 +28215,8 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(atcommand,"s"), // [MouseJstr]
 	BUILDIN_DEF2(atcommand,"charcommand","s"), // [MouseJstr]
 	BUILDIN_DEF(movenpc,"sii?"), // [MouseJstr]
-	BUILDIN_DEF(message,"ss"), // [MouseJstr]
+	BUILDIN_DEF(message,"ss"),
+	BUILDIN_DEF(getmessage,"i?"), // [MouseJstr]
 	BUILDIN_DEF(npctalk,"s???"), // [Valaris]
 	BUILDIN_DEF(chatmes,"s?"), // [Jey]
 	BUILDIN_DEF(mobcount,"ss"),

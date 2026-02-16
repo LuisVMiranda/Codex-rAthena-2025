@@ -1,0 +1,9 @@
+# Custom battleground item overrides.
+# Copy to: db/import/item_db_bg.yml
+
+Header:
+  Type: ITEM_DB
+  Version: 3
+
+Body:
+  # Add/override BG items here.

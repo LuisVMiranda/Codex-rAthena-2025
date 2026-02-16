@@ -1,0 +1,134 @@
+diff --git a/Codex diffs/ExtendedVending-v4 [OK]/README.md b/Codex diffs/ExtendedVending-v4 [OK]/README.md
+index 38def98..34a3491 100644
+--- a/Codex diffs/ExtendedVending-v4 [OK]/README.md	
++++ b/Codex diffs/ExtendedVending-v4 [OK]/README.md	
+@@ -23,4 +23,6 @@ Body:
+ 
+   # - Item: Hydra_Card
+   #   StorePrefix: "[HYDRA]"
++
++# Item/AegisName entries are matched case-insensitively.
+ ```
+diff --git a/DIFFS_IMPLEMENTATION_REPORT.md b/DIFFS_IMPLEMENTATION_REPORT.md
+index 3d09257..2c736c5 100644
+--- a/DIFFS_IMPLEMENTATION_REPORT.md
++++ b/DIFFS_IMPLEMENTATION_REPORT.md
+@@ -143,3 +143,22 @@ Body:
+ | `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after DB-type/parser and packet guard updates. | `src/map/vending.cpp`, `src/map/packets_struct.hpp`, `src/map/clif.cpp` |
+ | `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+ | `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |
++
++## Hotfix 2: cancel-freeze and currency menu rendering
++
++### Root causes and fixes
++- **Freeze on currency-window cancel**: cancel path left player in a prevend/work-in-progress state. Fixed by explicitly clearing `state.prevend` and restoring `WIP_DISABLE_NONE` when the menu is canceled.
++- **Hydra/other configured entries not appearing correctly**: menu payload used raw IDs and previously filtered by player inventory; this hid configured currencies and produced ambiguous zeny behavior. Fixed by:
++  - listing configured currencies regardless of current inventory,
++  - mapping zeny option (`Id: 0`) to a dedicated placeholder display id (`UNKNOWN_ITEM_ID`) in the selection menu,
++  - mapping that placeholder back to zeny internally on selection.
++- **Case-insensitive item names**: parser now normalizes item text and treats `Item: zeny`/`ZENY` etc. consistently.
++- **Requested packet define**: added `#define PACKETVER 20220406` in `src/custom/defines_pre.hpp`.
++
++### Command results
++
++| Command | Result | Concise excerpt | Impacted module(s) |
++|---|---|---|---|
++| `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after vending cancel/menu/rendering fixes. | `src/map/vending.cpp`, `src/custom/defines_pre.hpp` |
++| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
++| `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |
+diff --git a/db/import-tmpl/item_db_extended_vending.yml b/db/import-tmpl/item_db_extended_vending.yml
+index 1bb6cbc..3c088ab 100644
+--- a/db/import-tmpl/item_db_extended_vending.yml
++++ b/db/import-tmpl/item_db_extended_vending.yml
+@@ -5,6 +5,7 @@
+ #
+ # Supported keys:
+ # - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
++#         AegisName matching is case-insensitive.
+ # - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
+ # - StorePrefix: Prefix injected before the opened shop name.
+ 
+diff --git a/db/import/item_db_extended_vending.yml b/db/import/item_db_extended_vending.yml
+index 1bb6cbc..3c088ab 100644
+--- a/db/import/item_db_extended_vending.yml
++++ b/db/import/item_db_extended_vending.yml
+@@ -5,6 +5,7 @@
+ #
+ # Supported keys:
+ # - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
++#         AegisName matching is case-insensitive.
+ # - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
+ # - StorePrefix: Prefix injected before the opened shop name.
+ 
+diff --git a/src/custom/defines_pre.hpp b/src/custom/defines_pre.hpp
+index 70c7ba4..826614b 100644
+--- a/src/custom/defines_pre.hpp
++++ b/src/custom/defines_pre.hpp
+@@ -2,3 +2,4 @@
+ #define CUSTOM_DEFINES_PRE_HPP
+ // User custom pre-defines go here.
+ #endif
++#define PACKETVER 20220406
+diff --git a/src/map/vending.cpp b/src/map/vending.cpp
+index 43248a3..add5456 100644
+--- a/src/map/vending.cpp
++++ b/src/map/vending.cpp
+@@ -6,6 +6,7 @@
+ #include <cstdlib> // atoi
+ #include <vector>
+ #include <algorithm>
++#include <cctype>
+ 
+ #include <common/database.hpp>
+ #include <common/malloc.hpp> // aMalloc, aFree
+@@ -59,8 +60,10 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
+ 		if( !this->asString(node, key, item_name) ){
+ 			return 0;
+ 		}
++		std::string lower_item_name = item_name;
++		std::transform(lower_item_name.begin(), lower_item_name.end(), lower_item_name.begin(), [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+ 
+-		if( item_name == "Zeny" || item_name == "zeny" ){
++		if( lower_item_name == "zeny" ){
+ 			nameid = 0;
+ 		}else{
+ 			std::shared_ptr<item_data> item = item_db.search_aegisname(item_name.c_str());
+@@ -257,13 +260,8 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
+ 	std::sort(currencies.begin(), currencies.end());
+ 
+ 	for( t_itemid nameid : currencies ) {
+-		if( nameid > 0 ) {
+-			int16 idx = pc_search_inventory(&sd, nameid);
+-			if( idx < 0 )
+-				continue;
+-		}
+-
+-		packet->items[count++].itemId = nameid;
++		auto out_nameid = static_cast<decltype(packet->items[0].itemId)>(nameid == 0 ? UNKNOWN_ITEM_ID : nameid);
++		packet->items[count++].itemId = out_nameid;
+ 		packet->packetLength += sizeof(packet->items[0]);
+ 	}
+ 
+@@ -280,8 +278,22 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
+ 
+ void vending_select_currency(map_session_data& sd, t_itemid nameid)
+ {
++	bool selected_zeny = false;
++	if( nameid == UNKNOWN_ITEM_ID && extended_vending_db.find(0) != nullptr ){
++		nameid = 0;
++		selected_zeny = true;
++	}
++
++	if( nameid == 0 && !selected_zeny ){
++		sd.extended_vend.nameid = 0;
++		sd.state.prevend = 0;
++		sd.state.workinprogress = WIP_DISABLE_NONE;
++		return;
++	}
++
+ 	if (!vending_is_currency_allowed(nameid)) {
+ 		sd.extended_vend.nameid = 0;
++		sd.state.prevend = 0;
+ 		clif_skill_fail(sd, MC_VENDING);
+ 		sd.state.workinprogress = WIP_DISABLE_NONE;
+ 		return;

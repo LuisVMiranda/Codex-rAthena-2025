@@ -1,185 +1,89 @@
-diff --git a/conf/battle/monster.conf b/conf/battle/monster.conf
-index 939da1f..11a95c2 100644
---- a/conf/battle/monster.conf
-+++ b/conf/battle/monster.conf
-@@ -240,6 +240,9 @@ monster_class_change_full_recover: yes
- // 4: Display mob's level
- show_mob_info: 0
- 
-+// Show monster element and element level in the title area of modern name packets. (Note 1)
-+mob_ele_view: no
-+
- // Zeny from mobs
- zeny_from_mobs: no
- 
-diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index 6cc45e4..4685cdb 100644
---- a/src/map/battle.cpp
-+++ b/src/map/battle.cpp
-@@ -10462,6 +10462,27 @@ static const struct _battle_data {
- 	{ "bg_magic_attack_damage_rate",        &battle_config.bg_magic_damage_rate,            60,     0,      INT_MAX,        },
- 	{ "bg_misc_attack_damage_rate",         &battle_config.bg_misc_damage_rate,             60,     0,      INT_MAX,        },
- 	{ "bg_flee_penalty",                    &battle_config.bg_flee_penalty,                 20,     0,      INT_MAX,        },
-+	{ "bg_rotation_mode",                   &battle_config.bg_rotation_mode,                0,      0,      1,              },
-+	{ "bg_idle_announce",                   &battle_config.bg_idle_announce,                0,      0,      INT_MAX,        },
-+	{ "bg_idle_autokick",                   &battle_config.bg_idle_autokick,                0,      0,      INT_MAX,        },
-+	{ "bg_reward_rates",                    &battle_config.bg_reward_rates,                 100,    0,      INT_MAX,        },
-+	{ "bg_reward_rates_vip",                &battle_config.bg_reward_rates_vip,             0,      0,      INT_MAX,        },
-+	{ "bg_reportafk_leaderonly",            &battle_config.bg_reportafk_leaderonly,         1,      0,      1,              },
-+	{ "bg_queue_onlytowns",                 &battle_config.bg_queue_onlytowns,              1,      0,      1,              },
-+	{ "bg_reserved_char_id",                &battle_config.bg_reserved_char_id,             999996, 0,      INT_MAX,        },
-+	{ "woe_reserved_char_id",               &battle_config.woe_reserved_char_id,            999997, 0,      INT_MAX,        },
-+	{ "bg_can_trade",                       &battle_config.bg_can_trade,                    1,      0,      1,              },
-+	{ "bg_double_login",                    &battle_config.bg_double_login,                 1,      0,      1,              },
-+	{ "bg_extended_check_equip",            &battle_config.bg_extended_check_equip,         1,      0,      1,              },
-+	{ "bg_queue_confirmation",              &battle_config.bg_queue_confirmation,           1,      0,      1,              },
-+	{ "bg_queue_interface",                 &battle_config.bg_queue_interface,               1,      0,      1,              },
-+	{ "bg_remove_buffs",                    &battle_config.bg_remove_buffs,                 0,      0,      63,             },
-+	{ "bg_buffs_on_leave",                  &battle_config.bg_buffs_on_leave,               0,      0,      1,              },
-+	{ "bg_balance_teams",                   &battle_config.bg_balance_teams,                0,      0,      1,              },
-+	{ "bg_monsters_skillimmune",            &battle_config.bg_monsters_skillimmune,         0,      0,      1,              },
-+	{ "hide_pet",                           &battle_config.hide_pet,                        0,      0,      2,              },
-+	{ "party_sp_on",                        &battle_config.party_sp_on,                     1,      0,      1,              },
-+	{ "mob_ele_view",                       &battle_config.mob_ele_view,                    0,      0,      1,              },
- // rAthena
- 	{ "max_third_parameter",				&battle_config.max_third_parameter,				135,	10,		SHRT_MAX,		},
- 	{ "max_baby_third_parameter",			&battle_config.max_baby_third_parameter,		108,	10,		SHRT_MAX,		},
-diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index 87e4013..838c716 100644
---- a/src/map/battle.hpp
-+++ b/src/map/battle.hpp
-@@ -543,6 +543,28 @@ struct Battle_Config
- 	int32 bg_magic_damage_rate;
- 	int32 bg_misc_damage_rate;
- 	int32 bg_flee_penalty;
-+	int32 bg_rotation_mode;
-+	int32 bg_idle_announce;
-+	int32 bg_idle_autokick;
-+	int32 bg_reward_rates;
-+	int32 bg_reward_rates_vip;
-+	int32 bg_reportafk_leaderonly;
-+	int32 bg_queue_onlytowns;
-+	int32 bg_reserved_char_id;
-+	int32 woe_reserved_char_id;
-+	int32 bg_can_trade;
-+	int32 bg_double_login;
-+	int32 bg_extended_check_equip;
-+	int32 bg_queue_confirmation;
-+	int32 bg_queue_interface;
-+	int32 bg_remove_buffs;
-+	int32 bg_buffs_on_leave;
-+	int32 bg_balance_teams;
-+	int32 bg_monsters_skillimmune;
-+
-+	int32 hide_pet;
-+	int32 party_sp_on;
-+	int32 mob_ele_view;
- 
- 	// rAthena
- 	int32 max_third_parameter;
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index d3f4c71..6d8b31e 100644
+index d36f264..97ccf29 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
-@@ -4,6 +4,7 @@
+@@ -8259,7 +8259,7 @@ void clif_party_hp( const map_session_data& sd ){
+ #endif
+ #endif
  
- #include "clif.hpp"
- 
-+#include <array>
- #include <cstdarg>
- #include <cstdio>
- #include <cstdlib>
-@@ -422,6 +423,8 @@ static int32 clif_send_sub(block_list *bl, va_list ap)
- 	case AREA_WOS:
- 		if (bl == src_bl)
- 			return 0;
-+		if (src_bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == src_bl->id))))
-+			return 0;
- 	break;
- 	case AREA_WOC:
- 		if (sd->chatID || bl == src_bl)
-@@ -3514,7 +3517,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
- 	nullpo_ret(tsd);
- 
- 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
--		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
-+		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, 0, 0 );
- 	}
- 	return 0;
+-	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
++	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
  }
-@@ -5005,11 +5008,12 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
- 		clif_servantball( *dstsd, sd, SELF );
- 	if (dstsd->abyssball > 0)
- 		clif_abyssball( *dstsd, sd, SELF );
--	if( (sd->status.party_id && dstsd->status.party_id == sd->status.party_id) || //Party-mate, or hpdisp setting.
-+	const bool is_party_member = sd->status.party_id && dstsd->status.party_id == sd->status.party_id;
-+	if( is_party_member || //Party-mate, or hpdisp setting.
- 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
- 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
- 	)
--	clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
-+		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, is_party_member ? dstsd->battle_status.sp : 0, is_party_member ? dstsd->battle_status.max_sp : 0 );
  
- 	// display link (sd - dstsd) to sd
- 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
-@@ -5043,6 +5047,10 @@ void clif_getareachar_unit( map_session_data* sd,block_list *bl ){
- 		return;
- 	}
+ /// Notifies the party members of a character's death or revival.
+@@ -10176,6 +10176,36 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 			break;
+ 		case BL_MOB: {
+ 			const mob_data* md = static_cast<const mob_data*>(bl);
++			auto get_mob_ele_name = [](int32 ele) -> const char* {
++				switch (ele) {
++					case ELE_NEUTRAL: return "Neutral";
++					case ELE_WATER: return "Water";
++					case ELE_EARTH: return "Earth";
++					case ELE_FIRE: return "Fire";
++					case ELE_WIND: return "Wind";
++					case ELE_POISON: return "Poison";
++					case ELE_HOLY: return "Holy";
++					case ELE_DARK: return "Shadow";
++					case ELE_GHOST: return "Ghost";
++					case ELE_UNDEAD: return "Undead";
++					default: return "Unknown";
++				}
++			};
++			auto get_mob_race_name = [](int32 race) -> const char* {
++				switch (race) {
++					case RC_FORMLESS: return "Formless";
++					case RC_UNDEAD: return "Undead";
++					case RC_BRUTE: return "Brute";
++					case RC_PLANT: return "Plant";
++					case RC_INSECT: return "Insect";
++					case RC_FISH: return "Fish";
++					case RC_DEMON: return "Demon";
++					case RC_DEMIHUMAN: return "DemiHuman";
++					case RC_ANGEL: return "Angel";
++					case RC_DRAGON: return "Dragon";
++					default: return "Unknown";
++				}
++			};
  
-+	if (bl->type == BL_PET && (sd->state.hidepet == 2 || (sd->state.hidepet == 1 && !(sd->pd != nullptr && sd->pd->bl.id == bl->id)))) {
-+		return;
-+	}
-+
- 	if( bl->type == BL_NPC && npc_is_hidden_dynamicnpc( *( (npc_data*)bl ), *sd ) ){
- 		// Do not send anything
- 		return;
-@@ -8107,6 +8115,10 @@ void clif_party_hp( const map_session_data& sd ){
- #else
- 	p.hp = sd.battle_status.hp;
- 	p.maxhp = sd.battle_status.max_hp;
-+#if PACKETVER_ZERO_NUM >= 20210504
-+	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
-+	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
-+#endif
- #endif
+ 			if( md->guardian_data && md->guardian_data->guild_id ){
+ 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
+@@ -10194,7 +10224,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 				packet.gid = bl->id;
+ 				safestrncpy( packet.name, md->name, NAME_LENGTH );
  
- 	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
-@@ -8144,7 +8156,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
- /*==========================================
-  * Sends HP bar to a single fd. [Skotlex]
-  *------------------------------------------*/
--void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
-+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
- 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
+-				char mobhp[50], *str_p = mobhp;
++				char mobhp[128], *str_p = mobhp;
  
- 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
-@@ -8161,6 +8173,10 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
- #else
- 	p.hp = hp;
- 	p.maxhp = maxhp;
-+#if PACKETVER_ZERO_NUM >= 20210504
-+	p.sp = battle_config.party_sp_on ? sp : 0;
-+	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
-+#endif
- #endif
+ 				if( battle_config.show_mob_info&4 ){
+ 					str_p += sprintf( str_p, "Lv. %d | ", md->level );
+@@ -10208,6 +10238,10 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 					str_p += sprintf( str_p, "HP: %u%% | ", get_percentage( md->status.hp, md->status.max_hp ) );
+ 				}
  
- 	clif_send( &p, sizeof( p ), &sd, SELF );
-@@ -10071,7 +10087,17 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
- #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
- 				const unit_data* ud = unit_bl2ud(bl);
- 
--				if (ud != nullptr) {
-+				if (battle_config.mob_ele_view) {
-+					static constexpr std::array<const char*, ELE_MAX> ele_names = { "Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Shadow", "Ghost", "Undead" };
-+					if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX) {
-+						char output[NAME_LENGTH] = {};
-+						safesnprintf(output, sizeof(output), "%s Lv: %d", ele_names[md->status.def_ele], md->status.ele_lv);
-+						memcpy(packet.title, output, NAME_LENGTH);
-+						packet.groupId = 51 + md->status.def_ele;
-+					}
++				if( battle_config.mob_ele_view ){
++					str_p += sprintf( str_p, "Ele: %s %d | Race: %s | ", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_race_name(md->status.race) );
 +				}
 +
-+				if (ud != nullptr && packet.title[0] == '\0') {
- 					memcpy(packet.title, ud->title, NAME_LENGTH);
- 					packet.groupId = ud->group_id;
+ 				// Even thought mobhp ain't a name, we send it as one so the client can parse it. [Skotlex]
+ 				if( str_p != mobhp ){
+ 					*(str_p-3) = '\0'; //Remove trailing space + pipe.
+@@ -10226,13 +10260,12 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 				const unit_data* ud = unit_bl2ud(bl);
+ 
+ 				if (battle_config.mob_ele_view) {
+-					static constexpr std::array<const char*, ELE_MAX> ele_names = { "Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Shadow", "Ghost", "Undead" };
+-					if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX) {
+-						char output[NAME_LENGTH] = {};
+-						safesnprintf(output, sizeof(output), "%s Lv: %d", ele_names[md->status.def_ele], md->status.ele_lv);
+-						memcpy(packet.title, output, NAME_LENGTH);
++					char output[NAME_LENGTH] = {};
++					safesnprintf(output, sizeof(output), "%s Lv:%d | %s", get_mob_ele_name(md->status.def_ele), md->status.ele_lv, get_mob_race_name(md->status.race));
++					memcpy(packet.title, output, NAME_LENGTH);
++
++					if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
+ 						packet.groupId = 51 + md->status.def_ele;
+-					}
  				}
+ 
+ 				if (ud != nullptr && packet.title[0] == '\0') {

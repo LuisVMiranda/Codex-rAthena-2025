@@ -1,246 +1,34 @@
-diff --git a/conf/atcommands.yml b/conf/atcommands.yml
-index 8569fa3..510ebe2 100644
---- a/conf/atcommands.yml
-+++ b/conf/atcommands.yml
-@@ -1278,11 +1278,6 @@ Body:
-       Hides or shows pets around you.
-       @hidepet hides other players' pets.
-       @hidepetall hides all pets, including yours.
--  - Command: spbar
--    Aliases:
--      - showpartysp
--    Help: |
--      Toggles party SP bar updates for supported clients.
-   - Command: joinbg
-     Help: |
-       Params: <mode>
-diff --git a/conf/battle/party.conf b/conf/battle/party.conf
-index 863e0d2..ccbfe8a 100644
---- a/conf/battle/party.conf
-+++ b/conf/battle/party.conf
-@@ -18,8 +18,6 @@ party_update_interval: 1000
- // 1: rAthena - bar is updated with the party map dots (up to 1 second delay)
- party_hp_mode: 0
- 
--// Include SP values in party HP updates when supported by the client packet version. (Note 1)
--party_sp_on: yes
- 
- // NOTE:
- // The level range for sharing within a party is set in conf/inter_athena.conf
-diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
-index 19c7b52..af090c6 100644
---- a/src/map/atcommand.cpp
-+++ b/src/map/atcommand.cpp
-@@ -9281,24 +9281,6 @@ ACMD_FUNC(hidepet) {
- 	return 0;
- }
- 
--ACMD_FUNC(spbar) {
--	nullpo_retr(-1, sd);
--
--	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
--
--	struct s_mapiterator* iter = mapit_getallusers();
--	for (map_session_data* pl_sd = static_cast<map_session_data*>(mapit_first(iter)); mapit_exists(iter); pl_sd = static_cast<map_session_data*>(mapit_next(iter))) {
--		if (pl_sd == nullptr) {
--			continue;
--		}
--		clif_refresh(pl_sd);
--	}
--	mapit_free(iter);
--
--	clif_displaymessage(fd, battle_config.party_sp_on ? "Party SP bar is enabled." : "Party SP bar is disabled.");
--	return 0;
--}
--
- ACMD_FUNC(joinbg) {
- 	nullpo_retr(-1, sd);
- 
-@@ -11897,8 +11879,6 @@ void atcommand_basecommands(void) {
- 		ACMD_DEF(showdelay),
- 		ACMD_DEF(hidepet),
- 		ACMD_DEF2("hidepetall", hidepet),
--		ACMD_DEF(spbar),
--		ACMD_DEF2("showpartysp", spbar),
- 		ACMD_DEF(joinbg),
- 		ACMD_DEF(partybuff),
- 		ACMD_DEF(showrecovery),
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 85b012f..e1ce54f 100644
+index e1ce54f..9adba65 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
-@@ -3524,7 +3524,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
- 	nullpo_ret(tsd);
- 
- 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
--		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, 0, 0 );
-+		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
+@@ -3915,9 +3915,6 @@ void clif_updatestatus( map_session_data& sd, enum _sp type ){
+ 			}
+ 			break;
+ 		case SP_HP:
+-		case SP_SP:
+-		case SP_MAXHP:
+-		case SP_MAXSP:
+ 			clif_update_hp( sd );
+ 			break;
  	}
- 	return 0;
- }
-@@ -3547,7 +3547,7 @@ static int32 clif_hpmeter( const map_session_data* sd )
- void clif_update_hp( const map_session_data &sd ) {
- 	if (map_getmapdata(sd.m)->hpmeter_visible)
- 		clif_hpmeter(&sd);
--	if (sd.status.party_id)
-+	if (!battle_config.party_hp_mode && sd.status.party_id)
- 		clif_party_hp( sd );
- 	if (sd.bg_id)
- 		clif_bg_hp(&sd);
-@@ -5018,12 +5018,11 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
- 		clif_servantball( *dstsd, sd, SELF );
- 	if (dstsd->abyssball > 0)
- 		clif_abyssball( *dstsd, sd, SELF );
--	const bool is_party_member = sd->status.party_id && dstsd->status.party_id == sd->status.party_id;
--	if( is_party_member || //Party-mate, or hpdisp setting.
-+	if( (sd->status.party_id && dstsd->status.party_id == sd->status.party_id) || //Party-mate, or hpdisp setting.
- 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
- 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
- 	)
--		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, is_party_member ? dstsd->battle_status.sp : 0, is_party_member ? dstsd->battle_status.max_sp : 0 );
-+		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
- 
- 	// display link (sd - dstsd) to sd
- 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
-@@ -8293,7 +8292,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
- /*==========================================
-  * Sends HP bar to a single fd. [Skotlex]
-  *------------------------------------------*/
--void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
-+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
- 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
- 
- 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
-@@ -10186,6 +10185,22 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
- 					default: return "Unknown";
- 				}
- 			};
-+			
-+			auto get_mob_race_name = [](int32 race) -> const char* {
-+				switch (race) {
-+					case RC_FORMLESS: return "Formless";
-+					case RC_UNDEAD: return "Undead";
-+					case RC_BRUTE: return "Brute";
-+					case RC_PLANT: return "Plant";
-+					case RC_INSECT: return "Insect";
-+					case RC_FISH: return "Fish";
-+					case RC_DEMON: return "Demon";
-+					case RC_DEMIHUMAN: return "DemiHuman";
-+					case RC_ANGEL: return "Angel";
-+					case RC_DRAGON: return "Dragon";
-+					default: return "Unknown";
-+				}
-+			};
- 			auto get_mob_size_tag = [](int32 size) -> const char* {
- 				switch (size) {
- 					case SZ_SMALL: return "[S]";
-@@ -10212,17 +10227,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+@@ -10227,14 +10224,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
  				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
  				packet.gid = bl->id;
  
--				char title_line[NAME_LENGTH] = {};
--				if( battle_config.show_mob_info & 1 )
--					safesnprintf( title_line, sizeof(title_line), "%s [%u%%]", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
--				else
--					safesnprintf( title_line, sizeof(title_line), "%s [%u%%]", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
--				memcpy( packet.title, title_line, NAME_LENGTH );
+-				char name_line[NAME_LENGTH] = {};
+-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
+-				safestrncpy( packet.name, name_line, NAME_LENGTH );
 -
- 				char name_line[NAME_LENGTH] = {};
--				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_ele_name(md->status.def_ele), get_mob_size_tag(md->status.size) );
-+				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
- 				safestrncpy( packet.name, name_line, NAME_LENGTH );
+ 				char title_line[NAME_LENGTH] = {};
+-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
++				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
+ 				memcpy( packet.title, title_line, NAME_LENGTH );
  
-+				char title_line[NAME_LENGTH] = {};
-+				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
-+				memcpy( packet.title, title_line, NAME_LENGTH );
++				char name_line[NAME_LENGTH] = {};
++				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
++				safestrncpy( packet.name, name_line, NAME_LENGTH );
 +
  				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
  					packet.groupId = 51 + md->status.def_ele;
- 
-@@ -10266,7 +10278,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
- 				if( battle_config.show_mob_info&2 )
- 					str_p += sprintf( str_p, "HP: %u%% | ", get_percentage( md->status.hp, md->status.max_hp ) );
- 				if( battle_config.mob_ele_view )
--					str_p += sprintf( str_p, "Ele: %s | Size: %s | ", get_mob_ele_name(md->status.def_ele), get_mob_size_tag(md->status.size) );
-+					str_p += sprintf( str_p, "Race: %s | Size: %s | ", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
- 
- 				if( str_p != mobhp ){
- 					*(str_p-3) = '\0';
-diff --git a/src/map/clif.hpp b/src/map/clif.hpp
-index 0dd994e..bcbc4fc 100644
---- a/src/map/clif.hpp
-+++ b/src/map/clif.hpp
-@@ -1080,7 +1080,7 @@ void clif_party_message( const party_data& party, uint32 account_id, const char*
- void clif_party_xy( const map_session_data& sd );
- void clif_party_xy_single( const map_session_data& sd, const map_session_data& tsd );
- void clif_party_hp( const map_session_data& sd );
--void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp = 0, uint32 maxsp = 0 );
-+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp );
- void clif_party_job_and_level( const map_session_data& sd );
- void clif_party_dead( const map_session_data& sd );
- 
-diff --git a/src/map/party.cpp b/src/map/party.cpp
-index 5a3407f..a65eb8d 100644
---- a/src/map/party.cpp
-+++ b/src/map/party.cpp
-@@ -634,8 +634,7 @@ void party_member_joined( map_session_data& sd ){
- 	if (i < MAX_PARTY) {
- 		p->data[i].sd = &sd;
- 		p->data[i].hp = sd.battle_status.hp;
--		p->data[i].sp = sd.battle_status.sp;
--		p->data[i].x = sd.x;
-+			p->data[i].x = sd.x;
- 		p->data[i].y = sd.y;
- 	} else
- 		sd.status.party_id = 0; //He does not belongs to the party really?
-@@ -686,7 +685,7 @@ int32 party_member_added(int32 party_id,uint32 account_id,uint32 char_id, int32
- 		sd2 = p->data[i].sd;
- 
- 		if( sd2 && sd2->status.account_id != account_id && sd2->status.char_id != char_id )
--			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp, sd2->battle_status.sp, sd2->battle_status.max_sp );
-+			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp );
- 	}
- 
- 	clif_party_hp( *sd );
-@@ -1043,8 +1042,7 @@ int32 party_recv_movemap( int32 party_id, uint32 account_id, uint32 char_id, int
- 	p->data[i].sd = party_sd_check(party_id, account_id, char_id);
- 	if( p->data[i].sd != nullptr ){
- 		p->data[i].hp = p->data[i].sd->battle_status.hp;
--		p->data[i].sp = p->data[i].sd->battle_status.sp;
--		p->data[i].x = p->data[i].sd->x;
-+			p->data[i].x = p->data[i].sd->x;
- 		p->data[i].y = p->data[i].sd->y;
- 	}
- 
-@@ -1214,10 +1212,9 @@ TIMER_FUNC(party_send_xy_timer){
- 				p->data[i].y = sd->y;
- 			}
- 
--			if (p->data[i].hp != sd->battle_status.hp) { // perform hp update
-+			if (battle_config.party_hp_mode && p->data[i].hp != sd->battle_status.hp) { // perform hp update
- 				clif_party_hp( *sd );
- 				p->data[i].hp = sd->battle_status.hp;
--				p->data[i].sp = sd->battle_status.sp;
- 			}
- 		}
- 	}
-@@ -1237,7 +1234,6 @@ int32 party_send_xy_clear(struct party_data *p)
- 			continue;
- 
- 		p->data[i].hp = 0;
--		p->data[i].sp = 0;
- 		p->data[i].x = 0;
- 		p->data[i].y = 0;
- 	}
-diff --git a/src/map/party.hpp b/src/map/party.hpp
-index 3034db1..55b338c 100644
---- a/src/map/party.hpp
-+++ b/src/map/party.hpp
-@@ -19,7 +19,6 @@ struct item;
- struct party_member_data {
- 	map_session_data *sd;
- 	uint32 hp; //For HP,x,y refreshing.
--	uint32 sp; //For SP refreshing.
- 	uint16 x, y;
- };
  

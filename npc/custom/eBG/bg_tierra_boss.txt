@@ -19,7 +19,7 @@
 // BattleGround System - Tierra Bossnia
 // ==============================================================================*/
 
--	script	Tierra_Boss	-1,{
+	script	Tierra_Boss	-1,{
 	end;
 
 OnInit:
@@ -70,7 +70,7 @@ OnStart:
 	donpcevent "Balance_Flag::OnBGStart";
 	donpcevent "Guillaume_Boss::OnSummon";
 	donpcevent "Croix_Boss::OnSummon";
-	donpceventall "OnEmblemBOSS";
+	donpcevent "BG_Tierra_Boss::OnEmblemBOSS";
 	mapannounce "bat_cc2","-- Capture the Balance Flag to remove immunity of Enemy Guardians --",1,0x483D8B;
 	end;
 
@@ -110,7 +110,7 @@ OnNeutralBreak:
 		setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,1);
 		set .Flag, bg_monster(0,"bat_cc2",100,92,"Balance Flag",20403,"Tierra_Boss::OnNeutralBreak");
 	}
-	bg_rankpoints(BGR_BOSS_FLAGS,1,$@flag_boss);
+	callfunc("F_BGRankpoints",BGR_BOSS_FLAGS,1,$@flag_boss);
 	end;
 
 OnTimer600000:
@@ -163,7 +163,7 @@ OnEnd:
 	end;
 }
 
--	script	Guillaume_Boss	-1,{
+	script	Guillaume_Boss	-1,{
 	end;
 
 OnSummon:
@@ -202,7 +202,7 @@ OnBoss:
 	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
 	set .Boss, 0;
 	if (playerattached())
-		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
+		callfunc("F_BGRankpoints",BGR_BOSS_KILLED,1,$@boss_killed);
 	if (getvariableofnpc(.guillaume_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
 		donpcevent "Tierra_Boss::OnMatchEnd";
 	else
@@ -213,7 +213,7 @@ OnBoss:
 	end;
 }
 
--	script	Croix_Boss	-1,{
+	script	Croix_Boss	-1,{
 	end;
 
 OnSummon:
@@ -252,7 +252,7 @@ OnBoss:
 	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
 	set .Boss, 0;
 	if (playerattached())
-		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
+		callfunc("F_BGRankpoints",BGR_BOSS_KILLED,1,$@boss_killed);
 	if (getvariableofnpc(.croix_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
 		donpcevent "Tierra_Boss::OnMatchEnd";
 	else
@@ -263,7 +263,7 @@ OnBoss:
 	end;
 }
 
--	script	Balance_Flag	-1,{
+	script	Balance_Flag	-1,{
 	end;
 
 OnBGStart:

@@ -633,6 +633,9 @@ void party_member_joined( map_session_data& sd ){
 
 	if (i < MAX_PARTY) {
 		p->data[i].sd = &sd;
+		p->data[i].hp = sd.battle_status.hp;
+			p->data[i].x = sd.x;
+		p->data[i].y = sd.y;
 	} else
 		sd.status.party_id = 0; //He does not belongs to the party really?
 }
@@ -682,7 +685,7 @@ int32 party_member_added(int32 party_id,uint32 account_id,uint32 char_id, int32 
 		sd2 = p->data[i].sd;
 
 		if( sd2 && sd2->status.account_id != account_id && sd2->status.char_id != char_id )
-			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp, sd2->battle_status.sp, sd2->battle_status.max_sp );
+			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp );
 	}
 
 	clif_party_hp( *sd );
@@ -1037,6 +1040,11 @@ int32 party_recv_movemap( int32 party_id, uint32 account_id, uint32 char_id, int
 	m->lv = lv;
 	//Check if they still exist on this map server
 	p->data[i].sd = party_sd_check(party_id, account_id, char_id);
+	if( p->data[i].sd != nullptr ){
+		p->data[i].hp = p->data[i].sd->battle_status.hp;
+			p->data[i].x = p->data[i].sd->x;
+		p->data[i].y = p->data[i].sd->y;
+	}
 
 	clif_party_info( *p );
 

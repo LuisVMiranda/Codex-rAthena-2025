@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Tierra_TI	-1,{
+	script	Tierra_TI	-1,{
 	end;
 
 OnInit:
@@ -88,7 +88,7 @@ OnStart:
 	initnpctimer;
 	set .Team1_Score, 0;
 	set .Team2_Score, 0;
-	donpceventall "OnEmblemTI";
+	donpcevent "BG_Tierra_TI::OnEmblemTI";
 	sleep 2100;
 	bg_warp $@BG_Team1,"region_8",29,49;
 	bg_warp $@BG_Team2,"region_8",70,50;
@@ -196,7 +196,7 @@ OnTouch:
 	if (.@Points > 0) {
 		emotion ET_BEST;
 		specialeffect 622;
-		bg_rankpoints(BGR_SKULLS,1,$@skulls*.@Points);
+		callfunc("F_BGRankpoints",BGR_SKULLS,1,$@skulls*.@Points);
 		.@Score = getvariableofnpc(.Team1_Score,"Tierra_TI") + .@Points;
 		.@Score2 = getvariableofnpc(.Team2_Score,"Tierra_TI");
 		if (.@Score > .@condition) set .@Score, .@condition;
@@ -244,7 +244,7 @@ OnTouch:
 	if (.@Points > 0) {
 		emotion ET_BEST;
 		specialeffect 622;
-		bg_rankpoints(BGR_SKULLS,1,$@skulls*.@Points);
+		callfunc("F_BGRankpoints",BGR_SKULLS,1,$@skulls*.@Points);
 		.@Score = getvariableofnpc(.Team2_Score,"Tierra_TI") + .@Points;
 		.@Score2 = getvariableofnpc(.Team1_Score,"Tierra_TI");
 		if (.@Score > .@condition) .@Score = .@condition;

@@ -106,6 +106,7 @@ void vending_closevending(map_session_data* sd)
 
 		sd->state.vending = false;
 		sd->vender_id = 0;
+		sd->extended_vend.nameid = 0;
 		clif_closevendingboard( *sd, AREA_WOS, nullptr );
 		idb_remove(vending_db, sd->status.char_id);
 	}
@@ -149,6 +150,79 @@ static double vending_calc_tax(map_session_data *sd, double zeny)
 
 	return zeny;
 }
+
+static bool vending_is_currency_allowed(t_itemid nameid)
+{
+	if (!battle_config.extended_vending_enable)
+		return false;
+
+	if (nameid == 0)
+		return true;
+
+	return item_db.find(nameid) != nullptr;
+}
+
+void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
+{
+	sd.extended_vend.level = skill_lv;
+
+	if (!battle_config.extended_vending_enable) {
+		sd.extended_vend.nameid = 0;
+		clif_openvendingreq(sd, 2 + skill_lv);
+		return;
+	}
+
+	PACKET_ZC_MAKINGARROW_LIST* packet = reinterpret_cast<PACKET_ZC_MAKINGARROW_LIST*>(packet_buffer);
+	packet->packetType = HEADER_ZC_MAKINGARROW_LIST;
+	packet->packetLength = sizeof(*packet);
+
+	int32 count = 0;
+	
+	for (int32 i = 0; i < MAX_INVENTORY; ++i) {
+		t_itemid nameid = sd.inventory.u.items_inventory[i].nameid;
+		if (!nameid)
+			continue;
+		if (!sd.inventory.u.items_inventory[i].identify)
+			continue;
+		if (!itemdb_cantrade(&sd.inventory.u.items_inventory[i], pc_get_group_level(&sd), pc_get_group_level(&sd)))
+			continue;
+		bool already = false;
+		for (int32 k = 0; k < count; ++k) {
+			if (packet->items[k].itemId == nameid) {
+				already = true;
+				break;
+			}
+		}
+		if (already)
+			continue;
+		packet->items[count++].itemId = nameid;
+		packet->packetLength += sizeof(packet->items[0]);
+	}
+
+	if (count <= 0) {
+		clif_skill_fail(sd, MC_VENDING);
+		sd.state.workinprogress = WIP_DISABLE_NONE;
+		return;
+	}
+
+	clif_send(packet, packet->packetLength, &sd, SELF);
+	sd.menuskill_id = MC_VENDING;
+	sd.menuskill_val = count;
+}
+
+void vending_select_currency(map_session_data& sd, t_itemid nameid)
+{
+	if (!vending_is_currency_allowed(nameid)) {
+		sd.extended_vend.nameid = 0;
+		clif_skill_fail(sd, MC_VENDING);
+		sd.state.workinprogress = WIP_DISABLE_NONE;
+		return;
+	}
+
+	sd.extended_vend.nameid = nameid;
+	clif_openvendingreq(sd, 2 + sd.extended_vend.level);
+}
+
 
 /**
  * Purchase item(s) from a shop
@@ -252,10 +326,39 @@ void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8
 		}
 	}
 
-	pc_payzeny(sd, (int32)z, LOG_TYPE_VENDING, vsd->status.char_id);
-	achievement_update_objective(sd, AG_SPEND_ZENY, 1, (int32)z);
-	z = vending_calc_tax(sd, z);
-	pc_getzeny(vsd, (int32)z, LOG_TYPE_VENDING, sd->status.char_id);
+	const t_itemid currency = battle_config.extended_vending_enable ? vsd->extended_vend.nameid : 0;
+	if (currency > 0) {
+		int32 total_currency = 0;
+		for (int32 k = 0; k < MAX_INVENTORY; ++k) {
+			if (sd->inventory.u.items_inventory[k].nameid == currency)
+				total_currency += sd->inventory.u.items_inventory[k].amount;
+		}
+		if (total_currency < z) {
+			clif_buyvending(*sd, 0, 0, PURCHASEMC_NO_ZENY);
+			return;
+		}
+		if (pc_checkadditem(vsd, currency, (int32)z) == CHKADDITEM_OVERAMOUNT)
+			return;
+		for (int32 k = 0, need = (int32)z; k < MAX_INVENTORY && need > 0; ++k) {
+			if (sd->inventory.u.items_inventory[k].nameid != currency)
+				continue;
+			int32 rm = min(need, (int32)sd->inventory.u.items_inventory[k].amount);
+			if (rm > 0) {
+				pc_delitem(sd, k, rm, 0, 0, LOG_TYPE_VENDING);
+				need -= rm;
+			}
+		}
+		item it{};
+		it.nameid = currency;
+		it.identify = 1;
+		it.amount = (int16)z;
+		pc_additem(vsd, &it, it.amount, LOG_TYPE_VENDING);
+		} else {
+		pc_payzeny(sd, (int32)z, LOG_TYPE_VENDING, vsd->status.char_id);
+		achievement_update_objective(sd, AG_SPEND_ZENY, 1, (int32)z);
+		z = vending_calc_tax(sd, z);
+		pc_getzeny(vsd, (int32)z, LOG_TYPE_VENDING, sd->status.char_id);
+	}
 
 	for( i = 0; i < count; i++ ) {
 		int16 amount = *(uint16*)(data + 4*i + 0);
@@ -345,6 +448,14 @@ int8 vending_openvending( map_session_data& sd, const char* message, const uint8
 	}
 
 	vending_skill_lvl = pc_checkskill(&sd, MC_VENDING);
+
+	if (battle_config.extended_vending_enable && !vending_is_currency_allowed(sd.extended_vend.nameid)) {
+		clif_skill_fail( sd, MC_VENDING );
+		sd.state.prevend = 0;
+		sd.state.workinprogress = WIP_DISABLE_NONE;
+		clif_openvending_ack( sd, OPENSTORE2_FAILED );
+		return 1;
+	}
 	
 	// skill level and cart check
 	if( !vending_skill_lvl || !pc_iscarton(&sd) ) {

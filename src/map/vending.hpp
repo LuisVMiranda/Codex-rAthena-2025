@@ -28,6 +28,8 @@ void vending_closevending(map_session_data* sd);
 int8 vending_openvending( map_session_data& sd, const char* message, const uint8* data, int32 count, struct s_autotrader *at );
 void vending_vendinglistreq(map_session_data* sd, int32 id);
 void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8* data, int32 count);
+void vending_openvendingreq(map_session_data& sd, uint16 skill_lv);
+void vending_select_currency(map_session_data& sd, t_itemid nameid);
 bool vending_search( const map_session_data* sd, t_itemid nameid );
 bool vending_searchall( const map_session_data* sd, const s_search_store_search* s );
 void vending_update(map_session_data &sd);

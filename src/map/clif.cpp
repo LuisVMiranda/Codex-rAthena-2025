@@ -8256,7 +8256,7 @@ void clif_party_hp( const map_session_data& sd ){
 #endif
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -13641,6 +13641,9 @@ void clif_parse_SelectArrow(int32 fd,map_session_data *sd) {
 			break;
 		case NC_MAGICDECOY:
 			skill_magicdecoy(*sd,p->itemId);
+			break;
+		case MC_VENDING:
+			vending_select_currency(*sd, p->itemId);
 			break;
 	}
 

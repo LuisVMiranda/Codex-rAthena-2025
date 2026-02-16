@@ -20,7 +20,7 @@ Last updated: 2026-02-15
 | fakeIcon script command | **Implemented** | **Ported from local diff** | `src/map/script.cpp` (`BUILDIN_FUNC(fakeIcon)` + `BUILDIN_DEF(fakeIcon,"iiii")`) | Script API is available in buildins table. |
 | Sonic Blow / Arrow Vulcan rewrite | **Partially Implemented** | **Split: core upstream + local diff port** | Core skills exist upstream (`db/re/skill_db.yml`, `db/pre-re/skill_db.yml`), while local diff hit-count rewrite exists only as import template override in `db/import-tmpl/skill_db.yml` | Base skills are upstream; legacy multi-hit rewrite is staged but not fully validated for parity. |
 | VIP icon runtime wiring | **Partially Implemented** | **Split: core upstream + local diff port** | Core VIP status runtime exists (`src/map/clif.cpp` uses `SC_VIPSTATE`; constants in `src/map/status.hpp` / `src/map/script_constants.hpp`), local diff addition is template-only in `db/import-tmpl/status.yml` | Template instructs copying to active DB; full deployment depends on active import DB + client data rollout. |
-| Battleground EasyCore rev21-24 (full parity) | **Partially Implemented** | **Split: core upstream + local diff port** | Core battleground system exists (`npc/battleground/bg_common.txt`, `db/import-tmpl/battleground_db.yml`), legacy package remains external in `diffs/Battleground-EasyCore-21-24 [OK]/` | Upstream BG is present, but full rev24 custom parity is not fully ported. |
+| Battleground EasyCore rev21-24 (full parity) | **Partially Implemented** | **Split: core upstream + local diff port** | Core battleground system exists (`npc/battleground/bg_common.txt`, `db/import-tmpl/battleground_db.yml`), legacy package remains external in `diffs/Battleground-EasyCore-21-24/` | Upstream BG is present, but full rev24 custom parity is not fully ported. |
 | ExtendedVending v4 | **Not Implemented** | **Local diff not ported** | Only legacy diff artifact exists at `diffs/ExtendedVending-v4/Server Files/fe4234cd39e341985b1006a371acf9119a3ae248.diff`; no mapped runtime port markers in `src/` | Requires manual re-port to current vending internals. |
 
 ## Upstream vs local-diff split (quick view)
@@ -75,3 +75,20 @@ Validation run performed in this workspace after the rename/diff integration pas
 - Runtime `--run-once` checks for built servers additionally require:
   1. populated `conf/import/*` configuration files, and
   2. reachable MySQL instance matching `conf/inter_athena.conf` / server conf credentials.
+
+## Validation Update: Extended vending/SPB/showrecovery/getmessage adjustments
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake -S . -B build` | **PASS** | Configure/generate completed successfully. | Global CMake configuration |
+| `cmake --build build -j$(nproc)` (first pass) | **FAIL** | `src/map/vending.cpp: error: 'Battle_Config' has no member named 'item_zeny'` while validating the first extended-vending port attempt. | `src/map/vending.cpp` / `map-server` target |
+| `cmake --build build --target map-server -j4` (after fix) | **PASS** | `Built target map-server` (vending module linked successfully after removing invalid config-field assumptions). | `src/map/vending.cpp`, `src/map/clif.cpp`, `src/map/intif.cpp`, `src/map/skills/merchant/skill_vending.cpp` |
+| `cmake --build build -j$(nproc)` (final pass) | **PASS** | Full tree completed, including `map-server`. | Full server/tool targets |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 30s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC script files, and MySQL unavailable at `127.0.0.1:3306`. | `map-server` runtime bootstrap |
+
+### Notes
+- Extended vending diagnostics were iterated in two passes: first compile failure identified invalid battle-config references from legacy assumptions, then reworked to current-tree-compatible currency selection storage and purchase flow.
+- `src/custom/*` scaffold headers/includes remain present and are now prepared to be versioned for deterministic builds in this branch.

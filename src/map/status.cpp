@@ -14144,6 +14144,12 @@ int32 status_change_end( block_list* bl, enum sc_type type, int32 tid ){
 	if (type == SC_STONEWAIT && tid != INVALID_TIMER)
 		status_change_start(bl, bl, SC_STONE, 100, val1, val2, 0, 0, val3, SCSTART_NOAVOID);
 
+	if( sd != nullptr && sd->status.party_id > 0 && status_should_refresh_party_buffs(type) ){
+		party_data* p = party_search(sd->status.party_id);
+		if( p != nullptr )
+			clif_party_info(*p, nullptr);
+	}
+
 	return 1;
 }
 

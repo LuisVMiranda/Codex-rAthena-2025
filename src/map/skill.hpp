@@ -2912,6 +2912,9 @@ struct s_skill_animation_environment {
 	int8 base_dir;
 };
 
+void skill_readdb_animation( char* dbsubpath, bool enable_grf );
+void skill_animation_clear_db();
+
 const s_skill_animation_entry* skill_animation_get(uint16 skill_id);
 int32 skill_animation_step_direction(int32 base_dir, uint8 step);
 TIMER_FUNC(skill_play_animation);

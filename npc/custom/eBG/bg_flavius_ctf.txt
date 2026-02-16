@@ -71,9 +71,9 @@ OnTeam1Die:
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team2_Flag", .@x, .@y;
 		mapannounce "bat_b02","Omega Flag Droped by [ " + strcharinfo(0) + " ]",1,0xFF0000;
-		bg_rankpoints(BGR_CTF_DROPPED,1,0);
+		callfunc("F_BGRankpoints",BGR_CTF_DROPPED,1,0);
 		if (killedrid != getcharid(3))
-			bg_rankpoints(BGR_FAME,0,1,killerrid);
+			callfunc("F_BGRankpoints",BGR_FAME,0,1,killerrid);
 		set getvariableofnpc(.Flag_Status,"Team2_Flag"), 1; // OnFloor
 		initnpctimer "Team2_Flag";
 		enablenpc "Team2_Flag";
@@ -90,9 +90,9 @@ OnTeam2Die:
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team1_Flag", .@x, .@y;
 		mapannounce "bat_b02","Alpha Flag Droped by [ " + strcharinfo(0) + " ]",1,0x0000FF;
-		bg_rankpoints(BGR_CTF_DROPPED,1,0);
+		callfunc("F_BGRankpoints",BGR_CTF_DROPPED,1,0);
 		if (killedrid != getcharid(3))
-			bg_rankpoints(BGR_FAME,0,1,killerrid);
+			callfunc("F_BGRankpoints",BGR_FAME,0,1,killerrid);
 		set getvariableofnpc(.Flag_Status,"Team1_Flag"), 1; // OnFloor
 		initnpctimer "Team1_Flag";
 		enablenpc "Team1_Flag";
@@ -265,7 +265,7 @@ OnTouch:
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b02","Alpha Crystal Taken by [ " + strcharinfo(0) + " ]",1,0x0000FF;
-		bg_rankpoints(BGR_CTF_TAKEN,1,1);
+		callfunc("F_BGRankpoints",BGR_CTF_TAKEN,1,1);
 		disablenpc "Team1_Flag";
 		addtimer 2100, "Flavius_CTF::OnAlphaFlash";
 		stopnpctimer;
@@ -274,13 +274,13 @@ OnTouch:
 			set getvariableofnpc(.Flag_Carrier,"Team2_Flag"),0;
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Omega Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
-			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
+			callfunc("F_BGRankpoints",BGR_CTF_CAPTURED,1,1);
 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam1Score";
 		} else if (.Flag_Status == 1) {
 			mapannounce "bat_b02","Alpha Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
-			bg_rankpoints(BGR_FAME,0,1);
+			callfunc("F_BGRankpoints",BGR_FAME,0,1);
 			disablenpc "Team1_Flag";
 			sleep 2100;
 			movenpc "Team1_Flag",328,150; // Back to Base
@@ -327,7 +327,7 @@ OnTouch:
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b02","Omega Crystal Taken by [ " + strcharinfo(0) + " ]",1,0xFF0000;
-		bg_rankpoints(BGR_CTF_TAKEN,1,1);
+		callfunc("F_BGRankpoints",BGR_CTF_TAKEN,1,1);
 		disablenpc "Team2_Flag";
 		addtimer 2100, "Flavius_CTF::OnOmegaFlash";
 		stopnpctimer;
@@ -336,13 +336,13 @@ OnTouch:
 			set getvariableofnpc(.Flag_Carrier,"Team1_Flag"),0;
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Alpha Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
-			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
+			callfunc("F_BGRankpoints",BGR_CTF_CAPTURED,1,1);
 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam2Score";
 		} else if (.Flag_Status == 1) {
 			mapannounce "bat_b02","Omega Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
-			bg_rankpoints(BGR_FAME,0,1);
+			callfunc("F_BGRankpoints",BGR_FAME,0,1);
 			disablenpc "Team2_Flag";
 			sleep 2100;
 			movenpc "Team2_Flag",62,150; // Back to Base

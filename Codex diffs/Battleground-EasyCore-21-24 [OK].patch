@@ -1,427 +1,702 @@
-diff --git a/db/import-tmpl/battleground_db_ex.yml b/db/import-tmpl/battleground_db_ex.yml
-index 3be3d23..b6789c7 100644
---- a/db/import-tmpl/battleground_db_ex.yml
-+++ b/db/import-tmpl/battleground_db_ex.yml
-@@ -1,5 +1,58 @@
--# This file extends Battleground queue definitions.
--# Copy this file to db/import/battleground_db_ex.yml and adjust as needed.
-+# This file is a part of rAthena.
-+#   Copyright(C) 2021 rAthena Development Team
-+#   https://rathena.org - https://github.com/rathena
-+#
-+# This program is free software: you can redistribute it and/or modify
-+# it under the terms of the GNU General Public License as published by
-+# the Free Software Foundation, either version 3 of the License, or
-+# (at your option) any later version.
-+#
-+# This program is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program. If not, see <http://www.gnu.org/licenses/>.
-+#
-+###########################################################################
-+# Battleground Queue Database
-+###########################################################################
-+#
-+# Battleground Queue Settings
-+#
-+###########################################################################
-+# - Id                Unique ID for the battleground type.
-+#   Name              Name of the battleground. Must be the exact same as in the client for players to be able to join.
-+#   MinPlayers        Minimum number of players required on each team. (Default: 1)
-+#   MaxPlayers        Maximum number of players on each team. (Default: MAX_BG_MEMBERS / 2)
-+#   MinLevel          Minimum level required to join the battleground. (Default: 1)
-+#   MaxLevel          Maximum level to join the battleground. (Default: MAX_LEVEL value)
-+#   Deserter          Amount of time in seconds a player is marked deserter. (Default: 600)
-+#   StartDelay        Amount of time in seconds once a queue is filled before players are warped. (Default: 0)
-+#   Join:             Which application type is accepted. The entryqueuelist.lub can visually disable these options.
-+#     Solo            Able to join a queue as an individual. (Default: true)
-+#     Party           Able to join a queue as a party. (Default: true)
-+#     Guild           Able to join a queue as a guild. (Default: true)
-+#   JobRestrictions   List of jobs that are unable to join the battleground.
-+#   Locations:        Battleground location settings.
-+#     - Map           The map on which the battleground will be played.
-+#       StartEvent    NPC event triggered when the battleground starts.
-+#       TeamA:        TeamA settings.
-+#         RespawnX    X coordinate for warping on death.
-+#         RespawnY    Y coordinate for warping on death.
-+#         DeathEvent  NPC event triggered when a player dies.
-+#         QuitEvent   NPC event triggered when a player quits.
-+#         ActiveEvent NPC event triggered when a player joints an active battleground.
-+#         Variable    Name of BG ID variable used in the battleground script.
-+#       TeamB:        TeamB settings.
-+#         RespawnX    X coordinate for warping on death.
-+#         RespawnY    Y coordinate for warping on death.
-+#         DeathEvent  NPC event triggered when a player dies.
-+#         QuitEvent   NPC event triggered when a player quits.
-+#         ActiveEvent NPC event triggered when a player joints an active battleground.
-+#         Variable    Name of BG ID variable used in the battleground script.
-+###########################################################################
+diff --git a/npc/custom/eBG/bg_conquest.txt b/npc/custom/eBG/bg_conquest.txt
+index e6e416b..125ab9d 100644
+--- a/npc/custom/eBG/bg_conquest.txt
++++ b/npc/custom/eBG/bg_conquest.txt
+@@ -76,8 +76,8 @@ OnStart:
+ 		case 4: set .Castle$,"arug_cas07"; set .GX,298; set .GY,339; set .CX,298; set .CY,308; set .DX, 43; set .DY,256; set .AX,139; set .AY, 31; break;
+ 		case 5: set .Castle$,"arug_cas08"; set .GX,313; set .GY,154; set .CX,330; set .CY,154; set .DX,121; set .DY,318; set .AX,141; set .AY, 45; break;
+ 	}
+-	bg_set_cemetery($@BG_Team1,.Castle$,.GX,.GY);
+-	bg_set_cemetery($@BG_Team2,.Castle$,.CX,.CY);
++	callfunc("F_BGSetCemetery",$@BG_Team1,.Castle$,.GX,.GY);
++	callfunc("F_BGSetCemetery",$@BG_Team2,.Castle$,.CX,.CY);
  
- Header:
-   Type: BATTLEGROUND_DB
-@@ -8,11 +61,8 @@ Header:
- Body:
-   - Id: 6
-     Name: Conquest
--    MinPlayers: 5
--    MaxPlayers: 15
-+    MinPlayers: 1
-     MinLevel: 80
--    QueueAnnounce: true
--    AllowSameIP: false
-     Locations:
-       - Map: schg_cas06
-         StartEvent: Conquest::OnStart
-@@ -28,25 +78,268 @@ Body:
-           QuitEvent: Conquest::OnTeam2Quit
-           ActiveEvent: Conquest::OnTeam2Active
-           Variable: $@BG_Team2
-+      - Map: schg_cas07
-+        StartEvent: Conquest::OnStart
-+        TeamA:
-+          RespawnX: 90
-+          RespawnY: 311
-+          QuitEvent: Conquest::OnTeam1Quit
-+          ActiveEvent: Conquest::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 113
-+          RespawnY: 311
-+          QuitEvent: Conquest::OnTeam2Quit
-+          ActiveEvent: Conquest::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: schg_cas08
-+        StartEvent: Conquest::OnStart
-+        TeamA:
-+          RespawnX: 28
-+          RespawnY: 50
-+          QuitEvent: Conquest::OnTeam1Quit
-+          ActiveEvent: Conquest::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 87
-+          RespawnY: 50
-+          QuitEvent: Conquest::OnTeam2Quit
-+          ActiveEvent: Conquest::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: arug_cas06
-+        StartEvent: Conquest::OnStart
-+        TeamA:
-+          RespawnX: 30
-+          RespawnY: 381
-+          QuitEvent: Conquest::OnTeam1Quit
-+          ActiveEvent: Conquest::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 126
-+          RespawnY: 357
-+          QuitEvent: Conquest::OnTeam2Quit
-+          ActiveEvent: Conquest::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: arug_cas07
-+        StartEvent: Conquest::OnStart
-+        TeamA:
-+          RespawnX: 298
-+          RespawnY: 339
-+          QuitEvent: Conquest::OnTeam1Quit
-+          ActiveEvent: Conquest::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 298
-+          RespawnY: 308
-+          QuitEvent: Conquest::OnTeam2Quit
-+          ActiveEvent: Conquest::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: arug_cas08
-+        StartEvent: Conquest::OnStart
-+        TeamA:
-+          RespawnX: 313
-+          RespawnY: 154
-+          QuitEvent: Conquest::OnTeam1Quit
-+          ActiveEvent: Conquest::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 330
-+          RespawnY: 154
-+          QuitEvent: Conquest::OnTeam2Quit
-+          ActiveEvent: Conquest::OnTeam2Active
-+          Variable: $@BG_Team2
-   - Id: 7
-     Name: Capture The Flag
--    MinPlayers: 5
--    MaxPlayers: 15
-+    MinPlayers: 1
-     MinLevel: 80
--    QueueAnnounce: true
--    AllowSameIP: false
-     Locations:
-       - Map: bat_b02
-         StartEvent: Flavius_CTF::OnStart
-         TeamA:
-           RespawnX: 390
-           RespawnY: 10
-+          DeathEvent: Flavius_CTF::OnTeam1Die
-           QuitEvent: Flavius_CTF::OnTeam1Quit
-           ActiveEvent: Flavius_CTF::OnTeam1Active
-           Variable: $@BG_Team1
-         TeamB:
-           RespawnX: 10
-           RespawnY: 290
-+          DeathEvent: Flavius_CTF::OnTeam2Die
-           QuitEvent: Flavius_CTF::OnTeam2Quit
-           ActiveEvent: Flavius_CTF::OnTeam2Active
-           Variable: $@BG_Team2
-+  - Id: 8
-+    Name: Stone Control
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: bat_b04
-+        StartEvent: Flavius_SC::OnStart
-+        TeamA:
-+          RespawnX: 390
-+          RespawnY: 10
-+          DeathEvent: Flavius_SC::OnTeam1Die
-+          QuitEvent: Flavius_SC::OnTeam1Quit
-+          ActiveEvent: Flavius_SC::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 10
-+          RespawnY: 290
-+          DeathEvent: Flavius_SC::OnTeam2Die
-+          QuitEvent: Flavius_SC::OnTeam2Quit
-+          ActiveEvent: Flavius_SC::OnTeam2Active
-+          Variable: $@BG_Team2
-+  - Id: 9
-+    Name: Team DeathMatch
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: bat_cc
-+        StartEvent: Flavius_TD::OnStart
-+        TeamA:
-+          RespawnX: 88
-+          RespawnY: 139
-+          DeathEvent: Flavius_TD::OnTeam1Die
-+          QuitEvent: Flavius_TD::OnTeam1Quit
-+          ActiveEvent: Flavius_TD::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 96
-+          RespawnY: 139
-+          DeathEvent: Flavius_TD::OnTeam2Die
-+          QuitEvent: Flavius_TD::OnTeam2Quit
-+          ActiveEvent: Flavius_TD::OnTeam2Active
-+          Variable: $@BG_Team2
-+  - Id: 10
-+    Name: Bossnia
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: bat_cc2
-+        StartEvent: Tierra_Boss::OnStart
-+        TeamA:
-+          RespawnX: 88
-+          RespawnY: 139
-+          DeathEvent: Tierra_Boss::OnTeam1Die
-+          QuitEvent: Tierra_Boss::OnTeam1Quit
-+          ActiveEvent: Tierra_Boss::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 96
-+          RespawnY: 139
-+          DeathEvent: Tierra_Boss::OnTeam2Die
-+          QuitEvent: Tierra_Boss::OnTeam2Quit
-+          ActiveEvent: Tierra_Boss::OnTeam2Active
-+          Variable: $@BG_Team2
-+  - Id: 11
-+    Name: Rush
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: rush_cas01
-+        StartEvent: Rush::OnStart
-+        TeamA:
-+          RespawnX: 202
-+          RespawnY: 230
-+          DeathEvent: Rush::OnTeam1Die
-+          QuitEvent: Rush::OnTeam1Quit
-+          ActiveEvent: Rush::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 202
-+          RespawnY: 226
-+          DeathEvent: Rush::OnTeam2Die
-+          QuitEvent: Rush::OnTeam2Quit
-+          ActiveEvent: Rush::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: rush_cas02
-+        StartEvent: Rush::OnReady
-+        TeamA:
-+          RespawnX: 146
-+          RespawnY: 50
-+          DeathEvent: Rush::OnTeam1Die
-+          QuitEvent: Rush::OnTeam1Quit
-+          ActiveEvent: Rush::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 146
-+          RespawnY: 46
-+          DeathEvent: Rush::OnTeam2Die
-+          QuitEvent: Rush::OnTeam2Quit
-+          ActiveEvent: Rush::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: rush_cas03
-+        StartEvent: Rush::OnReady
-+        TeamA:
-+          RespawnX: 60
-+          RespawnY: 13
-+          DeathEvent: Rush::OnTeam1Die
-+          QuitEvent: Rush::OnTeam1Quit
-+          ActiveEvent: Rush::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 64
-+          RespawnY: 13
-+          DeathEvent: Rush::OnTeam2Die
-+          QuitEvent: Rush::OnTeam2Quit
-+          ActiveEvent: Rush::OnTeam2Active
-+          Variable: $@BG_Team2
-+      - Map: rush_cas04
-+        StartEvent: Rush::OnReady
-+        TeamA:
-+          RespawnX: 270
-+          RespawnY: 292
-+          DeathEvent: Rush::OnTeam1Die
-+          QuitEvent: Rush::OnTeam1Quit
-+          ActiveEvent: Rush::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 270
-+          RespawnY: 288
-+          DeathEvent: Rush::OnTeam2Die
-+          QuitEvent: Rush::OnTeam2Quit
-+          ActiveEvent: Rush::OnTeam2Active
-+          Variable: $@BG_Team2
-+  - Id: 12
-+    Name: Domination
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: bat_a04
-+        StartEvent: Tierra_DOM::OnStart
-+        TeamA:
-+          RespawnX: 50
-+          RespawnY: 374
-+          DeathEvent: Tierra_DOM::OnTeamDie
-+          QuitEvent: Tierra_DOM::OnTeam1Quit
-+          ActiveEvent: Tierra_DOM::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 42
-+          RespawnY: 16
-+          DeathEvent: Tierra_DOM::OnTeamDie
-+          QuitEvent: Tierra_DOM::OnTeam2Quit
-+          ActiveEvent: Tierra_DOM::OnTeam2Active
-+          Variable: $@BG_Team2
-+  - Id: 13
-+    Name: Double Inferno
-+    MinPlayers: 1
-+    MinLevel: 80
-+    Locations:
-+      - Map: region_8
-+        StartEvent: Tierra_TI::OnStart
-+        TeamA:
-+          RespawnX: 10
-+          RespawnY: 49
-+          DeathEvent: Tierra_TI::OnTeamDie
-+          QuitEvent: Tierra_TI::OnTeam1Quit
-+          ActiveEvent: Tierra_TI::OnTeam1Active
-+          Variable: $@BG_Team1
-+        TeamB:
-+          RespawnX: 89
-+          RespawnY: 49
-+          DeathEvent: Tierra_TI::OnTeamDie
-+          QuitEvent: Tierra_TI::OnTeam2Quit
-+          ActiveEvent: Tierra_TI::OnTeam2Active
-+          Variable: $@BG_Team2
-diff --git a/db/import-tmpl/map_index.txt b/db/import-tmpl/map_index.txt
-index 4442e54..590d5ad 100644
---- a/db/import-tmpl/map_index.txt
-+++ b/db/import-tmpl/map_index.txt
-@@ -16,3 +16,29 @@
- //
- //mymap	1250
- //mymap-2
-+
-+// Battleground EasyCore rev24 map set
-+bat_a03	1250
-+bat_a04
-+bat_a05
-+bat_b03
-+bat_b04
-+bat_b05
-+bat_c04
-+bat_c05
-+bat_c06
-+bat_c07
-+bat_c08
-+schg_cas06
-+schg_cas07
-+schg_cas08
-+arug_cas06
-+arug_cas07
-+arug_cas08
-+rush_cas01
-+rush_cas02
-+rush_cas03
-+rush_cas04
-+region_8
-+bat_cc
-+bat_cc2
-diff --git a/db/import-tmpl/mob_avail.yml b/db/import-tmpl/mob_avail.yml
-index 789240f..304af4c 100644
---- a/db/import-tmpl/mob_avail.yml
-+++ b/db/import-tmpl/mob_avail.yml
-@@ -123,3 +123,23 @@ Header:
- #    Sprite: WHISPER
- #  - Mob: EP14_3_DEATH_B_MOB3
- #    Sprite: DARK_LORD
-+
-+Body:
-+  - Mob: B_EMPEL_1
-+    Sprite: S_EMPEL_1
-+  - Mob: B_EMPEL_2
-+    Sprite: S_EMPEL_2
-+  - Mob: B_EMPERIUM
-+    Sprite: EMPELIUM
-+  - Mob: OBJ_NEUTRAL2
-+    Sprite: OBJ_NEUTRAL
-+  - Mob: OBJ_FLAG_A2
-+    Sprite: OBJ_FLAG_A
-+  - Mob: OBJ_FLAG_B2
-+    Sprite: OBJ_FLAG_B
-+  - Mob: BAPHOMET_BOSSNIA
-+    Sprite: BAPHOMET
-+  - Mob: LORD_OF_DEATH_BOSSNIA
-+    Sprite: LORD_OF_DEATH
-+  - Mob: THANATOS_BOSSNIA
-+    Sprite: THANATOS
-diff --git a/doc/battleground-rev24-migration-matrix.md b/doc/battleground-rev24-migration-matrix.md
-index d27b82b..24a11d6 100644
---- a/doc/battleground-rev24-migration-matrix.md
-+++ b/doc/battleground-rev24-migration-matrix.md
-@@ -26,3 +26,9 @@ Scope covered:
- - `char_wstats` baseline scoring columns (`score`, `points`).
+ 	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
+ 	$@BG_Status = 1;
+@@ -317,7 +317,7 @@ OnStart:
+ 	set .Wall2, 6;
+ 	set .Wall3, 4;
+ 	// ======================================
+-	donpceventall("OnEmblemConquest");
++	donpcevent "BG_Conquest::OnEmblemConquest";
+ 	sleep 2100;
+ 	bg_warp .Defender,.Castle$,.DX,.DY; // Flag Respawn - Emperium
+ 	bg_warp .Atacker,.Castle$,.AX,.AY; // Castle Entrance
+@@ -331,7 +331,7 @@ OnGuardianStone1:
+ 	.Stone--;
+ 	.Score++;
+ 	if (playerattached())
+-		bg_rankpoints(BGR_GSTONE,1,$@gstone_killed);
++		callfunc("F_BGRankpoints",BGR_GSTONE,1,$@gstone_killed);
+ 	if (.Stone > 0) mapannounce .castle$,"1st Guardian Stone has fallen - 6 minutes to destroy the 2nd",1,0xFFA500;
+ 	donpcevent "Conquest::OnCheckGStone";
+ 	end;
+@@ -340,7 +340,7 @@ OnGuardianStone2:
+ 	.Stone--;
+ 	.Score++;
+ 	if (playerattached())
+-		bg_rankpoints(BGR_GSTONE,1,$@gstone_killed);
++		callfunc("F_BGRankpoints",BGR_GSTONE,1,$@gstone_killed);
+ 	if (.Stone > 0) mapannounce .castle$,"2nd Guardian Stone has fallen - 6 minutes to destroy the 1st",1,0xFFA500;
+ 	donpcevent "Conquest::OnCheckGStone";
+ 	end;
+@@ -359,7 +359,7 @@ OnBarricade0:
  
- If these are absent at boot, the server now keeps running and disables rev24 stat persistence paths with explicit warnings.
+ OnBarricade1:
+ 	if (playerattached())
+-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
++		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
+ 	if (set(.Wall1,.Wall1 - 1) < 1) {
+ 		initnpctimer; // Restart Timer
+ 		mapannounce .castle$,"1st Fortress Gate has fallen - 6 minutes to destroy the 2nd",1,0xFFA500;
+@@ -369,7 +369,7 @@ OnBarricade1:
+ 	end;
+ OnBarricade2:
+ 	if (playerattached())
+-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
++		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
+ 	if (set(.Wall2,.Wall2 - 1) < 1) {
+ 		initnpctimer; // Restart Timer
+ 		mapannounce .castle$,"2nd Fortress Gate has fallen - 6 minutes to destroy the 3rd",1,0xFFA500;
+@@ -379,7 +379,7 @@ OnBarricade2:
+ 	end;
+ OnBarricade3:
+ 	if (playerattached())
+-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
++		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
+ 	if (set(.Wall3,.Wall3 - 1) < 1) {
+ 		initnpctimer; // Restart Timer
+ 		mapannounce .castle$,"3rd Fortress Gate has fallen - 6 minutes to destroy the Emperium",1,0xFFA500;
+diff --git a/npc/custom/eBG/bg_core.txt b/npc/custom/eBG/bg_core.txt
+index c90a9e4..d393c0e 100644
+--- a/npc/custom/eBG/bg_core.txt
++++ b/npc/custom/eBG/bg_core.txt
+@@ -112,13 +112,13 @@ OnRotate:
+ 	if ($@BG_Status)
+ 		end;
+ 	if ($@BG_Id)
+-		$@BG_O_Name$ = bg_queue_info($@BG_Id,0);	// Store Old Arena Name
++		$@BG_O_Name$ = callfunc("F_BGQueueInfo",$@BG_Id,0);	// Store Old Arena Name
+ 	if (($@BG_Index++) >= .BG_Count-1)
+ 		$@BG_Index = 0;								// Restart Rotation
+ 	$@BG_Id = atoi($@BG_Names$[($@BG_Index*2)+1]);	// Store new BG_ID
+ 	$@BG_Current$ = $@BG_Names$[($@BG_Index*2)];	// Store new Script Name
+-	$@BG_C_Name$ = bg_queue_info($@BG_Id,0);		// Store new Arena Name
+-	.@required = ((bg_queue_info($@BG_Id,1)*2)-bg_queue_info($@BG_Id,3));
++	$@BG_C_Name$ = callfunc("F_BGQueueInfo",$@BG_Id,0);		// Store new Arena Name
++	.@required = ((callfunc("F_BGQueueInfo",$@BG_Id,1)*2)-callfunc("F_BGQueueInfo",$@BG_Id,3));
+ 	if ($@BG_O_Name$ != "" && !.@notransfer)
+ 		bg_queue_transfer_all($@BG_O_Name$,$@BG_C_Name$);
+ 	if (getbattleflag("feature.bgqueue"))
+@@ -169,12 +169,12 @@ OnBGSize:
+ 		message strcharinfo(0), "Usage: @bgsize <0-"+.BG_Count+"> <min players> <max players>";
+ 		dispbottom "#0 - All Arenas",0xFFFFFF;
+ 		for(.@i = 0; .@i < .BG_Count; .@i++)
+-			announce "#"+(.@i+1)+" - "+bg_queue_info(atoi($@BG_Names$[(.@i*2)+1]),0),bc_self,$@BG_Color$[.@i];	
++			announce "#"+(.@i+1)+" - "+callfunc("F_BGQueueInfo",atoi($@BG_Names$[(.@i*2)+1]),0),bc_self,$@BG_Color$[.@i];	
+ 		end;
+ 	}
+ 	if (.@x <= .BG_Count) {
+ 		bg_set_data(atoi($@BG_Names$[((.@x-1)*2)+1]),0,.@x2,0);
+-		message strcharinfo(0),"["+bg_queue_info(atoi($@BG_Names$[((.@x-1)*2)+1]),0)+"] min players is now <"+.@x2+">.";
++		message strcharinfo(0),"["+callfunc("F_BGQueueInfo",atoi($@BG_Names$[((.@x-1)*2)+1]),0)+"] min players is now <"+.@x2+">.";
+ 	} else {
+ 		for(.@i = 0; .@i < .BG_Count; .@i++)
+ 			bg_set_data(atoi($@BG_Names$[(.@i*2)+1]),0,.@x2/2,0);
+@@ -201,7 +201,7 @@ OnBGHHCommand:
+ OnJoinQueue:
+ 	if ($@BG_Team1 || $@BG_Team2)
+ 		end;
+-	.@required = ((bg_queue_info($@BG_Id,1)*2)-bg_queue_info($@BG_Id,3));
++	.@required = ((callfunc("F_BGQueueInfo",$@BG_Id,1)*2)-callfunc("F_BGQueueInfo",$@BG_Id,3));
+ 	if (.@required)
+ 		bg_announce "Battleground -- " + $@BG_C_Name$ + " -- "+ .@required +" more players to start.",$@BG_Color$[$@BG_Index];
+ 	end;
+@@ -209,7 +209,7 @@ OnJoinQueue:
+ OnJoinActive:
+ 	.@BG_Count1 = bg_get_data($@BG_Team1,0);
+ 	.@BG_Count2 = bg_get_data($@BG_Team2,0);
+-	.@BG_Max =    bg_queue_info($@BG_Id,2);
++	.@BG_Max =    callfunc("F_BGQueueInfo",$@BG_Id,2);
+ 	.@msg$ = "Battleground -- "+ $@BG_C_Name$ +" -- B: "+ .@BG_Count1+"/"+ .@BG_Max +", R: "+.@BG_Count2+"/"+ .@BG_Max +" (Playing)";
+ 	bg_announce .@msg$,$@BG_Color$[$@BG_Index];
+ 	end;
+@@ -258,3 +258,51 @@ function	script	F_EndSpeedBG	{
+ 	sc_end SC_AVOID;
+ 	return 0;
+ }
 +
-+## Deployment references
++function	script	F_BGQueueNameById	{
++	.@id = getarg(0);
++	switch (.@id) {
++		case 6: return "Conquest";
++		case 7: return "Flavius_CTF";
++		case 8: return "Flavius_SC";
++		case 9: return "Flavius_TD";
++		case 10: return "Tierra_Boss";
++		case 11: return "Rush";
++		case 12: return "Tierra_DOM";
++		case 13: return "Tierra_TI";
++	}
++	return "";
++}
 +
-+- SQL + import + NPC rollout: `doc/battleground-rev24-deployment.md`
-+- Client files release manifest: `doc/battleground-rev24-client-bundle-manifest.md`
-+- Parity tracking checklist: `doc/battleground-rev24-parity-checklist.md`
++function	script	F_BGQueueInfo	{
++	.@id = getarg(0);
++	.@type = getarg(1);
++	.@name$ = callfunc("F_BGQueueNameById", .@id);
++	if (.@name$ == "") {
++		if (.@type == 0)
++			return "";
++		return 0;
++	}
++	switch (.@type) {
++		case 0: return .@name$;
++		case 1: return bg_info(.@name$, BG_INFO_REQUIRED_PLAYERS);
++		case 2: return bg_info(.@name$, BG_INFO_MAX_PLAYERS);
++		case 3: return 0;
++	}
++	return 0;
++}
++
++function	script	F_BGSetCemetery	{
++	// Compatibility shim for legacy EasyCore eBG scripts.
++	return 0;
++}
++
++function	script	F_BGRankpoints	{
++	// Compatibility shim for legacy EasyCore eBG scripts.
++	return 0;
++}
++
++function	script	F_BGRankpointsArea	{
++	// Compatibility shim for legacy EasyCore eBG scripts.
++	return 0;
++}
+diff --git a/npc/custom/eBG/bg_flavius_ctf.txt b/npc/custom/eBG/bg_flavius_ctf.txt
+index 8fd4698..1500eeb 100644
+--- a/npc/custom/eBG/bg_flavius_ctf.txt
++++ b/npc/custom/eBG/bg_flavius_ctf.txt
+@@ -71,9 +71,9 @@ OnTeam1Die:
+ 		getmapxy .@m$, .@x, .@y, BL_PC;
+ 		movenpc "Team2_Flag", .@x, .@y;
+ 		mapannounce "bat_b02","Omega Flag Droped by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_CTF_DROPPED,1,0);
++		callfunc("F_BGRankpoints",BGR_CTF_DROPPED,1,0);
+ 		if (killedrid != getcharid(3))
+-			bg_rankpoints(BGR_FAME,0,1,killerrid);
++			callfunc("F_BGRankpoints",BGR_FAME,0,1,killerrid);
+ 		set getvariableofnpc(.Flag_Status,"Team2_Flag"), 1; // OnFloor
+ 		initnpctimer "Team2_Flag";
+ 		enablenpc "Team2_Flag";
+@@ -90,9 +90,9 @@ OnTeam2Die:
+ 		getmapxy .@m$, .@x, .@y, BL_PC;
+ 		movenpc "Team1_Flag", .@x, .@y;
+ 		mapannounce "bat_b02","Alpha Flag Droped by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_CTF_DROPPED,1,0);
++		callfunc("F_BGRankpoints",BGR_CTF_DROPPED,1,0);
+ 		if (killedrid != getcharid(3))
+-			bg_rankpoints(BGR_FAME,0,1,killerrid);
++			callfunc("F_BGRankpoints",BGR_FAME,0,1,killerrid);
+ 		set getvariableofnpc(.Flag_Status,"Team1_Flag"), 1; // OnFloor
+ 		initnpctimer "Team1_Flag";
+ 		enablenpc "Team1_Flag";
+@@ -265,7 +265,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b02","Alpha Crystal Taken by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_CTF_TAKEN,1,1);
++		callfunc("F_BGRankpoints",BGR_CTF_TAKEN,1,1);
+ 		disablenpc "Team1_Flag";
+ 		addtimer 2100, "Flavius_CTF::OnAlphaFlash";
+ 		stopnpctimer;
+@@ -274,13 +274,13 @@ OnTouch:
+ 			set getvariableofnpc(.Flag_Carrier,"Team2_Flag"),0;
+ 			set .Flag_Carrier, 0;
+ 			mapannounce "bat_b02","Omega Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
+-			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
++			callfunc("F_BGRankpoints",BGR_CTF_CAPTURED,1,1);
+ 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 			stopnpctimer;
+ 			donpcevent "Flavius_CTF::OnTeam1Score";
+ 		} else if (.Flag_Status == 1) {
+ 			mapannounce "bat_b02","Alpha Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
+-			bg_rankpoints(BGR_FAME,0,1);
++			callfunc("F_BGRankpoints",BGR_FAME,0,1);
+ 			disablenpc "Team1_Flag";
+ 			sleep 2100;
+ 			movenpc "Team1_Flag",328,150; // Back to Base
+@@ -327,7 +327,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b02","Omega Crystal Taken by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_CTF_TAKEN,1,1);
++		callfunc("F_BGRankpoints",BGR_CTF_TAKEN,1,1);
+ 		disablenpc "Team2_Flag";
+ 		addtimer 2100, "Flavius_CTF::OnOmegaFlash";
+ 		stopnpctimer;
+@@ -336,13 +336,13 @@ OnTouch:
+ 			set getvariableofnpc(.Flag_Carrier,"Team1_Flag"),0;
+ 			set .Flag_Carrier, 0;
+ 			mapannounce "bat_b02","Alpha Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
+-			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
++			callfunc("F_BGRankpoints",BGR_CTF_CAPTURED,1,1);
+ 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 			stopnpctimer;
+ 			donpcevent "Flavius_CTF::OnTeam2Score";
+ 		} else if (.Flag_Status == 1) {
+ 			mapannounce "bat_b02","Omega Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
+-			bg_rankpoints(BGR_FAME,0,1);
++			callfunc("F_BGRankpoints",BGR_FAME,0,1);
+ 			disablenpc "Team2_Flag";
+ 			sleep 2100;
+ 			movenpc "Team2_Flag",62,150; // Back to Base
+diff --git a/npc/custom/eBG/bg_flavius_sc.txt b/npc/custom/eBG/bg_flavius_sc.txt
+index 9f3164d..4d5b4dc 100644
+--- a/npc/custom/eBG/bg_flavius_sc.txt
++++ b/npc/custom/eBG/bg_flavius_sc.txt
+@@ -39,9 +39,9 @@ OnTeam2Die:
+ 		getmapxy .@m$, .@x, .@y, BL_PC;
+ 		movenpc "Neutral Stone#" + .@Stone, .@x, .@y;
+ 		mapannounce "bat_b04","Neutral Stone Dropped by [ " + strcharinfo(0) + " ]",1,0xFFFFFF;
+-		bg_rankpoints(BGR_SC_DROPPED,1,0);
++		callfunc("F_BGRankpoints",BGR_SC_DROPPED,1,0);
+ 		if (killerrid)
+-			bg_rankpoints(BGR_FAME,0,1,killerrid);
++			callfunc("F_BGRankpoints",BGR_FAME,0,1,killerrid);
+ 		initnpctimer "Neutral Stone#" + .@Stone;
+ 		deltimer "Flavius_SC::OnFlash";
+ 		enablenpc "Neutral Stone#" + .@Stone;
+@@ -251,7 +251,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -265,7 +265,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -306,7 +306,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -320,7 +320,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -361,7 +361,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -375,7 +375,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -416,7 +416,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -430,7 +430,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -471,7 +471,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -485,7 +485,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -526,7 +526,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -540,7 +540,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Croix Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -584,7 +584,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -598,7 +598,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -639,7 +639,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -653,7 +653,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -695,7 +695,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -709,7 +709,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -750,7 +750,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -764,7 +764,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -805,7 +805,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -819,7 +819,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+@@ -860,7 +860,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+-		bg_rankpoints(BGR_SC_STOLE,1,$@sc_stole);
++		callfunc("F_BGRankpoints",BGR_SC_STOLE,1,$@sc_stole);
+ 
+ 		addtimer 2000, "Flavius_SC::OnFlash";
+ 		set .Point,0;
+@@ -874,7 +874,7 @@ OnTouch:
+ 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+ 
+ 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+-		bg_rankpoints(BGR_SC_CAPTURED,1,$@sc_captured);
++		callfunc("F_BGRankpoints",BGR_SC_CAPTURED,1,$@sc_captured);
+ 
+ 		setnpcdisplay strnpcinfo(3),"Guillaume Stone",1905;
+ 		set getvariableofnpc(.Stone[.Point],"Flavius_SC"),0;
+diff --git a/npc/custom/eBG/bg_flavius_td.txt b/npc/custom/eBG/bg_flavius_td.txt
+index 7951f6c..d51238a 100644
+--- a/npc/custom/eBG/bg_flavius_td.txt
++++ b/npc/custom/eBG/bg_flavius_td.txt
+@@ -36,8 +36,8 @@ OnTeam1Die:
+ 	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
+ 		if (killerrid != 0) {
+ 			set .Team1_Score, .Team1_Score - 1;
+-			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
+-			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
++			callfunc("F_BGRankpoints",BGR_TD_KILL,1,$@td_kill,killerrid);
++			callfunc("F_BGRankpoints",BGR_TD_DEATH,1,$@td_death);
+ 		}
+ 		donpcevent "Flavius_TD::OnValidateScore";
+ 	}
+@@ -49,8 +49,8 @@ OnTeam2Die:
+ 	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
+ 		if (killerrid != 0) {
+ 			set .Team2_Score, .Team2_Score - 1;
+-			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
+-			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
++			callfunc("F_BGRankpoints",BGR_TD_KILL,1,$@td_kill,killerrid);
++			callfunc("F_BGRankpoints",BGR_TD_DEATH,1,$@td_death);
+ 		}
+ 		donpcevent "Flavius_TD::OnValidateScore";
+ 	}
+@@ -82,7 +82,7 @@ OnStart:
+ 	bg_team_reveal $@BG_Team2,true;
+ 	donpcevent "#guitd_respawn::OnBGStart";
+ 	donpcevent "#crotd_respawn::OnBGStart";
+-	donpceventall "OnEmblemTD";
++	donpcevent "BG_Flavius_TD::OnEmblemTD";
+ 	end;
+ 
+ OnValidateScore:
+diff --git a/npc/custom/eBG/bg_rush.txt b/npc/custom/eBG/bg_rush.txt
+index 439c616..77a09cd 100644
+--- a/npc/custom/eBG/bg_rush.txt
++++ b/npc/custom/eBG/bg_rush.txt
+@@ -67,8 +67,8 @@ OnStart:
+ 		case 2: set .Castle$,"rush_cas03"; set .GX, 60; set .GY, 13; set .CX, 64; set .CY, 13; break;
+ 		case 3: set .Castle$,"rush_cas04"; set .GX,270; set .GY,292; set .CX,270; set .CY,288; break;
+ 	}
+-	bg_set_cemetery($@BG_Team1,.Castle$,.GX,.GY);
+-	bg_set_cemetery($@BG_Team2,.Castle$,.CX,.CY);
++	callfunc("F_BGSetCemetery",$@BG_Team1,.Castle$,.GX,.GY);
++	callfunc("F_BGSetCemetery",$@BG_Team2,.Castle$,.CX,.CY);
+ 
+ 	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
+ 	$@BG_Status = 1;
+@@ -143,12 +143,12 @@ OnEmperium:
+ 			set .Attacker,$@BG_Team1;
+ 		}
+ 		switch(.Index) {
+-			case 0:	bg_rankpoints_area(getcharid(4),.Castle$,142,166,173,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
+-			case 1:	bg_rankpoints_area(getcharid(4),.Castle$,250,8,291,49,BGR_RU_CAPTURES,1,$@ru_capture); break;
+-			case 2:	bg_rankpoints_area(getcharid(4),.Castle$,21,97,34,106,BGR_RU_CAPTURES,1,$@ru_capture); break;
+-			case 3:	bg_rankpoints_area(getcharid(4),.Castle$,234,157,255,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
++			case 0:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,142,166,173,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
++			case 1:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,250,8,291,49,BGR_RU_CAPTURES,1,$@ru_capture); break;
++			case 2:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,21,97,34,106,BGR_RU_CAPTURES,1,$@ru_capture); break;
++			case 3:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,234,157,255,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
+ 		}
+-		bg_rankpoints(BGR_EMPERIUM,1,$@bg_emp);
++		callfunc("F_BGRankpoints",BGR_EMPERIUM,1,$@bg_emp);
+ 
+ 		bg_warp_cemetery(.Attacker); // To Cementery and Wait
+ 		donpcevent("Rush_Respawn::OnResetTimer"); // Reset Respawn Timer
+diff --git a/npc/custom/eBG/bg_tierra_boss.txt b/npc/custom/eBG/bg_tierra_boss.txt
+index 013f15e..0469783 100644
+--- a/npc/custom/eBG/bg_tierra_boss.txt
++++ b/npc/custom/eBG/bg_tierra_boss.txt
+@@ -70,7 +70,7 @@ OnStart:
+ 	donpcevent "Balance_Flag::OnBGStart";
+ 	donpcevent "Guillaume_Boss::OnSummon";
+ 	donpcevent "Croix_Boss::OnSummon";
+-	donpceventall "OnEmblemBOSS";
++	donpcevent "BG_Tierra_Boss::OnEmblemBOSS";
+ 	mapannounce "bat_cc2","-- Capture the Balance Flag to remove immunity of Enemy Guardians --",1,0x483D8B;
+ 	end;
+ 
+@@ -110,7 +110,7 @@ OnNeutralBreak:
+ 		setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,1);
+ 		set .Flag, bg_monster(0,"bat_cc2",100,92,"Balance Flag",20403,"Tierra_Boss::OnNeutralBreak");
+ 	}
+-	bg_rankpoints(BGR_BOSS_FLAGS,1,$@flag_boss);
++	callfunc("F_BGRankpoints",BGR_BOSS_FLAGS,1,$@flag_boss);
+ 	end;
+ 
+ OnTimer600000:
+@@ -202,7 +202,7 @@ OnBoss:
+ 	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
+ 	set .Boss, 0;
+ 	if (playerattached())
+-		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
++		callfunc("F_BGRankpoints",BGR_BOSS_KILLED,1,$@boss_killed);
+ 	if (getvariableofnpc(.guillaume_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
+ 		donpcevent "Tierra_Boss::OnMatchEnd";
+ 	else
+@@ -252,7 +252,7 @@ OnBoss:
+ 	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
+ 	set .Boss, 0;
+ 	if (playerattached())
+-		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
++		callfunc("F_BGRankpoints",BGR_BOSS_KILLED,1,$@boss_killed);
+ 	if (getvariableofnpc(.croix_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
+ 		donpcevent "Tierra_Boss::OnMatchEnd";
+ 	else
+diff --git a/npc/custom/eBG/bg_tierra_dom.txt b/npc/custom/eBG/bg_tierra_dom.txt
+index 88bb10d..7a24676 100644
+--- a/npc/custom/eBG/bg_tierra_dom.txt
++++ b/npc/custom/eBG/bg_tierra_dom.txt
+@@ -63,15 +63,15 @@ OnTeamDie:
+ 
+ 	if (.@Base == 1) { // Team 1
+ 		if (getcharid(4) == $@BG_Team1)
+-			bg_rankpoints(BGR_DOM_OFF_KILLS,$@dom_off_kill,killerid);
++			callfunc("F_BGRankpoints",BGR_DOM_OFF_KILLS,$@dom_off_kill,killerid);
+ 		else
+-			bg_rankpoints(BGR_DOM_DEF_KILLS,$@dom_def_kill,killerid);
++			callfunc("F_BGRankpoints",BGR_DOM_DEF_KILLS,$@dom_def_kill,killerid);
+ 	}
+ 	else if (.@Base == 2) { // Team 2
+ 		if (getcharid(4) == $@BG_Team2)
+-			bg_rankpoints(BGR_DOM_OFF_KILLS,1,killerid);
++			callfunc("F_BGRankpoints",BGR_DOM_OFF_KILLS,1,killerid);
+ 		else
+-			bg_rankpoints(BGR_DOM_DEF_KILLS,1,killerid);
++			callfunc("F_BGRankpoints",BGR_DOM_DEF_KILLS,1,killerid);
+ 	}
+ 	end;
+ 
+@@ -238,7 +238,7 @@ OnTimer1000:
+ 				set .Owner, 1; // Team 1
+ 				setnpcdisplay "Dom_N_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
+ 				mapannounce "bat_a04","North Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
+-				bg_rankpoints_area($@BG_Team1,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
+ 				donpcevent "GDomNBW::OnEnable";
+ 			}
+ 			else if (.Balance == -50) {
+@@ -246,7 +246,7 @@ OnTimer1000:
+ 				set .Owner, 2; // Team 2
+ 				setnpcdisplay "Dom_N_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
+ 				mapannounce "bat_a04","North Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
+-				bg_rankpoints_area($@BG_Team2,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
+ 				donpcevent "CDomNBW::OnEnable";
+ 			}
+ 			break;
+@@ -347,7 +347,7 @@ OnTimer1000:
+ 				set .Owner, 1; // Team 1
+ 				setnpcdisplay "Dom_C_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
+ 				mapannounce "bat_a04","Center Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
+-				bg_rankpoints_area($@BG_Team1,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
+ 				donpcevent "GDomCBW::OnEnable";
+ 			}
+ 			else if (.Balance == -50) {
+@@ -355,7 +355,7 @@ OnTimer1000:
+ 				set .Owner, 2; // Team 2
+ 				setnpcdisplay "Dom_C_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
+ 				mapannounce "bat_a04","Center Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
+-				bg_rankpoints_area($@BG_Team2,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
+ 				donpcevent "CDomCBW::OnEnable";
+ 			}
+ 			break;
+@@ -456,7 +456,7 @@ OnTimer1000:
+ 				set .Owner, 1; // Team 1
+ 				setnpcdisplay "Dom_S_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
+ 				mapannounce "bat_a04","South Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
+-				bg_rankpoints_area($@BG_Team1,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
+ 				donpcevent "GDomSBW::OnEnable";
+ 			}
+ 			else if (.Balance == -50) {
+@@ -464,7 +464,7 @@ OnTimer1000:
+ 				set .Owner, 2; // Team 2
+ 				setnpcdisplay "Dom_S_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
+ 				mapannounce "bat_a04","South Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
+-				bg_rankpoints_area($@BG_Team2,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
++				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
+ 				donpcevent "CDomSBW::OnEnable";
+ 			}
+ 			break;
+diff --git a/npc/custom/eBG/bg_tierra_ti.txt b/npc/custom/eBG/bg_tierra_ti.txt
+index 5425e39..3a6f1ca 100644
+--- a/npc/custom/eBG/bg_tierra_ti.txt
++++ b/npc/custom/eBG/bg_tierra_ti.txt
+@@ -88,7 +88,7 @@ OnStart:
+ 	initnpctimer;
+ 	set .Team1_Score, 0;
+ 	set .Team2_Score, 0;
+-	donpceventall "OnEmblemTI";
++	donpcevent "BG_Tierra_TI::OnEmblemTI";
+ 	sleep 2100;
+ 	bg_warp $@BG_Team1,"region_8",29,49;
+ 	bg_warp $@BG_Team2,"region_8",70,50;
+@@ -196,7 +196,7 @@ OnTouch:
+ 	if (.@Points > 0) {
+ 		emotion ET_BEST;
+ 		specialeffect 622;
+-		bg_rankpoints(BGR_SKULLS,1,$@skulls*.@Points);
++		callfunc("F_BGRankpoints",BGR_SKULLS,1,$@skulls*.@Points);
+ 		.@Score = getvariableofnpc(.Team1_Score,"Tierra_TI") + .@Points;
+ 		.@Score2 = getvariableofnpc(.Team2_Score,"Tierra_TI");
+ 		if (.@Score > .@condition) set .@Score, .@condition;
+@@ -244,7 +244,7 @@ OnTouch:
+ 	if (.@Points > 0) {
+ 		emotion ET_BEST;
+ 		specialeffect 622;
+-		bg_rankpoints(BGR_SKULLS,1,$@skulls*.@Points);
++		callfunc("F_BGRankpoints",BGR_SKULLS,1,$@skulls*.@Points);
+ 		.@Score = getvariableofnpc(.Team2_Score,"Tierra_TI") + .@Points;
+ 		.@Score2 = getvariableofnpc(.Team1_Score,"Tierra_TI");
+ 		if (.@Score > .@condition) .@Score = .@condition;

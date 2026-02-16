@@ -8250,7 +8250,7 @@ void clif_party_hp( const map_session_data& sd ){
 #else
 	p.hp = sd.battle_status.hp;
 	p.maxhp = sd.battle_status.max_hp;
-#if PACKETVER_ZERO_NUM >= 20210504
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
 	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
 	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
 #endif
@@ -8308,7 +8308,7 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #else
 	p.hp = hp;
 	p.maxhp = maxhp;
-#if PACKETVER_ZERO_NUM >= 20210504
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
 	p.sp = battle_config.party_sp_on ? sp : 0;
 	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
 #endif

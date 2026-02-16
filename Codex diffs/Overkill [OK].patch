@@ -62,3 +62,42 @@ index 47e1a32..5a3e010 100644
  	uint32 spotted_log[DAMAGELOG_SIZE];
  	struct spawn_data *spawn; //Spawn data.
  	int32 spawn_timer; //Required for Convex Mirror
+
+diff --git a/conf/battle/drops.conf b/conf/battle/drops.conf
+index 6990da3..8a7dd90 100644
+--- a/conf/battle/drops.conf
++++ b/conf/battle/drops.conf
+@@ -213,3 +213,7 @@
+ carddrop_equipment: no
+ 
+ mvp_itemdrop_ratio: 100
++
++// One-hit kill drop rate multiplier for cards/equipment.
++// 100 = normal drop rate.
++hitkill_rate: 200
+
+diff --git a/src/map/battle.cpp b/src/map/battle.cpp
+index 0f4a8bb..4a2c1f3 100644
+--- a/src/map/battle.cpp
++++ b/src/map/battle.cpp
+@@ -10619,6 +10619,7 @@
+ 	{ "mvp_exp_no_share", 						&battle_config.mvp_exp_no_share, 				0, 		0, 		1, 				},
+ 	{ "mvp_hp_rate", 							&battle_config.mvp_hp_rate, 				100, 		1, 		INT_MAX, 		},
+ 	{ "mvp_itemdrop_ratio", 						&battle_config.mvp_itemdrop_ratio, 				100, 		1, 		10000, 			},
++	{ "hitkill_rate", 			&battle_config.hitkill_rate,			200,    0,      INT_MAX,        },
+ 	{ "pk_mode", 									&battle_config.pk_mode, 				0, 		0, 		2, 				},
+ 	{ "pk_level_range", 						&battle_config.pk_level_range, 				0, 		0, 		MAX_LEVEL, 		},
+ 	{ "pk_min_level", 							&battle_config.pk_min_level, 				55, 		1, 		MAX_LEVEL, 		},
+
+diff --git a/src/map/battle.hpp b/src/map/battle.hpp
+index 6ac1518..5ff2f32 100644
+--- a/src/map/battle.hpp
++++ b/src/map/battle.hpp
+@@ -702,6 +702,7 @@
+ 	int32 mvp_exp_no_share;
+ 	int32 mvp_hp_rate;
+ 	int32 mvp_itemdrop_ratio;
++	int32 hitkill_rate;
+ 	int32 pk_mode;
+ 	int32 pk_level_range;
+ 	int32 pk_min_level;

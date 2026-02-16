@@ -1,136 +1,135 @@
-diff --git a/npc/custom/eBG/bg_core.txt b/npc/custom/eBG/bg_core.txt
-index d393c0e..187ee4e 100644
---- a/npc/custom/eBG/bg_core.txt
-+++ b/npc/custom/eBG/bg_core.txt
-@@ -153,9 +153,9 @@ OnDoJoinSolo:
- 	}
- 	switch(.@x) {
- 		default:
--		case 0: bg_queue_join($@BG_C_Name$,0); break;
--		case 1: bg_queue_join($@BG_C_Name$,1); break;
--		case 2: bg_queue_join($@BG_C_Name$,2); break;
-+		case 0: bg_queue_join($@BG_C_Name$,0,getcharid(3)); break;
-+		case 1: bg_queue_join($@BG_C_Name$,1,getcharid(3)); break;
-+		case 2: bg_queue_join($@BG_C_Name$,2,getcharid(3)); break;
- 	}
- 	if (getcharqueue() != -1)
- 		donpcevent "BG_Core::OnJoinQueue";
+diff --git a/conf/atcommands.yml b/conf/atcommands.yml
+index 1f56362..8569fa3 100644
+--- a/conf/atcommands.yml
++++ b/conf/atcommands.yml
+@@ -1283,6 +1283,11 @@ Body:
+       - showpartysp
+     Help: |
+       Toggles party SP bar updates for supported clients.
++  - Command: joinbg
++    Help: |
++      Params: <mode>
++      Joins the currently rotated battleground queue.
++      Modes: 0 = solo, 1 = party, 2 = guild.
+   - Command: partybuff
+     Aliases:
+       - spb
+diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
+index b2e9de4..f47f51b 100644
+--- a/src/map/atcommand.cpp
++++ b/src/map/atcommand.cpp
+@@ -9304,6 +9304,50 @@ ACMD_FUNC(spbar) {
+ 	return 0;
+ }
+ 
++ACMD_FUNC(joinbg) {
++	nullpo_retr(-1, sd);
++
++	if (!battle_config.feature_bgqueue) {
++		clif_displaymessage(fd, "Battleground queue is disabled.");
++		return -1;
++	}
++
++	int32 mode = 0;
++	if (message != nullptr && message[0] != '\0') {
++		mode = atoi(message);
++	}
++
++	if (mode < 0 || mode > 2) {
++		clif_displaymessage(fd, "Usage: @joinbg <0|1|2> (0=solo,1=party,2=guild)");
++		return -1;
++	}
++
++	char* bg_name = mapreg_readregstr(add_str("$@BG_C_Name$"));
++	if (bg_name == nullptr || bg_name[0] == '\0') {
++		clif_displaymessage(fd, "No active battleground queue found.");
++		return -1;
++	}
++
++	if (sd->bg_queue_id > 0) {
++		clif_bg_queue_apply_result(BG_APPLY_DUPLICATE, bg_name, sd);
++		return -1;
++	}
++
++	switch (mode) {
++		case 1: bg_queue_join_party(bg_name, sd); break;
++		case 2: bg_queue_join_guild(bg_name, sd); break;
++		default: bg_queue_join_solo(bg_name, sd); break;
++	}
++
++	if (sd->bg_queue_id > 0) {
++		clif_displaymessage(fd, "Joined battleground queue.");
++		return 0;
++	}
++
++	clif_displaymessage(fd, "Failed to join battleground queue.");
++	return -1;
++}
++
+ ACMD_FUNC(partybuff) {
+ 	nullpo_retr(-1, sd);
+ 
+@@ -11859,6 +11903,7 @@ void atcommand_basecommands(void) {
+ 		ACMD_DEF(hidepet),
+ 		ACMD_DEF2("hidepetall", hidepet),
+ 		ACMD_DEF(spbar),
++		ACMD_DEF(joinbg),
+ 		ACMD_DEF(partybuff),
+ 		ACMD_DEF(showrecovery),
+ 		ACMD_DEF2("spb", partybuff),
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index 628d67b..6367e74 100644
+index 6367e74..5d1135c 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
-@@ -21720,6 +21720,102 @@ BUILDIN_FUNC(bg_info)
+@@ -21816,6 +21816,42 @@ BUILDIN_FUNC(bg_warp_cemetery)
  	return SCRIPT_CMD_SUCCESS;
  }
  
 +/// Compatibility helper for legacy EasyCore BG packs.
-+/// bg_percentheal(<bg_id>, <hp%>, <sp%>)
-+BUILDIN_FUNC(bg_percentheal)
++/// bg_emotions(<bg_id>, <emotion>)
++BUILDIN_FUNC(bg_emotions)
 +{
 +	int32 bg_id = script_getnum(st, 2);
-+	int32 hp = script_getnum(st, 3);
-+	int32 sp = script_getnum(st, 4);
++	int32 emotion = script_getnum(st, 3);
 +	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
 +
 +	if( bg == nullptr )
 +		return SCRIPT_CMD_SUCCESS;
 +
++	if( emotion < ET_SURPRISE || emotion >= ET_MAX )
++		emotion = ET_SURPRISE;
++
 +	for( const auto& member : bg->members ){
 +		if( member.sd == nullptr )
 +			continue;
-+		status_percent_heal(member.sd, static_cast<int8>(hp), static_cast<int8>(sp));
++		clif_emotion( *member.sd, static_cast<emotion_type>(emotion) );
 +	}
 +
 +	return SCRIPT_CMD_SUCCESS;
 +}
 +
 +/// Compatibility helper for legacy EasyCore BG packs.
-+/// bg_reward(<bg_id>, <item_id>, <amount>, ...)
-+BUILDIN_FUNC(bg_reward)
++/// bg_announce(<message>, <hex_color>)
++BUILDIN_FUNC(bg_announce)
 +{
-+	int32 bg_id = script_getnum(st, 2);
-+	t_itemid item_id = static_cast<t_itemid>(script_getnum(st, 3));
-+	int32 amount = script_getnum(st, 4);
-+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
++	const char* message = script_getstr(st, 2);
++	const char* color = script_getstr(st, 3);
 +
-+	if( bg == nullptr || item_id == 0 || amount <= 0 )
-+		return SCRIPT_CMD_SUCCESS;
++	clif_broadcast2(nullptr, message, strlen(message) + 1,
++		strtoul(color, nullptr, 0), 0x190, 12, 0, 0, ALL_CLIENT);
 +
-+	for( const auto& member : bg->members ){
-+		if( member.sd == nullptr )
-+			continue;
-+
-+		item it{};
-+		it.nameid = item_id;
-+		it.identify = 1;
-+		it.amount = static_cast<int16>(cap_value(amount, 1, INT16_MAX));
-+
-+		pc_additem(member.sd, &it, it.amount, LOG_TYPE_SCRIPT);
-+	}
-+
-+	return SCRIPT_CMD_SUCCESS;
-+}
-+
-+/// Compatibility helper for legacy EasyCore BG packs.
-+/// bg_queue_transfer_all(<old_name>, <new_name>)
-+BUILDIN_FUNC(bg_queue_transfer_all)
-+{
-+	// Legacy no-op for compatibility with older script packs.
-+	return SCRIPT_CMD_SUCCESS;
-+}
-+
-+/// Compatibility helper for legacy EasyCore BG packs.
-+/// bg_team_reveal(<bg_id>, <visible>)
-+BUILDIN_FUNC(bg_team_reveal)
-+{
-+	int32 bg_id = script_getnum(st, 2);
-+	bool visible = script_getnum(st, 3) != 0;
-+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
-+
-+	if( bg == nullptr )
-+		return SCRIPT_CMD_SUCCESS;
-+
-+	for( const auto& member : bg->members ){
-+		if( member.sd == nullptr )
-+			continue;
-+
-+		if( visible ){
-+			clif_bg_xy(member.sd);
-+			clif_bg_hp(member.sd);
-+		}else{
-+			clif_bg_xy_remove(member.sd);
-+		}
-+	}
-+
-+	return SCRIPT_CMD_SUCCESS;
-+}
-+
-+/// Compatibility helper for legacy EasyCore BG packs.
-+/// bg_warp_cemetery(<bg_id>)
-+BUILDIN_FUNC(bg_warp_cemetery)
-+{
-+	int32 bg_id = script_getnum(st, 2);
-+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
-+
-+	if( bg == nullptr || bg->cemetery.map == 0 )
-+		return SCRIPT_CMD_SUCCESS;
-+
-+	bg_team_warp(bg_id, bg->cemetery.map, bg->cemetery.x, bg->cemetery.y);
 +	return SCRIPT_CMD_SUCCESS;
 +}
 +
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -28418,6 +28514,11 @@ struct script_function buildin_func[] = {
- 	BUILDIN_DEF(bg_unbook,"s"),
- 	BUILDIN_DEF(bg_info,"si"),
- 	BUILDIN_DEF(bg_queue_join,"sii"),
-+	BUILDIN_DEF(bg_percentheal,"iii"),
-+	BUILDIN_DEF(bg_reward,"iii*"),
-+	BUILDIN_DEF(bg_queue_transfer_all,"ss"),
-+	BUILDIN_DEF(bg_team_reveal,"ii"),
-+	BUILDIN_DEF(bg_warp_cemetery,"i"),
+@@ -28519,6 +28555,8 @@ struct script_function buildin_func[] = {
+ 	BUILDIN_DEF(bg_queue_transfer_all,"ss"),
+ 	BUILDIN_DEF(bg_team_reveal,"ii"),
+ 	BUILDIN_DEF(bg_warp_cemetery,"i"),
++	BUILDIN_DEF(bg_emotions,"ii"),
++	BUILDIN_DEF(bg_announce,"ss"),
  	BUILDIN_DEF(getcharqueue,"i"),
  	BUILDIN_DEF(viewpointmap2,"siiiii"),
  

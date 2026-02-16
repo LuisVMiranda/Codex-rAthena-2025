@@ -21816,6 +21816,42 @@ BUILDIN_FUNC(bg_warp_cemetery)
 	return SCRIPT_CMD_SUCCESS;
 }
 
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_emotions(<bg_id>, <emotion>)
+BUILDIN_FUNC(bg_emotions)
+{
+	int32 bg_id = script_getnum(st, 2);
+	int32 emotion = script_getnum(st, 3);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	if( emotion < ET_SURPRISE || emotion >= ET_MAX )
+		emotion = ET_SURPRISE;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		clif_emotion( *member.sd, static_cast<emotion_type>(emotion) );
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_announce(<message>, <hex_color>)
+BUILDIN_FUNC(bg_announce)
+{
+	const char* message = script_getstr(st, 2);
+	const char* color = script_getstr(st, 3);
+
+	clif_broadcast2(nullptr, message, strlen(message) + 1,
+		strtoul(color, nullptr, 0), 0x190, 12, 0, 0, ALL_CLIENT);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
 /*==========================================
  * Instancing System
  *------------------------------------------*/
@@ -28519,6 +28555,8 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(bg_queue_transfer_all,"ss"),
 	BUILDIN_DEF(bg_team_reveal,"ii"),
 	BUILDIN_DEF(bg_warp_cemetery,"i"),
+	BUILDIN_DEF(bg_emotions,"ii"),
+	BUILDIN_DEF(bg_announce,"ss"),
 	BUILDIN_DEF(getcharqueue,"i"),
 	BUILDIN_DEF(viewpointmap2,"siiiii"),
 

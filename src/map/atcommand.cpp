@@ -9304,6 +9304,50 @@ ACMD_FUNC(spbar) {
 	return 0;
 }
 
+ACMD_FUNC(joinbg) {
+	nullpo_retr(-1, sd);
+
+	if (!battle_config.feature_bgqueue) {
+		clif_displaymessage(fd, "Battleground queue is disabled.");
+		return -1;
+	}
+
+	int32 mode = 0;
+	if (message != nullptr && message[0] != '\0') {
+		mode = atoi(message);
+	}
+
+	if (mode < 0 || mode > 2) {
+		clif_displaymessage(fd, "Usage: @joinbg <0|1|2> (0=solo,1=party,2=guild)");
+		return -1;
+	}
+
+	char* bg_name = mapreg_readregstr(add_str("$@BG_C_Name$"));
+	if (bg_name == nullptr || bg_name[0] == '\0') {
+		clif_displaymessage(fd, "No active battleground queue found.");
+		return -1;
+	}
+
+	if (sd->bg_queue_id > 0) {
+		clif_bg_queue_apply_result(BG_APPLY_DUPLICATE, bg_name, sd);
+		return -1;
+	}
+
+	switch (mode) {
+		case 1: bg_queue_join_party(bg_name, sd); break;
+		case 2: bg_queue_join_guild(bg_name, sd); break;
+		default: bg_queue_join_solo(bg_name, sd); break;
+	}
+
+	if (sd->bg_queue_id > 0) {
+		clif_displaymessage(fd, "Joined battleground queue.");
+		return 0;
+	}
+
+	clif_displaymessage(fd, "Failed to join battleground queue.");
+	return -1;
+}
+
 ACMD_FUNC(partybuff) {
 	nullpo_retr(-1, sd);
 
@@ -11859,6 +11903,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(hidepet),
 		ACMD_DEF2("hidepetall", hidepet),
 		ACMD_DEF(spbar),
+		ACMD_DEF(joinbg),
 		ACMD_DEF(partybuff),
 		ACMD_DEF(showrecovery),
 		ACMD_DEF2("spb", partybuff),

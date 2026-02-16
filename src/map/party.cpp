@@ -633,6 +633,10 @@ void party_member_joined( map_session_data& sd ){
 
 	if (i < MAX_PARTY) {
 		p->data[i].sd = &sd;
+		p->data[i].hp = sd.battle_status.hp;
+		p->data[i].sp = sd.battle_status.sp;
+		p->data[i].x = sd.x;
+		p->data[i].y = sd.y;
 	} else
 		sd.status.party_id = 0; //He does not belongs to the party really?
 }
@@ -1037,6 +1041,12 @@ int32 party_recv_movemap( int32 party_id, uint32 account_id, uint32 char_id, int
 	m->lv = lv;
 	//Check if they still exist on this map server
 	p->data[i].sd = party_sd_check(party_id, account_id, char_id);
+	if( p->data[i].sd != nullptr ){
+		p->data[i].hp = p->data[i].sd->battle_status.hp;
+		p->data[i].sp = p->data[i].sd->battle_status.sp;
+		p->data[i].x = p->data[i].sd->x;
+		p->data[i].y = p->data[i].sd->y;
+	}
 
 	clif_party_info( *p );
 
@@ -1204,9 +1214,10 @@ TIMER_FUNC(party_send_xy_timer){
 				p->data[i].y = sd->y;
 			}
 
-			if (battle_config.party_hp_mode && p->data[i].hp != sd->battle_status.hp) { // perform hp update
+			if (battle_config.party_hp_mode && (p->data[i].hp != sd->battle_status.hp || (battle_config.party_sp_on && p->data[i].sp != sd->battle_status.sp))) { // perform hp/sp update
 				clif_party_hp( *sd );
 				p->data[i].hp = sd->battle_status.hp;
+				p->data[i].sp = sd->battle_status.sp;
 			}
 		}
 	}
@@ -1226,6 +1237,7 @@ int32 party_send_xy_clear(struct party_data *p)
 			continue;
 
 		p->data[i].hp = 0;
+		p->data[i].sp = 0;
 		p->data[i].x = 0;
 		p->data[i].y = 0;
 	}

@@ -1283,6 +1283,11 @@ Body:
       - showpartysp
     Help: |
       Toggles party SP bar updates for supported clients.
+  - Command: joinbg
+    Help: |
+      Params: <mode>
+      Joins the currently rotated battleground queue.
+      Modes: 0 = solo, 1 = party, 2 = guild.
   - Command: partybuff
     Aliases:
       - spb

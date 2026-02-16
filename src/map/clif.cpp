@@ -6069,7 +6069,7 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	if (sd == nullptr) {
 		return;
 	}
-	skill_clear_animation(&sd->bl);
+	skill_clear_animation(sd);
 
 	int32 start = (animation->start_delay >= 0) ? animation->start_delay : sdelay;
 	if (start < 0) {
@@ -6082,10 +6082,10 @@ static void clif_skill_animation_start(const block_list& src, const block_list& 
 	env->base_dir = static_cast<int8>(unit_getdir(&dst));
 
 	sd->skill_animation.step = 0;
-	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->bl.id, reinterpret_cast<intptr_t>(env));
+	sd->skill_animation.tid = add_timer(tick + start, skill_play_animation, sd->id, reinterpret_cast<intptr_t>(env));
 	if (sd->skill_animation.tid == INVALID_TIMER) {
 		delete env;
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 	}
 }
 
@@ -8256,7 +8256,7 @@ void clif_party_hp( const map_session_data& sd ){
 #endif
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -13641,6 +13641,9 @@ void clif_parse_SelectArrow(int32 fd,map_session_data *sd) {
 			break;
 		case NC_MAGICDECOY:
 			skill_magicdecoy(*sd,p->itemId);
+			break;
+		case MC_VENDING:
+			vending_select_currency(*sd, p->itemId);
 			break;
 	}
 

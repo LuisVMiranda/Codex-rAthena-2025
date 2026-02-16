@@ -4353,6 +4353,7 @@ ACMD_FUNC(reloaditemdb){
 	nullpo_retr(-1, sd);
 
 	itemdb_reload();
+	extended_vending_db.reload();
 	clif_displaymessage(fd, msg_txt(sd,97)); // Item database has been reloaded.
 
 	return 0;
@@ -9283,6 +9284,11 @@ ACMD_FUNC(hidepet) {
 ACMD_FUNC(spbar) {
 	nullpo_retr(-1, sd);
 
+#if !(PACKETVER_ZERO_NUM >= 20210504)
+	clif_displaymessage(fd, "Party SP bars require a PACKETVER_ZERO client >= 2021-05-04 (packet 0x0bab with SP fields).");
+	return -1;
+#endif
+
 	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
 
 	struct s_mapiterator* iter = mapit_getallusers();
@@ -9313,8 +9319,8 @@ ACMD_FUNC(partybuff) {
 	}
 
 	sd->state.spb = !sd->state.spb;
-	clif_displaymessage(fd, sd->state.spb ? msg_txt(sd,1073) : msg_txt(sd,1072));
 	clif_party_info(*p, sd);
+	clif_displaymessage(fd, sd->state.spb ? msg_txt(sd,1073) : msg_txt(sd,1072));
 	return 0;
 }
 
@@ -11854,6 +11860,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF2("hidepetall", hidepet),
 		ACMD_DEF(spbar),
 		ACMD_DEF(partybuff),
+		ACMD_DEF(showrecovery),
 		ACMD_DEF2("spb", partybuff),
 		ACMD_DEF(autotrade),
 		ACMD_DEF(autovend),

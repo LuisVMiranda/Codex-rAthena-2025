@@ -1,0 +1,26 @@
+# This file configures which currencies are available to Extended Vending.
+# Copy to: db/import/item_db_extended_vending.yml
+#
+# Header.Type must be ITEM_EXTENDED_VENDING_DB.
+#
+# Supported keys:
+# - Id: Item ID used as vending currency. Use 0 for Zeny.
+# - AegisName: Alternative to Id (optional).
+# - StorePrefix: Prefix injected before the opened shop name.
+#
+# Example entries:
+# - Zeny with [Z]
+# - Cash Point Item with [CASH]
+
+Header:
+  Type: ITEM_EXTENDED_VENDING_DB
+  Version: 1
+
+Body:
+  # Zeny example (StorePrefix is optional; default is [Z] for Id: 0)
+  - Id: 0
+    StorePrefix: "[Z]"
+
+  # Custom item currency example
+  # - AegisName: Blue_Gemstone
+  #   StorePrefix: "[BG]"

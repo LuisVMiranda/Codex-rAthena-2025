@@ -1279,8 +1279,18 @@ Body:
       @hidepet hides other players' pets.
       @hidepetall hides all pets, including yours.
   - Command: spbar
+    Aliases:
+      - showpartysp
     Help: |
       Toggles party SP bar updates for supported clients.
+  - Command: partybuff
+    Aliases:
+      - spb
+    Help: |
+      Toggles party buff indicators shown in party member names.
+  - Command: showrecovery
+    Help: |
+      Toggles display of HP/SP recovery numbers.
   - Command: showdelay
     Help: |
       Shows/hides the "There is a delay after this skill" message.

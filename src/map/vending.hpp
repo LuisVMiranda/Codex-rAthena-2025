@@ -5,12 +5,32 @@
 #define	_VENDING_HPP_
 
 #include <common/cbasetypes.hpp>
+#include <common/database.hpp>
 #include <common/db.hpp>
 #include <common/mmo.hpp>
+
+#include <string>
 
 class map_session_data;
 struct s_search_store_search;
 struct s_autotrader;
+
+struct s_extended_vending_currency {
+	t_itemid nameid;
+	t_itemid displayNameid;
+	std::string storePrefix;
+	std::string displayName;
+};
+
+class ExtendedVendingDatabase : public TypesafeYamlDatabase<t_itemid, s_extended_vending_currency> {
+public:
+	ExtendedVendingDatabase() : TypesafeYamlDatabase("ITEM_VENDING_DB", 1) {}
+
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+};
+
+extern ExtendedVendingDatabase extended_vending_db;
 
 struct s_vending {
 	int16 index; /// cart index (return item data)
@@ -28,6 +48,9 @@ void vending_closevending(map_session_data* sd);
 int8 vending_openvending( map_session_data& sd, const char* message, const uint8* data, int32 count, struct s_autotrader *at );
 void vending_vendinglistreq(map_session_data* sd, int32 id);
 void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8* data, int32 count);
+void vending_openvendingreq(map_session_data& sd, uint16 skill_lv);
+void vending_select_currency(map_session_data& sd, t_itemid nameid);
+const char* vending_store_prefix(t_itemid nameid);
 bool vending_search( const map_session_data* sd, t_itemid nameid );
 bool vending_searchall( const map_session_data* sd, const s_search_store_search* s );
 void vending_update(map_session_data &sd);

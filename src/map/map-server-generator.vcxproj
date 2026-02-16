@@ -889,6 +889,7 @@
     <ClCompile Include="script.cpp" />
     <ClCompile Include="searchstore.cpp" />
     <ClCompile Include="skill.cpp" />
+    <ClCompile Include="skill_animation.cpp" />
     <ClCompile Include="status.cpp" />
     <ClCompile Include="storage.cpp" />
     <ClCompile Include="trade.cpp" />
@@ -2009,9 +2010,7 @@
     <ClCompile Include="skills/npc/skill_factory_npc.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="skills/skill_factory.cpp">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="skills/skill_factory.cpp" />
     <ClCompile Include="skills/skill_impl.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>

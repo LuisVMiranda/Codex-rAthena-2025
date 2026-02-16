@@ -96,3 +96,4 @@ Footer:
     Mode: Renewal
   - Path: db/import/item_db.yml
   - Path: db/import/item_db_bg.yml
+  - Path: db/import/item_db_extended_vending.yml

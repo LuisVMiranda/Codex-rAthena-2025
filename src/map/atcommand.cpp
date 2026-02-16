@@ -9281,24 +9281,6 @@ ACMD_FUNC(hidepet) {
 	return 0;
 }
 
-ACMD_FUNC(spbar) {
-	nullpo_retr(-1, sd);
-
-	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
-
-	struct s_mapiterator* iter = mapit_getallusers();
-	for (map_session_data* pl_sd = static_cast<map_session_data*>(mapit_first(iter)); mapit_exists(iter); pl_sd = static_cast<map_session_data*>(mapit_next(iter))) {
-		if (pl_sd == nullptr) {
-			continue;
-		}
-		clif_refresh(pl_sd);
-	}
-	mapit_free(iter);
-
-	clif_displaymessage(fd, battle_config.party_sp_on ? "Party SP bar is enabled." : "Party SP bar is disabled.");
-	return 0;
-}
-
 ACMD_FUNC(joinbg) {
 	nullpo_retr(-1, sd);
 
@@ -11897,8 +11879,6 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(showdelay),
 		ACMD_DEF(hidepet),
 		ACMD_DEF2("hidepetall", hidepet),
-		ACMD_DEF(spbar),
-		ACMD_DEF2("showpartysp", spbar),
 		ACMD_DEF(joinbg),
 		ACMD_DEF(partybuff),
 		ACMD_DEF(showrecovery),

@@ -3524,7 +3524,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
 	nullpo_ret(tsd);
 
 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
-		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, 0, 0 );
+		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
 	}
 	return 0;
 }
@@ -3547,7 +3547,7 @@ static int32 clif_hpmeter( const map_session_data* sd )
 void clif_update_hp( const map_session_data &sd ) {
 	if (map_getmapdata(sd.m)->hpmeter_visible)
 		clif_hpmeter(&sd);
-	if (sd.status.party_id)
+	if (!battle_config.party_hp_mode && sd.status.party_id)
 		clif_party_hp( sd );
 	if (sd.bg_id)
 		clif_bg_hp(&sd);
@@ -5018,12 +5018,11 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
 		clif_servantball( *dstsd, sd, SELF );
 	if (dstsd->abyssball > 0)
 		clif_abyssball( *dstsd, sd, SELF );
-	const bool is_party_member = sd->status.party_id && dstsd->status.party_id == sd->status.party_id;
-	if( is_party_member || //Party-mate, or hpdisp setting.
+	if( (sd->status.party_id && dstsd->status.party_id == sd->status.party_id) || //Party-mate, or hpdisp setting.
 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
 	)
-		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, is_party_member ? dstsd->battle_status.sp : 0, is_party_member ? dstsd->battle_status.max_sp : 0 );
+		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
 
 	// display link (sd - dstsd) to sd
 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
@@ -8293,7 +8292,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
 /*==========================================
  * Sends HP bar to a single fd. [Skotlex]
  *------------------------------------------*/
-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
 
 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
@@ -10186,6 +10185,22 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 					default: return "Unknown";
 				}
 			};
+			
+			auto get_mob_race_name = [](int32 race) -> const char* {
+				switch (race) {
+					case RC_FORMLESS: return "Formless";
+					case RC_UNDEAD: return "Undead";
+					case RC_BRUTE: return "Brute";
+					case RC_PLANT: return "Plant";
+					case RC_INSECT: return "Insect";
+					case RC_FISH: return "Fish";
+					case RC_DEMON: return "Demon";
+					case RC_DEMIHUMAN: return "DemiHuman";
+					case RC_ANGEL: return "Angel";
+					case RC_DRAGON: return "Dragon";
+					default: return "Unknown";
+				}
+			};
 			auto get_mob_size_tag = [](int32 size) -> const char* {
 				switch (size) {
 					case SZ_SMALL: return "[S]";
@@ -10212,16 +10227,13 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char title_line[NAME_LENGTH] = {};
-				if( battle_config.show_mob_info & 1 )
-					safesnprintf( title_line, sizeof(title_line), "%s [%u%%]", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				else
-					safesnprintf( title_line, sizeof(title_line), "%s [%u%%]", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				memcpy( packet.title, title_line, NAME_LENGTH );
-
 				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_ele_name(md->status.def_ele), get_mob_size_tag(md->status.size) );
+				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				safestrncpy( packet.name, name_line, NAME_LENGTH );
+
+				char title_line[NAME_LENGTH] = {};
+				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				memcpy( packet.title, title_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;
@@ -10266,7 +10278,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				if( battle_config.show_mob_info&2 )
 					str_p += sprintf( str_p, "HP: %u%% | ", get_percentage( md->status.hp, md->status.max_hp ) );
 				if( battle_config.mob_ele_view )
-					str_p += sprintf( str_p, "Ele: %s | Size: %s | ", get_mob_ele_name(md->status.def_ele), get_mob_size_tag(md->status.size) );
+					str_p += sprintf( str_p, "Race: %s | Size: %s | ", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
 
 				if( str_p != mobhp ){
 					*(str_p-3) = '\0';

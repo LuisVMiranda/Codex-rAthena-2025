@@ -19,9 +19,21 @@ Header:
 Body:
   # Zeny example
   - Item: Zeny
-    DisplayItem: 1750
+    DisplayItem: 41005
     DisplayName: "Zeny"
     StorePrefix: "[Z]"
+  - Item: sacola_rops
+    DisplayItem: 41006
+    DisplayName: "Cash"
+    StorePrefix: "[C]"
+  - Item: BF_Badge1
+    DisplayItem: 7828
+    DisplayName: "Bravura"
+    StorePrefix: "[EB]"
+  - Item: BF_Badge2
+    DisplayItem: 7829
+    DisplayName: "Valor"
+    StorePrefix: "[EV]"
 
   # Item currency example
   # - Item: Hydra_Card

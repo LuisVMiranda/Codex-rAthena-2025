@@ -22,10 +22,10 @@ Body:
     DisplayItem: 41005
     DisplayName: "Zeny"
     StorePrefix: "[Z]"
-  - Item: sacola_rops
+  - Id: 41006
     DisplayItem: 41006
     DisplayName: "Cash"
-    StorePrefix: "[C]"
+    StorePrefix: "[Cash]"
   - Item: BF_Badge1
     DisplayItem: 7828
     DisplayName: "Bravura"

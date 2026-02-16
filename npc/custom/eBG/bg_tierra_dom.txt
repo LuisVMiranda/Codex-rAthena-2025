@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Tierra_DOM	FAKE_NPC,{
+	script	Tierra_DOM	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -63,15 +63,15 @@ OnTeamDie:
 
 	if (.@Base == 1) { // Team 1
 		if (getcharid(4) == $@BG_Team1)
-			bg_rankpoints(BGR_DOM_OFF_KILLS,$@dom_off_kill,killerid);
+			callfunc("F_BGRankpoints",BGR_DOM_OFF_KILLS,$@dom_off_kill,killerid);
 		else
-			bg_rankpoints(BGR_DOM_DEF_KILLS,$@dom_def_kill,killerid);
+			callfunc("F_BGRankpoints",BGR_DOM_DEF_KILLS,$@dom_def_kill,killerid);
 	}
 	else if (.@Base == 2) { // Team 2
 		if (getcharid(4) == $@BG_Team2)
-			bg_rankpoints(BGR_DOM_OFF_KILLS,1,killerid);
+			callfunc("F_BGRankpoints",BGR_DOM_OFF_KILLS,1,killerid);
 		else
-			bg_rankpoints(BGR_DOM_DEF_KILLS,1,killerid);
+			callfunc("F_BGRankpoints",BGR_DOM_DEF_KILLS,1,killerid);
 	}
 	end;
 
@@ -238,7 +238,7 @@ OnTimer1000:
 				set .Owner, 1; // Team 1
 				setnpcdisplay "Dom_N_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
 				mapannounce "bat_a04","North Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
-				bg_rankpoints_area($@BG_Team1,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
 				donpcevent "GDomNBW::OnEnable";
 			}
 			else if (.Balance == -50) {
@@ -246,7 +246,7 @@ OnTimer1000:
 				set .Owner, 2; // Team 2
 				setnpcdisplay "Dom_N_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
 				mapannounce "bat_a04","North Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
-				bg_rankpoints_area($@BG_Team2,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",136,329,186,361,BGR_DOM_BASES,1,5);
 				donpcevent "CDomNBW::OnEnable";
 			}
 			break;
@@ -347,7 +347,7 @@ OnTimer1000:
 				set .Owner, 1; // Team 1
 				setnpcdisplay "Dom_C_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
 				mapannounce "bat_a04","Center Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
-				bg_rankpoints_area($@BG_Team1,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
 				donpcevent "GDomCBW::OnEnable";
 			}
 			else if (.Balance == -50) {
@@ -355,7 +355,7 @@ OnTimer1000:
 				set .Owner, 2; // Team 2
 				setnpcdisplay "Dom_C_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
 				mapannounce "bat_a04","Center Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
-				bg_rankpoints_area($@BG_Team2,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",260,194,287,213,BGR_DOM_BASES,1,5);
 				donpcevent "CDomCBW::OnEnable";
 			}
 			break;
@@ -456,7 +456,7 @@ OnTimer1000:
 				set .Owner, 1; // Team 1
 				setnpcdisplay "Dom_S_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
 				mapannounce "bat_a04","South Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
-				bg_rankpoints_area($@BG_Team1,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team1,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
 				donpcevent "GDomSBW::OnEnable";
 			}
 			else if (.Balance == -50) {
@@ -464,7 +464,7 @@ OnTimer1000:
 				set .Owner, 2; // Team 2
 				setnpcdisplay "Dom_S_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
 				mapannounce "bat_a04","South Base captured by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
-				bg_rankpoints_area($@BG_Team2,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
+				callfunc("F_BGRankpointsArea",$@BG_Team2,"bat_a04",129,34,175,65,BGR_DOM_BASES,1,5);
 				donpcevent "CDomSBW::OnEnable";
 			}
 			break;

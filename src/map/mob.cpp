@@ -3331,6 +3331,9 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 
 		// Regular mob drops drop after script-granted drops
 		const bool hitkill_bonus = (md->hitkill_count == 1 && battle_config.hitkill_rate > 0);
+		if( hitkill_bonus ){
+			clif_specialeffect(md, EF_BASH3D6, AREA);
+		}
 
 		for( const std::shared_ptr<s_mob_drop>& entry : md->db->dropitem ){
 			if (entry->nameid == 0)

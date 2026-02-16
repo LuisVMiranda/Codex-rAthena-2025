@@ -6,6 +6,7 @@
 #include <cstdlib> // atoi
 #include <vector>
 #include <algorithm>
+#include <cctype>
 
 #include <common/database.hpp>
 #include <common/malloc.hpp> // aMalloc, aFree
@@ -59,8 +60,10 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
 		if( !this->asString(node, key, item_name) ){
 			return 0;
 		}
+		std::string lower_item_name = item_name;
+		std::transform(lower_item_name.begin(), lower_item_name.end(), lower_item_name.begin(), [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
 
-		if( item_name == "Zeny" || item_name == "zeny" ){
+		if( lower_item_name == "zeny" ){
 			nameid = 0;
 		}else{
 			std::shared_ptr<item_data> item = item_db.search_aegisname(item_name.c_str());
@@ -257,13 +260,8 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
 	std::sort(currencies.begin(), currencies.end());
 
 	for( t_itemid nameid : currencies ) {
-		if( nameid > 0 ) {
-			int16 idx = pc_search_inventory(&sd, nameid);
-			if( idx < 0 )
-				continue;
-		}
-
-		packet->items[count++].itemId = nameid;
+		auto out_nameid = static_cast<decltype(packet->items[0].itemId)>(nameid == 0 ? UNKNOWN_ITEM_ID : nameid);
+		packet->items[count++].itemId = out_nameid;
 		packet->packetLength += sizeof(packet->items[0]);
 	}
 
@@ -280,8 +278,22 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
 
 void vending_select_currency(map_session_data& sd, t_itemid nameid)
 {
+	bool selected_zeny = false;
+	if( nameid == UNKNOWN_ITEM_ID && extended_vending_db.find(0) != nullptr ){
+		nameid = 0;
+		selected_zeny = true;
+	}
+
+	if( nameid == 0 && !selected_zeny ){
+		sd.extended_vend.nameid = 0;
+		sd.state.prevend = 0;
+		sd.state.workinprogress = WIP_DISABLE_NONE;
+		return;
+	}
+
 	if (!vending_is_currency_allowed(nameid)) {
 		sd.extended_vend.nameid = 0;
+		sd.state.prevend = 0;
 		clif_skill_fail(sd, MC_VENDING);
 		sd.state.workinprogress = WIP_DISABLE_NONE;
 		return;

@@ -5,6 +5,7 @@
 #
 # Supported keys:
 # - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
+#         AegisName matching is case-insensitive.
 # - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
 # - StorePrefix: Prefix injected before the opened shop name.
 

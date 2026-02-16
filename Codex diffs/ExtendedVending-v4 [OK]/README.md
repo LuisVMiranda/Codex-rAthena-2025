@@ -23,4 +23,6 @@ Body:
 
   # - Item: Hydra_Card
   #   StorePrefix: "[HYDRA]"
+
+# Item/AegisName entries are matched case-insensitively.
 ```

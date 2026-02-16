@@ -143,3 +143,22 @@ Body:
 | `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after DB-type/parser and packet guard updates. | `src/map/vending.cpp`, `src/map/packets_struct.hpp`, `src/map/clif.cpp` |
 | `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
 | `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |
+
+## Hotfix 2: cancel-freeze and currency menu rendering
+
+### Root causes and fixes
+- **Freeze on currency-window cancel**: cancel path left player in a prevend/work-in-progress state. Fixed by explicitly clearing `state.prevend` and restoring `WIP_DISABLE_NONE` when the menu is canceled.
+- **Hydra/other configured entries not appearing correctly**: menu payload used raw IDs and previously filtered by player inventory; this hid configured currencies and produced ambiguous zeny behavior. Fixed by:
+  - listing configured currencies regardless of current inventory,
+  - mapping zeny option (`Id: 0`) to a dedicated placeholder display id (`UNKNOWN_ITEM_ID`) in the selection menu,
+  - mapping that placeholder back to zeny internally on selection.
+- **Case-insensitive item names**: parser now normalizes item text and treats `Item: zeny`/`ZENY` etc. consistently.
+- **Requested packet define**: added `#define PACKETVER 20220406` in `src/custom/defines_pre.hpp`.
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after vending cancel/menu/rendering fixes. | `src/map/vending.cpp`, `src/custom/defines_pre.hpp` |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |

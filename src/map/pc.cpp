@@ -6968,7 +6968,7 @@ enum e_setpos pc_setpos(map_session_data* sd, uint16 mapindex, int32 x, int32 y,
 	sd->state.item_enchant_index = 0;
 
 	if( sd->state.changemap ) { // Misc map-changing settings
-		skill_clear_animation(&sd->bl);
+		skill_clear_animation(sd);
 		int32 curr_map_instance_id = map_getmapdata(sd->m)->instance_id, new_map_instance_id = (mapdata ? mapdata->instance_id : 0);
 
 		if (curr_map_instance_id != new_map_instance_id) {

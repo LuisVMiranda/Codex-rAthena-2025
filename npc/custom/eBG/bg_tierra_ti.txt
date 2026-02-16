@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Tierra_TI	-1,{
+	script	Tierra_TI	-1,{
 	end;
 
 OnInit:

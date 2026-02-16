@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Rush	FAKE_NPC,{
+	script	Rush	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -241,7 +241,7 @@ OnEnd:
 // Battleground Respawn
 // *********************************************************************
 
--	script	Rush_Respawn	FAKE_NPC,{
+	script	Rush_Respawn	FAKE_NPC,{
 	end;
 
 OnResetTimer:

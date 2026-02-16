@@ -21622,7 +21622,13 @@ BUILDIN_FUNC(bg_queue_join)
 BUILDIN_FUNC(getcharqueue)
 {
 	TBL_PC* sd = nullptr;
-	if (!script_charid2sd(2, sd) || sd == nullptr) {
+
+	if( script_hasdata(st, 2) ) {
+		if (!script_charid2sd(2, sd) || sd == nullptr) {
+			script_pushint(st, -1);
+			return SCRIPT_CMD_SUCCESS;
+		}
+	} else if (!script_rid2sd(sd) || sd == nullptr) {
 		script_pushint(st, -1);
 		return SCRIPT_CMD_SUCCESS;
 	}
@@ -21822,6 +21828,27 @@ BUILDIN_FUNC(bg_emotions)
 {
 	int32 bg_id = script_getnum(st, 2);
 	int32 emotion = script_getnum(st, 3);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	if( emotion < ET_SURPRISE || emotion >= ET_MAX )
+		emotion = ET_SURPRISE;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		clif_emotion( *member.sd, static_cast<emotion_type>(emotion) );
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(bg_emotion)
+{
+	int32 emotion = script_getnum(st, 2);
+	int32 bg_id = script_getnum(st, 3);
 	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
 
 	if( bg == nullptr )
@@ -28556,8 +28583,9 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(bg_team_reveal,"ii"),
 	BUILDIN_DEF(bg_warp_cemetery,"i"),
 	BUILDIN_DEF(bg_emotions,"ii"),
+	BUILDIN_DEF(bg_emotion,"ii"),
 	BUILDIN_DEF(bg_announce,"ss"),
-	BUILDIN_DEF(getcharqueue,"i"),
+	BUILDIN_DEF(getcharqueue,"?"),
 	BUILDIN_DEF(viewpointmap2,"siiiii"),
 
 	// Instancing

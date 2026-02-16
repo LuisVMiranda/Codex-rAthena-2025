@@ -19,7 +19,7 @@
 // BattleGround System - Tierra Bossnia
 // ==============================================================================*/
 
--	script	Tierra_Boss	-1,{
+	script	Tierra_Boss	-1,{
 	end;
 
 OnInit:
@@ -163,7 +163,7 @@ OnEnd:
 	end;
 }
 
--	script	Guillaume_Boss	-1,{
+	script	Guillaume_Boss	-1,{
 	end;
 
 OnSummon:
@@ -213,7 +213,7 @@ OnBoss:
 	end;
 }
 
--	script	Croix_Boss	-1,{
+	script	Croix_Boss	-1,{
 	end;
 
 OnSummon:
@@ -263,7 +263,7 @@ OnBoss:
 	end;
 }
 
--	script	Balance_Flag	-1,{
+	script	Balance_Flag	-1,{
 	end;
 
 OnBGStart:

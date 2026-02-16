@@ -15,7 +15,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Flavius_CTF	FAKE_NPC,{
+	script	Flavius_CTF	FAKE_NPC,{
 	end;
 
 OnInit:

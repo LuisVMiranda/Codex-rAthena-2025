@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Tierra_DOM	FAKE_NPC,{
+	script	Tierra_DOM	FAKE_NPC,{
 	end;
 
 OnInit:

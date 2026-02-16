@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Conquest	FAKE_NPC,{
+	script	Conquest	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -659,7 +659,7 @@ OnInit:
 // Battleground Respawn
 // *********************************************************************
 
--	script	Conquest_Respawn	FAKE_NPC,{
+	script	Conquest_Respawn	FAKE_NPC,{
 	end;
 
 OnStart:

@@ -16,7 +16,7 @@
 // BattleGround System - Flavius Stone Control
 // ==============================================================================*/
 
--	script	Flavius_SC	-1,{
+	script	Flavius_SC	-1,{
 	end;
 
 OnInit:

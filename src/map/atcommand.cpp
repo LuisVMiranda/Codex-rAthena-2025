@@ -9284,11 +9284,6 @@ ACMD_FUNC(hidepet) {
 ACMD_FUNC(spbar) {
 	nullpo_retr(-1, sd);
 
-#if !(PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103)
-	clif_displaymessage(fd, "Party SP bars are not supported by this packet version.");
-	return -1;
-#endif
-
 	battle_config.party_sp_on = 1 - battle_config.party_sp_on;
 
 	struct s_mapiterator* iter = mapit_getallusers();

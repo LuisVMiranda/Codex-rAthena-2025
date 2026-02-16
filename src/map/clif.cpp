@@ -3544,7 +3544,7 @@ static int32 clif_hpmeter( const map_session_data* sd )
 void clif_update_hp( const map_session_data &sd ) {
 	if (map_getmapdata(sd.m)->hpmeter_visible)
 		clif_hpmeter(&sd);
-	if (!battle_config.party_hp_mode && sd.status.party_id)
+	if (sd.status.party_id)
 		clif_party_hp( sd );
 	if (sd.bg_id)
 		clif_bg_hp(&sd);
@@ -10217,7 +10217,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				safestrncpy( packet.position_name, md->guardian_data->castle->castle_name, NAME_LENGTH );
 
 				clif_send(&packet, sizeof(packet), src, target);
-			}else if( battle_config.show_mob_info ){
+			}else if( battle_config.show_mob_info || battle_config.mob_ele_view ){
 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;

@@ -7,6 +7,9 @@
 # - Item: Item AegisName used as vending currency (e.g. Hydra_Card).
 #         AegisName matching is case-insensitive.
 # - Id: Alternative numeric item id. Use 0 or Item: Zeny for zeny shops.
+# - DisplayItem: Optional client item id used for menu icon/name display.
+# - DisplayAegisName: Optional alternative to DisplayItem (case-insensitive).
+# - DisplayName: Optional custom text label (server-side metadata).
 # - StorePrefix: Prefix injected before the opened shop name.
 
 Header:
@@ -16,8 +19,12 @@ Header:
 Body:
   # Zeny example
   - Item: Zeny
+    DisplayItem: 1750
+    DisplayName: "Zeny"
     StorePrefix: "[Z]"
 
   # Item currency example
   # - Item: Hydra_Card
+  #   DisplayAegisName: Hydra_Card
+  #   DisplayName: "Hydra"
   #   StorePrefix: "[HYDRA]"

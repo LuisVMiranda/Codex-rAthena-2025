@@ -17,7 +17,9 @@ struct s_autotrader;
 
 struct s_extended_vending_currency {
 	t_itemid nameid;
+	t_itemid displayNameid;
 	std::string storePrefix;
+	std::string displayName;
 };
 
 class ExtendedVendingDatabase : public TypesafeYamlDatabase<t_itemid, s_extended_vending_currency> {

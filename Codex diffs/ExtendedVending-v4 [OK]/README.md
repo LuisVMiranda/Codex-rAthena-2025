@@ -19,10 +19,15 @@ Header:
 
 Body:
   - Item: Zeny
+    DisplayItem: 1750
+    DisplayName: "Zeny"
     StorePrefix: "[Z]"
 
   # - Item: Hydra_Card
+  #   DisplayAegisName: Hydra_Card
+  #   DisplayName: "Hydra"
   #   StorePrefix: "[HYDRA]"
 
 # Item/AegisName entries are matched case-insensitively.
+# DisplayItem/DisplayAegisName controls icon/name shown by the selection window.
 ```

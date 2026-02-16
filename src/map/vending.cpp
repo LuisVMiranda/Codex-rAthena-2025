@@ -83,7 +83,33 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
 	if( !exists ){
 		entry = std::make_shared<s_extended_vending_currency>();
 		entry->nameid = nameid;
+		entry->displayNameid = nameid;
 		entry->storePrefix = (nameid == 0 ? "[Z]" : "");
+		entry->displayName = (nameid == 0 ? "Zeny" : "");
+	}
+
+	if( this->nodeExists(node, "DisplayName") ){
+		if( !this->asString(node, "DisplayName", entry->displayName) ){
+			return 0;
+		}
+	}
+
+	if( this->nodeExists(node, "DisplayItem") ){
+		if( !this->asUInt32(node, "DisplayItem", entry->displayNameid) ){
+			return 0;
+		}
+	}else if( this->nodeExists(node, "DisplayAegisName") ){
+		std::string display_name;
+		if( !this->asString(node, "DisplayAegisName", display_name) ){
+			return 0;
+		}
+
+		std::shared_ptr<item_data> display_item = item_db.search_aegisname(display_name.c_str());
+		if( display_item == nullptr ){
+			this->invalidWarning(node, "Unknown DisplayAegisName '%s', skipping.\\n", display_name.c_str());
+			return 0;
+		}
+		entry->displayNameid = display_item->nameid;
 	}
 
 	if( this->nodeExists(node, "StorePrefix") ){
@@ -260,7 +286,9 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
 	std::sort(currencies.begin(), currencies.end());
 
 	for( t_itemid nameid : currencies ) {
-		auto out_nameid = static_cast<decltype(packet->items[0].itemId)>(nameid == 0 ? UNKNOWN_ITEM_ID : nameid);
+		auto currency = extended_vending_db.find(nameid);
+		t_itemid display_nameid = currency != nullptr ? currency->displayNameid : nameid;
+		auto out_nameid = static_cast<decltype(packet->items[0].itemId)>(display_nameid > 0 ? display_nameid : UNKNOWN_ITEM_ID);
 		packet->items[count++].itemId = out_nameid;
 		packet->packetLength += sizeof(packet->items[0]);
 	}
@@ -278,20 +306,25 @@ void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
 
 void vending_select_currency(map_session_data& sd, t_itemid nameid)
 {
-	bool selected_zeny = false;
-	if( nameid == UNKNOWN_ITEM_ID && extended_vending_db.find(0) != nullptr ){
-		nameid = 0;
-		selected_zeny = true;
+	t_itemid currency_id = nameid;
+	if( extended_vending_db.find(currency_id) == nullptr ){
+		currency_id = 0;
+		for( const auto& [id, currency] : extended_vending_db ){
+			if( currency != nullptr && currency->displayNameid == nameid ){
+				currency_id = id;
+				break;
+			}
+		}
 	}
 
-	if( nameid == 0 && !selected_zeny ){
+	if( currency_id == 0 && extended_vending_db.find(0) == nullptr ){
 		sd.extended_vend.nameid = 0;
 		sd.state.prevend = 0;
 		sd.state.workinprogress = WIP_DISABLE_NONE;
 		return;
 	}
 
-	if (!vending_is_currency_allowed(nameid)) {
+	if (!vending_is_currency_allowed(currency_id)) {
 		sd.extended_vend.nameid = 0;
 		sd.state.prevend = 0;
 		clif_skill_fail(sd, MC_VENDING);
@@ -299,7 +332,7 @@ void vending_select_currency(map_session_data& sd, t_itemid nameid)
 		return;
 	}
 
-	sd.extended_vend.nameid = nameid;
+	sd.extended_vend.nameid = currency_id;
 	clif_openvendingreq(sd, 2 + sd.extended_vend.level);
 }
 

@@ -162,3 +162,21 @@ Body:
 | `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after vending cancel/menu/rendering fixes. | `src/map/vending.cpp`, `src/custom/defines_pre.hpp` |
 | `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
 | `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |
+
+## Hotfix 3: party HP/SP packet compatibility + vending display mapping
+
+### Changes
+- Reverted default party HP packet structs to upstream-compatible guards (SP fields only on ZERO branch), then added an auxiliary `0x0bab` SP-capable packet send alongside normal HP updates when `party_sp_on` is enabled. This preserves HP-bar compatibility while attempting SP updates for clients that support `0x0bab`.
+- Extended vending currency entries now support display mapping keys:
+  - `DisplayItem` (numeric item id)
+  - `DisplayAegisName` (case-insensitive)
+  - `DisplayName` (metadata label)
+- Currency menu rendering now uses mapped display item ids, and selection maps display ids back to internal currency ids; this removes the hardcoded-apple behavior and allows zeny/icon customization through YAML.
+
+### Command results
+
+| Command | Result | Concise excerpt | Impacted module(s) |
+|---|---|---|---|
+| `cmake --build build --target map-server -j$(nproc)` | **PASS** | `Built target map-server` after party-packet and vending-display mapping changes. | `src/map/clif.cpp`, `src/map/packets_struct.hpp`, `src/map/vending.cpp` |
+| `ctest --test-dir build --output-on-failure` | **PASS** (no tests) | `No tests were found!!!` | Test harness discovery |
+| `timeout 20s ./map-server --run-once` | **FAIL** (env/deps) | Missing `conf/import/*`, missing custom NPC files, MySQL unavailable. | Runtime environment prerequisites |

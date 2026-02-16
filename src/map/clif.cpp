@@ -8250,13 +8250,33 @@ void clif_party_hp( const map_session_data& sd ){
 #else
 	p.hp = sd.battle_status.hp;
 	p.maxhp = sd.battle_status.max_hp;
-#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+#if PACKETVER_ZERO_NUM >= 20210504
 	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
 	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
 #endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
+
+	if( battle_config.party_sp_on ) {
+		struct PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP {
+			int16 PacketType;
+			uint32 AID;
+			int hp;
+			int maxhp;
+			int sp;
+			int maxsp;
+		} __attribute__((packed));
+
+		PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP ps{};
+		ps.PacketType = 0x0bab;
+		ps.AID = sd.status.account_id;
+		ps.hp = sd.battle_status.hp;
+		ps.maxhp = sd.battle_status.max_hp;
+		ps.sp = sd.battle_status.sp;
+		ps.maxsp = sd.battle_status.max_sp;
+		clif_send(&ps, sizeof(ps), &sd, PARTY);
+	}
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -8308,13 +8328,33 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #else
 	p.hp = hp;
 	p.maxhp = maxhp;
-#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+#if PACKETVER_ZERO_NUM >= 20210504
 	p.sp = battle_config.party_sp_on ? sp : 0;
 	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
 #endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, SELF );
+
+	if( battle_config.party_sp_on ) {
+		struct PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP {
+			int16 PacketType;
+			uint32 AID;
+			int hp;
+			int maxhp;
+			int sp;
+			int maxsp;
+		} __attribute__((packed));
+
+		PACKET_ZC_NOTIFY_HP_TO_GROUPM_SP ps{};
+		ps.PacketType = 0x0bab;
+		ps.AID = id;
+		ps.hp = hp;
+		ps.maxhp = maxhp;
+		ps.sp = sp;
+		ps.maxsp = maxsp;
+		clif_send(&ps, sizeof(ps), &sd, SELF);
+	}
 }
 
 
@@ -10184,7 +10224,7 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				safestrncpy( packet.position_name, md->guardian_data->castle->castle_name, NAME_LENGTH );
 
 				clif_send(&packet, sizeof(packet), src, target);
-			}else if( battle_config.show_mob_info && (unit_bl2ud(bl) == nullptr || unit_bl2ud(bl)->group_id != battle_config.group_id_monster_champion) ){
+			}else if( battle_config.show_mob_info ){
 				PACKET_ZC_ACK_REQNAMEALL packet = { 0 };
 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL;

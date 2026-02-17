@@ -84,8 +84,16 @@ uint64 ExtendedVendingDatabase::parseBodyNode(const ryml::NodeRef& node)
 		entry = std::make_shared<s_extended_vending_currency>();
 		entry->nameid = nameid;
 		entry->displayNameid = nameid;
-		entry->storePrefix = (nameid == 0 ? "[Z]" : "");
-		entry->displayName = (nameid == 0 ? "Zeny" : "");
+		if( nameid == 0 ){
+			entry->storePrefix = "[Z]";
+			entry->displayName = "Zeny";
+		}else if( battle_config.item_cash > 0 && nameid == battle_config.item_cash ){
+			entry->storePrefix = "[Cash]";
+			entry->displayName = "Cash";
+		}else{
+			entry->storePrefix = "";
+			entry->displayName = "";
+		}
 	}
 
 	if( this->nodeExists(node, "DisplayName") ){
@@ -259,6 +267,11 @@ static bool vending_is_currency_allowed(t_itemid nameid)
 		return false;
 
 	return extended_vending_db.find(nameid) != nullptr;
+}
+
+static bool vending_is_cash_currency(t_itemid nameid)
+{
+	return battle_config.item_cash > 0 && nameid == battle_config.item_cash;
 }
 
 void vending_openvendingreq(map_session_data& sd, uint16 skill_lv)
@@ -441,31 +454,42 @@ void vending_purchasereq(map_session_data* sd, int32 aid, int32 uid, const uint8
 
 	const t_itemid currency = battle_config.extended_vending_enable ? vsd->extended_vend.nameid : 0;
 	if (currency > 0) {
-		int32 total_currency = 0;
-		for (int32 k = 0; k < MAX_INVENTORY; ++k) {
-			if (sd->inventory.u.items_inventory[k].nameid == currency)
-				total_currency += sd->inventory.u.items_inventory[k].amount;
-		}
-		if (total_currency < z) {
-			clif_buyvending(*sd, 0, 0, PURCHASEMC_NO_ZENY);
-			return;
-		}
-		if (pc_checkadditem(vsd, currency, (int32)z) == CHKADDITEM_OVERAMOUNT)
-			return;
-		for (int32 k = 0, need = (int32)z; k < MAX_INVENTORY && need > 0; ++k) {
-			if (sd->inventory.u.items_inventory[k].nameid != currency)
-				continue;
-			int32 rm = min(need, (int32)sd->inventory.u.items_inventory[k].amount);
-			if (rm > 0) {
-				pc_delitem(sd, k, rm, 0, 0, LOG_TYPE_VENDING);
-				need -= rm;
+		if (vending_is_cash_currency(currency)) {
+			if (sd->cashPoints < z) {
+				clif_buyvending(*sd, 0, 0, PURCHASEMC_NO_ZENY);
+				return;
 			}
+			if (pc_paycash(sd, (int32)z, 0, LOG_TYPE_VENDING) < 0)
+				return;
+			if (pc_getcash(vsd, (int32)z, 0, LOG_TYPE_VENDING) < 0)
+				return;
+		} else {
+			int32 total_currency = 0;
+			for (int32 k = 0; k < MAX_INVENTORY; ++k) {
+				if (sd->inventory.u.items_inventory[k].nameid == currency)
+					total_currency += sd->inventory.u.items_inventory[k].amount;
+			}
+			if (total_currency < z) {
+				clif_buyvending(*sd, 0, 0, PURCHASEMC_NO_ZENY);
+				return;
+			}
+			if (pc_checkadditem(vsd, currency, (int32)z) == CHKADDITEM_OVERAMOUNT)
+				return;
+			for (int32 k = 0, need = (int32)z; k < MAX_INVENTORY && need > 0; ++k) {
+				if (sd->inventory.u.items_inventory[k].nameid != currency)
+					continue;
+				int32 rm = min(need, (int32)sd->inventory.u.items_inventory[k].amount);
+				if (rm > 0) {
+					pc_delitem(sd, k, rm, 0, 0, LOG_TYPE_VENDING);
+					need -= rm;
+				}
+			}
+			item it{};
+			it.nameid = currency;
+			it.identify = 1;
+			it.amount = (int16)z;
+			pc_additem(vsd, &it, it.amount, LOG_TYPE_VENDING);
 		}
-		item it{};
-		it.nameid = currency;
-		it.identify = 1;
-		it.amount = (int16)z;
-		pc_additem(vsd, &it, it.amount, LOG_TYPE_VENDING);
 	} else {
 		pc_payzeny(sd, (int32)z, LOG_TYPE_VENDING, vsd->status.char_id);
 		achievement_update_objective(sd, AG_SPEND_ZENY, 1, (int32)z);

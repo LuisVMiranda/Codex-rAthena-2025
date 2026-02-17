@@ -21622,7 +21622,13 @@ BUILDIN_FUNC(bg_queue_join)
 BUILDIN_FUNC(getcharqueue)
 {
 	TBL_PC* sd = nullptr;
-	if (!script_charid2sd(2, sd) || sd == nullptr) {
+
+	if( script_hasdata(st, 2) ) {
+		if (!script_charid2sd(2, sd) || sd == nullptr) {
+			script_pushint(st, -1);
+			return SCRIPT_CMD_SUCCESS;
+		}
+	} else if (!script_rid2sd(sd) || sd == nullptr) {
 		script_pushint(st, -1);
 		return SCRIPT_CMD_SUCCESS;
 	}
@@ -21716,6 +21722,159 @@ BUILDIN_FUNC(bg_info)
 			ShowError("bg_info: Unknown battleground info type %d given.\n", type);
 			return SCRIPT_CMD_FAILURE;
 	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_percentheal(<bg_id>, <hp%>, <sp%>)
+BUILDIN_FUNC(bg_percentheal)
+{
+	int32 bg_id = script_getnum(st, 2);
+	int32 hp = script_getnum(st, 3);
+	int32 sp = script_getnum(st, 4);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		status_percent_heal(member.sd, static_cast<int8>(hp), static_cast<int8>(sp));
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_reward(<bg_id>, <item_id>, <amount>, ...)
+BUILDIN_FUNC(bg_reward)
+{
+	int32 bg_id = script_getnum(st, 2);
+	t_itemid item_id = static_cast<t_itemid>(script_getnum(st, 3));
+	int32 amount = script_getnum(st, 4);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr || item_id == 0 || amount <= 0 )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+
+		item it{};
+		it.nameid = item_id;
+		it.identify = 1;
+		it.amount = static_cast<int16>(cap_value(amount, 1, INT16_MAX));
+
+		pc_additem(member.sd, &it, it.amount, LOG_TYPE_SCRIPT);
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_queue_transfer_all(<old_name>, <new_name>)
+BUILDIN_FUNC(bg_queue_transfer_all)
+{
+	// Legacy no-op for compatibility with older script packs.
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_team_reveal(<bg_id>, <visible>)
+BUILDIN_FUNC(bg_team_reveal)
+{
+	int32 bg_id = script_getnum(st, 2);
+	bool visible = script_getnum(st, 3) != 0;
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+
+		if( visible ){
+			clif_bg_xy(member.sd);
+			clif_bg_hp(member.sd);
+		}else{
+			clif_bg_xy_remove(member.sd);
+		}
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_warp_cemetery(<bg_id>)
+BUILDIN_FUNC(bg_warp_cemetery)
+{
+	int32 bg_id = script_getnum(st, 2);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr || bg->cemetery.map == 0 )
+		return SCRIPT_CMD_SUCCESS;
+
+	bg_team_warp(bg_id, bg->cemetery.map, bg->cemetery.x, bg->cemetery.y);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_emotions(<bg_id>, <emotion>)
+BUILDIN_FUNC(bg_emotions)
+{
+	int32 bg_id = script_getnum(st, 2);
+	int32 emotion = script_getnum(st, 3);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	if( emotion < ET_SURPRISE || emotion >= ET_MAX )
+		emotion = ET_SURPRISE;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		clif_emotion( *member.sd, static_cast<emotion_type>(emotion) );
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(bg_emotion)
+{
+	int32 emotion = script_getnum(st, 2);
+	int32 bg_id = script_getnum(st, 3);
+	std::shared_ptr<s_battleground_data> bg = util::umap_find(bg_team_db, bg_id);
+
+	if( bg == nullptr )
+		return SCRIPT_CMD_SUCCESS;
+
+	if( emotion < ET_SURPRISE || emotion >= ET_MAX )
+		emotion = ET_SURPRISE;
+
+	for( const auto& member : bg->members ){
+		if( member.sd == nullptr )
+			continue;
+		clif_emotion( *member.sd, static_cast<emotion_type>(emotion) );
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Compatibility helper for legacy EasyCore BG packs.
+/// bg_announce(<message>, <hex_color>)
+BUILDIN_FUNC(bg_announce)
+{
+	const char* message = script_getstr(st, 2);
+	const char* color = script_getstr(st, 3);
+
+	clif_broadcast2(nullptr, message, strlen(message) + 1,
+		strtoul(color, nullptr, 0), 0x190, 12, 0, 0, ALL_CLIENT);
 
 	return SCRIPT_CMD_SUCCESS;
 }
@@ -28418,7 +28577,15 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(bg_unbook,"s"),
 	BUILDIN_DEF(bg_info,"si"),
 	BUILDIN_DEF(bg_queue_join,"sii"),
-	BUILDIN_DEF(getcharqueue,"i"),
+	BUILDIN_DEF(bg_percentheal,"iii"),
+	BUILDIN_DEF(bg_reward,"iii*"),
+	BUILDIN_DEF(bg_queue_transfer_all,"ss"),
+	BUILDIN_DEF(bg_team_reveal,"ii"),
+	BUILDIN_DEF(bg_warp_cemetery,"i"),
+	BUILDIN_DEF(bg_emotions,"ii"),
+	BUILDIN_DEF(bg_emotion,"ii"),
+	BUILDIN_DEF(bg_announce,"ss"),
+	BUILDIN_DEF(getcharqueue,"?"),
 	BUILDIN_DEF(viewpointmap2,"siiiii"),
 
 	// Instancing

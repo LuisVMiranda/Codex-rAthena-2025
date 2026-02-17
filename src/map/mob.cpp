@@ -2788,7 +2788,7 @@ void mob_damage(mob_data *md, block_list *src, int32 damage)
 		mob_log_damage(md, src, static_cast<int64>(damage));
 	}
 
-	if (battle_config.show_mob_info&3)
+	if ((battle_config.show_mob_info&3) || battle_config.mob_ele_view || battle_config.monster_hp_headtext)
 		clif_name_area(md);
 
 #if PACKETVER >= 20120404
@@ -3331,6 +3331,9 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 
 		// Regular mob drops drop after script-granted drops
 		const bool hitkill_bonus = (md->hitkill_count == 1 && battle_config.hitkill_rate > 0);
+		if( hitkill_bonus ){
+			clif_specialeffect(md, EF_BASH3D6, AREA);
+		}
 
 		for( const std::shared_ptr<s_mob_drop>& entry : md->db->dropitem ){
 			if (entry->nameid == 0)
@@ -3704,7 +3707,7 @@ void mob_revive(mob_data *md, uint32 hp)
 	clif_spawn(md);
 	skill_unit_move(md,tick,1);
 	mobskill_use(md, tick, MSC_SPAWN);
-	if (battle_config.show_mob_info&3)
+	if ((battle_config.show_mob_info&3) || battle_config.mob_ele_view || battle_config.monster_hp_headtext)
 		clif_name_area(md);
 }
 
@@ -3901,7 +3904,7 @@ int32 mob_class_change (mob_data *md, int32 mob_id)
  *------------------------------------------*/
 void mob_heal(mob_data *md,uint32 heal)
 {
-	if (battle_config.show_mob_info&3)
+	if ((battle_config.show_mob_info&3) || battle_config.mob_ele_view || battle_config.monster_hp_headtext)
 		clif_name_area(md);
 #if PACKETVER >= 20120404
 	if (battle_config.monster_hp_bars_info && !map_getmapflag(md->m, MF_HIDEMOBHPBAR)) {

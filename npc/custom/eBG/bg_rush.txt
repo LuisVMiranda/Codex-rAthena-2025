@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Rush	FAKE_NPC,{
+	script	Rush	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -67,8 +67,8 @@ OnStart:
 		case 2: set .Castle$,"rush_cas03"; set .GX, 60; set .GY, 13; set .CX, 64; set .CY, 13; break;
 		case 3: set .Castle$,"rush_cas04"; set .GX,270; set .GY,292; set .CX,270; set .CY,288; break;
 	}
-	bg_set_cemetery($@BG_Team1,.Castle$,.GX,.GY);
-	bg_set_cemetery($@BG_Team2,.Castle$,.CX,.CY);
+	callfunc("F_BGSetCemetery",$@BG_Team1,.Castle$,.GX,.GY);
+	callfunc("F_BGSetCemetery",$@BG_Team2,.Castle$,.CX,.CY);
 
 	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
 	$@BG_Status = 1;
@@ -143,12 +143,12 @@ OnEmperium:
 			set .Attacker,$@BG_Team1;
 		}
 		switch(.Index) {
-			case 0:	bg_rankpoints_area(getcharid(4),.Castle$,142,166,173,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
-			case 1:	bg_rankpoints_area(getcharid(4),.Castle$,250,8,291,49,BGR_RU_CAPTURES,1,$@ru_capture); break;
-			case 2:	bg_rankpoints_area(getcharid(4),.Castle$,21,97,34,106,BGR_RU_CAPTURES,1,$@ru_capture); break;
-			case 3:	bg_rankpoints_area(getcharid(4),.Castle$,234,157,255,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
+			case 0:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,142,166,173,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
+			case 1:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,250,8,291,49,BGR_RU_CAPTURES,1,$@ru_capture); break;
+			case 2:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,21,97,34,106,BGR_RU_CAPTURES,1,$@ru_capture); break;
+			case 3:	callfunc("F_BGRankpointsArea",getcharid(4),.Castle$,234,157,255,177,BGR_RU_CAPTURES,1,$@ru_capture); break;
 		}
-		bg_rankpoints(BGR_EMPERIUM,1,$@bg_emp);
+		callfunc("F_BGRankpoints",BGR_EMPERIUM,1,$@bg_emp);
 
 		bg_warp_cemetery(.Attacker); // To Cementery and Wait
 		donpcevent("Rush_Respawn::OnResetTimer"); // Reset Respawn Timer
@@ -241,7 +241,7 @@ OnEnd:
 // Battleground Respawn
 // *********************************************************************
 
--	script	Rush_Respawn	FAKE_NPC,{
+	script	Rush_Respawn	FAKE_NPC,{
 	end;
 
 OnResetTimer:

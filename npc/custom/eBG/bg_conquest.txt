@@ -19,7 +19,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Conquest	FAKE_NPC,{
+	script	Conquest	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -76,8 +76,8 @@ OnStart:
 		case 4: set .Castle$,"arug_cas07"; set .GX,298; set .GY,339; set .CX,298; set .CY,308; set .DX, 43; set .DY,256; set .AX,139; set .AY, 31; break;
 		case 5: set .Castle$,"arug_cas08"; set .GX,313; set .GY,154; set .CX,330; set .CY,154; set .DX,121; set .DY,318; set .AX,141; set .AY, 45; break;
 	}
-	bg_set_cemetery($@BG_Team1,.Castle$,.GX,.GY);
-	bg_set_cemetery($@BG_Team2,.Castle$,.CX,.CY);
+	callfunc("F_BGSetCemetery",$@BG_Team1,.Castle$,.GX,.GY);
+	callfunc("F_BGSetCemetery",$@BG_Team2,.Castle$,.CX,.CY);
 
 	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
 	$@BG_Status = 1;
@@ -317,7 +317,7 @@ OnStart:
 	set .Wall2, 6;
 	set .Wall3, 4;
 	// ======================================
-	donpceventall("OnEmblemConquest");
+	donpcevent "BG_Conquest::OnEmblemConquest";
 	sleep 2100;
 	bg_warp .Defender,.Castle$,.DX,.DY; // Flag Respawn - Emperium
 	bg_warp .Atacker,.Castle$,.AX,.AY; // Castle Entrance
@@ -331,7 +331,7 @@ OnGuardianStone1:
 	.Stone--;
 	.Score++;
 	if (playerattached())
-		bg_rankpoints(BGR_GSTONE,1,$@gstone_killed);
+		callfunc("F_BGRankpoints",BGR_GSTONE,1,$@gstone_killed);
 	if (.Stone > 0) mapannounce .castle$,"1st Guardian Stone has fallen - 6 minutes to destroy the 2nd",1,0xFFA500;
 	donpcevent "Conquest::OnCheckGStone";
 	end;
@@ -340,7 +340,7 @@ OnGuardianStone2:
 	.Stone--;
 	.Score++;
 	if (playerattached())
-		bg_rankpoints(BGR_GSTONE,1,$@gstone_killed);
+		callfunc("F_BGRankpoints",BGR_GSTONE,1,$@gstone_killed);
 	if (.Stone > 0) mapannounce .castle$,"2nd Guardian Stone has fallen - 6 minutes to destroy the 1st",1,0xFFA500;
 	donpcevent "Conquest::OnCheckGStone";
 	end;
@@ -359,7 +359,7 @@ OnBarricade0:
 
 OnBarricade1:
 	if (playerattached())
-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
+		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
 	if (set(.Wall1,.Wall1 - 1) < 1) {
 		initnpctimer; // Restart Timer
 		mapannounce .castle$,"1st Fortress Gate has fallen - 6 minutes to destroy the 2nd",1,0xFFA500;
@@ -369,7 +369,7 @@ OnBarricade1:
 	end;
 OnBarricade2:
 	if (playerattached())
-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
+		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
 	if (set(.Wall2,.Wall2 - 1) < 1) {
 		initnpctimer; // Restart Timer
 		mapannounce .castle$,"2nd Fortress Gate has fallen - 6 minutes to destroy the 3rd",1,0xFFA500;
@@ -379,7 +379,7 @@ OnBarricade2:
 	end;
 OnBarricade3:
 	if (playerattached())
-		bg_rankpoints(BGR_BARRICADE,1,$@cq_barri);
+		callfunc("F_BGRankpoints",BGR_BARRICADE,1,$@cq_barri);
 	if (set(.Wall3,.Wall3 - 1) < 1) {
 		initnpctimer; // Restart Timer
 		mapannounce .castle$,"3rd Fortress Gate has fallen - 6 minutes to destroy the Emperium",1,0xFFA500;
@@ -659,7 +659,7 @@ OnInit:
 // Battleground Respawn
 // *********************************************************************
 
--	script	Conquest_Respawn	FAKE_NPC,{
+	script	Conquest_Respawn	FAKE_NPC,{
 	end;
 
 OnStart:

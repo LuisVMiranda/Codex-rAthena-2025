@@ -80,7 +80,7 @@ bat_room,161,158,3	duplicate(bat_aid)	General Guillaume's Aid::bat_aid4	4_M_KY_H
 // Flags
 // *********************************************************************
 
--	script	Base Flag#bg	FAKE_NPC,{ end; }
+	script	Base Flag#bg	FAKE_NPC,{ end; }
 
 // BattleGround Warper - Exit
 // *********************************************************************
@@ -413,7 +413,7 @@ S_BuyConsumableWOE:
 	close;
 }
 
--	script	Maroll Battle Recruiter::BatRecruit	728,{
+	script	Maroll Battle Recruiter::BatRecruit	728,{
 	mes "[Maroll Battle Recruiter]";
 	mes "Good day, adventurer.";
 	mes "I'm a knight from a far country called Maroll Kingdom.";

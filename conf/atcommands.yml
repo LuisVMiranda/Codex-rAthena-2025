@@ -1278,11 +1278,11 @@ Body:
       Hides or shows pets around you.
       @hidepet hides other players' pets.
       @hidepetall hides all pets, including yours.
-  - Command: spbar
-    Aliases:
-      - showpartysp
+  - Command: joinbg
     Help: |
-      Toggles party SP bar updates for supported clients.
+      Params: <mode>
+      Joins the currently rotated battleground queue.
+      Modes: 0 = solo, 1 = party, 2 = guild.
   - Command: partybuff
     Aliases:
       - spb

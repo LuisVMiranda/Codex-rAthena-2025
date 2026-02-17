@@ -17,7 +17,7 @@
 // Battleground Engine
 // *********************************************************************
 
--	script	Flavius_TD	FAKE_NPC,{
+	script	Flavius_TD	FAKE_NPC,{
 	end;
 
 OnInit:
@@ -36,8 +36,8 @@ OnTeam1Die:
 	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
 		if (killerrid != 0) {
 			set .Team1_Score, .Team1_Score - 1;
-			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
-			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
+			callfunc("F_BGRankpoints",BGR_TD_KILL,1,$@td_kill,killerrid);
+			callfunc("F_BGRankpoints",BGR_TD_DEATH,1,$@td_death);
 		}
 		donpcevent "Flavius_TD::OnValidateScore";
 	}
@@ -49,8 +49,8 @@ OnTeam2Die:
 	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
 		if (killerrid != 0) {
 			set .Team2_Score, .Team2_Score - 1;
-			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
-			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
+			callfunc("F_BGRankpoints",BGR_TD_KILL,1,$@td_kill,killerrid);
+			callfunc("F_BGRankpoints",BGR_TD_DEATH,1,$@td_death);
 		}
 		donpcevent "Flavius_TD::OnValidateScore";
 	}
@@ -82,7 +82,7 @@ OnStart:
 	bg_team_reveal $@BG_Team2,true;
 	donpcevent "#guitd_respawn::OnBGStart";
 	donpcevent "#crotd_respawn::OnBGStart";
-	donpceventall "OnEmblemTD";
+	donpcevent "BG_Flavius_TD::OnEmblemTD";
 	end;
 
 OnValidateScore:

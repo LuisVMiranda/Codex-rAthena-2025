@@ -10224,13 +10224,13 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char title_line[NAME_LENGTH] = {};
-				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				memcpy( packet.title, title_line, NAME_LENGTH );
-
 				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				safestrncpy( packet.name, name_line, NAME_LENGTH );
+
+				char title_line[NAME_LENGTH] = {};
+				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				memcpy( packet.title, title_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;
@@ -10292,9 +10292,15 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				safestrncpy(packet.name, md->name, NAME_LENGTH );
 
 #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
+				if (battle_config.monster_hp_headtext) {
+					char hp_title[NAME_LENGTH] = {};
+					safesnprintf(hp_title, sizeof(hp_title), "%s (%u%%)", md->name, get_percentage(md->status.hp, md->status.max_hp));
+					memcpy(packet.title, hp_title, NAME_LENGTH);
+				}
+
 				const unit_data* ud = unit_bl2ud(bl);
 
-				if (ud != nullptr) {
+				if (ud != nullptr && packet.title[0] == '\0') {
 					memcpy(packet.title, ud->title, NAME_LENGTH);
 					packet.groupId = ud->group_id;
 				}

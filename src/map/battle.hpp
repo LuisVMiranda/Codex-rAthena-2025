@@ -680,6 +680,7 @@ struct Battle_Config
 	int32 feature_roulette;
 	int32 feature_roulette_bonus_reward;
 	int32 monster_hp_bars_info;
+	int32 monster_hp_headtext;
 	int32 save_body_style;
 	int32 mob_eye_range_bonus; //Vulture's Eye and Snake's Eye range bonus
 	int32 mob_stuck_warning; //Show warning if a monster is stuck too long

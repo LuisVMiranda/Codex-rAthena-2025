@@ -10292,15 +10292,9 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				safestrncpy(packet.name, md->name, NAME_LENGTH );
 
 #if PACKETVER_MAIN_NUM >= 20180207 || PACKETVER_RE_NUM >= 20171129 || PACKETVER_ZERO_NUM >= 20171130
-				if (battle_config.monster_hp_headtext) {
-					char hp_title[NAME_LENGTH] = {};
-					safesnprintf(hp_title, sizeof(hp_title), "%s (%u%%)", md->name, get_percentage(md->status.hp, md->status.max_hp));
-					memcpy(packet.title, hp_title, NAME_LENGTH);
-				}
-
 				const unit_data* ud = unit_bl2ud(bl);
 
-				if (ud != nullptr && packet.title[0] == '\0') {
+				if (ud != nullptr) {
 					memcpy(packet.title, ud->title, NAME_LENGTH);
 					packet.groupId = ud->group_id;
 				}

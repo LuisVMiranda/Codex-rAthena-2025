@@ -1,0 +1,913 @@
+//==============================================================
+// TravelerDamageLog - Production NPC Script (ANSI / Windows-1252)
+// Commands
+//   @damagelog  - first-time setup + manage up to 3 reports
+//   @dpslog     - show Top 5 based on the ACTIVE report schema
+//
+// Language
+// - English, Português, Español (with accents)
+// - Menu text contains NO ":" characters (select delimiter safety)
+//
+// Data
+// - Uses damage_nature for nature breakdown (physical, magical, misc, unknown)
+// - damage_type remains flow labels (incoming, outgoing, death) if needed
+//
+// Column IDs
+// 0 None
+// 1 [You]    - Damage dealt
+// 2 [You]    - Skill and Damage
+// 3 [You]    - Nature and Damage
+// 4 [You]    - Hits
+// 5 [Target] - Damage taken
+// 6 [Target] - Skill and Damage
+// 7 [Target] - Nature and Damage
+// 8 [Target] - Hits
+//
+// Mode rules (predictable)
+// - If Column 1 is 2,3,6,7 -> Dimension mode (Top 5 skills or natures)
+// - Otherwise -> Target mode (Top 5 targets), and Skill/Nature columns become Top per-target
+//==============================================================
+
+
+//--------------------------------------------------------------
+// Messages (no ":" inside any returned string)
+// #DL_LANG: 0 EN, 1 PT, 2 ES
+//--------------------------------------------------------------
+function	script	F_DLogMsg	{
+	.@id = getarg(0);
+
+	if (#DL_LANG == 1) { // PT-BR
+		switch (.@id) {
+			case 0:  return "[Log]: ";
+			case 1:  return "Nenhum registro encontrado.";
+			case 2:  return "Por favor, aguarde ";
+			case 3:  return "s antes de usar @dpslog novamente.";
+			case 4:  return "Configuração inicial - vamos ajustar seus relatórios.";
+			case 5:  return "Selecione o idioma";
+			case 6:  return "Idioma salvo.";
+			case 7:  return "Menu @damagelog";
+			case 8:  return "Gerenciar relatórios 1 a 3";
+			case 9:  return "Selecionar relatório ativo para @dpslog";
+			case 10: return "Alterar idioma";
+			case 11: return "Resetar tudo";
+			case 12: return "Sair";
+			case 13: return "Escolha inválida.";
+			case 14: return "Escolha um slot de relatório";
+			case 15: return "Criar ou editar nome do relatório";
+			case 16: return "Editar colunas do schema";
+			case 17: return "Definir como ativo";
+			case 18: return "Voltar";
+			case 19: return "Digite o nome do relatório";
+			case 20: return "Nome salvo.";
+			case 21: return "Escolha o relatório ativo";
+			case 22: return "Relatório ativo salvo.";
+			case 23: return "Escolha as colunas em ordem";
+			case 24: return "Escolha a coluna 1";
+			case 25: return "Escolha a coluna 2 ou Nenhuma";
+			case 26: return "Escolha a coluna 3 ou Nenhuma";
+			case 27: return "Escolha a coluna 4 ou Nenhuma";
+			case 28: return "Você já escolheu essa coluna. Selecione outra.";
+			case 29: return "Schema salvo.";
+			case 30: return "[Estrutura]: ";
+			case 31: return "C";
+			case 32: return " = ";
+			case 33: return " + ";
+			case 34: return "Nenhuma";
+			case 35: return "-------------------------------------------------------------------";
+			case 36: return "[~]  D A M A G E   L O G  -  T O P  5  (@DPSLOG)  [~]";
+			case 37: return "Janela de combate ";
+			case 38: return " min";
+			case 39: return "Relatório ativo não configurado. Use @damagelog.";
+			case 40: return "Configurações resetadas.";
+			case 41: return "Ataque Básico";
+			case 42: return "(Mágico)";
+			case 43: return "(Físico)";
+			case 44: return "(Misc)";
+			case 45: return "Habilidade";
+			case 46: return "Desconhecido";
+			case 47: return "Ativo";
+		}
+	}
+	else if (#DL_LANG == 2) { // ES
+		switch (.@id) {
+			case 0:  return "[Log]: ";
+			case 1:  return "No se encontraron registros.";
+			case 2:  return "Por favor espera ";
+			case 3:  return "s antes de usar @dpslog otra vez.";
+			case 4:  return "Configuración inicial - vamos a ajustar tus reportes.";
+			case 5:  return "Elige el idioma";
+			case 6:  return "Idioma guardado.";
+			case 7:  return "Menú @damagelog";
+			case 8:  return "Gestionar reportes 1 a 3";
+			case 9:  return "Seleccionar reporte activo para @dpslog";
+			case 10: return "Cambiar idioma";
+			case 11: return "Reiniciar todo";
+			case 12: return "Salir";
+			case 13: return "Selección inválida.";
+			case 14: return "Elige un slot de reporte";
+			case 15: return "Crear o editar nombre del reporte";
+			case 16: return "Editar columnas del schema";
+			case 17: return "Definir como activo";
+			case 18: return "Volver";
+			case 19: return "Escribe el nombre del reporte";
+			case 20: return "Nombre guardado.";
+			case 21: return "Elige el reporte activo";
+			case 22: return "Reporte activo guardado.";
+			case 23: return "Elige las columnas en orden";
+			case 24: return "Elige la columna 1";
+			case 25: return "Elige la columna 2 o Ninguna";
+			case 26: return "Elige la columna 3 o Ninguna";
+			case 27: return "Elige la columna 4 o Ninguna";
+			case 28: return "Ya elegiste esa columna. Elige otra.";
+			case 29: return "Schema guardado.";
+			case 30: return "[Estrutura]: ";
+			case 31: return "C";
+			case 32: return " = ";
+			case 33: return " + ";
+			case 34: return "Ninguna";
+			case 35: return "-------------------------------------------------------------------";
+			case 36: return "[~]  D A M A G E   L O G  -  T O P  5  (@DPSLOG)  [~]";
+			case 37: return "Ventana de combate ";
+			case 38: return " min";
+			case 39: return "Reporte activo no configurado. Usa @damagelog.";
+			case 40: return "Configuración reiniciada.";
+			case 41: return "Ataque Básico";
+			case 42: return "(Mágico)";
+			case 43: return "(Físico)";
+			case 44: return "(Misc)";
+			case 45: return "Habilidad";
+			case 46: return "Desconhecido";
+			case 47: return "Activo";
+		}
+	}
+	else { // EN
+		switch (.@id) {
+			case 0:  return "[Log]: ";
+			case 1:  return "No records found.";
+			case 2:  return "Please wait ";
+			case 3:  return "s before using @dpslog again.";
+			case 4:  return "First time setup - lets configure your reports.";
+			case 5:  return "Select language";
+			case 6:  return "Language saved.";
+			case 7:  return "@damagelog menu";
+			case 8:  return "Manage reports 1 to 3";
+			case 9:  return "Select active report for @dpslog";
+			case 10: return "Change language";
+			case 11: return "Reset everything";
+			case 12: return "Exit";
+			case 13: return "Invalid selection.";
+			case 14: return "Pick a report slot";
+			case 15: return "Create or edit report name";
+			case 16: return "Edit schema columns";
+			case 17: return "Set as active";
+			case 18: return "Back";
+			case 19: return "Enter report name";
+			case 20: return "Name saved.";
+			case 21: return "Pick the active report";
+			case 22: return "Active report saved.";
+			case 23: return "Pick columns in order";
+			case 24: return "Pick column 1";
+			case 25: return "Pick column 2 or None";
+			case 26: return "Pick column 3 or None";
+			case 27: return "Pick column 4 or None";
+			case 28: return "You already picked that column. Pick a different one.";
+			case 29: return "Schema saved.";
+			case 30: return "[Structure]: ";
+			case 31: return "C";
+			case 32: return " = ";
+			case 33: return " + ";
+			case 34: return "None";
+			case 35: return "-------------------------------------------------------------------";
+			case 36: return "[~]  D A M A G E   L O G  -  T O P  5  (@DPSLOG)  [~]";
+			case 37: return "Combat window ";
+			case 38: return " min";
+			case 39: return "Active report not configured. Use @damagelog.";
+			case 40: return "Settings reset.";
+			case 41: return "Basic Attack";
+			case 42: return "(Magical)";
+			case 43: return "(Physical)";
+			case 44: return "(Misc)";
+			case 45: return "Skill";
+			case 46: return "Unknown";
+			case 47: return "Active";
+		}
+	}
+	return "";
+}
+
+
+//--------------------------------------------------------------
+// Column labels (no ":" inside)
+//--------------------------------------------------------------
+function	script	F_DLogColName	{
+	.@c = getarg(0);
+
+	if (#DL_LANG == 1) { // PT
+		if (.@c == 0) return callfunc("F_DLogMsg", 34);
+		if (.@c == 1) return "[Dano]: ";
+		if (.@c == 2) return "[Dano & Skill]: ";
+		if (.@c == 3) return "[Tipo & Dano]: ";
+		if (.@c == 4) return "[Hits]: ";
+		if (.@c == 5) return "[* Dano]: ";
+		if (.@c == 6) return "[* Dano & Skill]: ";
+		if (.@c == 7) return "[* Tipo & Dano]: ";
+		if (.@c == 8) return "[* Hits]: ";
+	}
+	else if (#DL_LANG == 2) { // ES
+		if (.@c == 0) return callfunc("F_DLogMsg", 34);
+		if (.@c == 1) return "[Daño]: ";
+		if (.@c == 2) return "[Daño & Skill]: ";
+		if (.@c == 3) return "[Tipo & Daño]: ";
+		if (.@c == 4) return "[Golpes]: ";
+		if (.@c == 5) return "[* Daño]: ";
+		if (.@c == 6) return "[* Daño & Skill]: ";
+		if (.@c == 7) return "[* Tipo & Daño]: ";
+		if (.@c == 8) return "[* Golpes]: ";
+	}
+	else { // EN
+		if (.@c == 0) return callfunc("F_DLogMsg", 34);
+		if (.@c == 1) return "[Damage]: ";
+		if (.@c == 2) return "[Damage & Skill]: ";
+		if (.@c == 3) return "[Type & Damage]: ";
+		if (.@c == 4) return "[Hits]: ";
+		if (.@c == 5) return "[* Damage]: ";
+		if (.@c == 6) return "[* Damage & Skill]: ";
+		if (.@c == 7) return "[* Nature & Damage]: ";
+		if (.@c == 8) return "[* Hits]: ";
+	}
+	return callfunc("F_DLogMsg", 34);
+}
+
+
+//--------------------------------------------------------------
+// Safe text for storing report names and showing in select
+//--------------------------------------------------------------
+function	script	F_DLogSafeText	{
+	.@s$ = getarg(0);
+	.@s$ = replacestr(.@s$, ":", "-");
+	.@s$ = replacestr(.@s$, ";", "-");
+	.@s$ = replacestr(.@s$, "|", "-");
+	return .@s$;
+}
+
+
+//--------------------------------------------------------------
+// SQL escape for string literal
+//--------------------------------------------------------------
+function	script	F_DLogSqlEscape	{
+	.@s$ = getarg(0);
+	.@s$ = replacestr(.@s$, "\\", "\\\\");
+	.@s$ = replacestr(.@s$, "'", "\\'");
+	return .@s$;
+}
+
+
+//--------------------------------------------------------------
+// Nature label mapping (damage_nature)
+//--------------------------------------------------------------
+function	script	F_DLogNatureLabel	{
+	.@n$ = getarg(0);
+
+	if (.@n$ == "magical") return callfunc("F_DLogMsg", 42);
+	if (.@n$ == "physical") return callfunc("F_DLogMsg", 43);
+	if (.@n$ == "misc") return callfunc("F_DLogMsg", 44);
+	if (.@n$ == "skill") return callfunc("F_DLogMsg", 45);
+	return callfunc("F_DLogMsg", 46);
+}
+
+
+//--------------------------------------------------------------
+// Skill label wrapper (keep skill names inside parentheses)
+//--------------------------------------------------------------
+function	script	F_DLogSkillLabel	{
+	.@s$ = getarg(0);
+	if (.@s$ == "") .@s$ = callfunc("F_DLogMsg",41);
+	return "(" + .@s$ + ")";
+}
+
+
+//--------------------------------------------------------------
+// Structure preview line
+//--------------------------------------------------------------
+function	script	F_DLogPreview	{
+	.@c1 = getarg(0);
+	.@c2 = getarg(1);
+	.@c3 = getarg(2);
+	.@c4 = getarg(3);
+
+	.@out$ = callfunc("F_DLogMsg", 30);
+
+	if (.@c1 > 0) .@out$ = .@out$ + callfunc("F_DLogMsg", 31) + "1" + callfunc("F_DLogMsg", 32) + callfunc("F_DLogColName", .@c1);
+	if (.@c2 > 0) .@out$ = .@out$ + callfunc("F_DLogMsg", 33) + callfunc("F_DLogMsg", 31) + "2" + callfunc("F_DLogMsg", 32) + callfunc("F_DLogColName", .@c2);
+	if (.@c3 > 0) .@out$ = .@out$ + callfunc("F_DLogMsg", 33) + callfunc("F_DLogMsg", 31) + "3" + callfunc("F_DLogMsg", 32) + callfunc("F_DLogColName", .@c3);
+	if (.@c4 > 0) .@out$ = .@out$ + callfunc("F_DLogMsg", 33) + callfunc("F_DLogMsg", 31) + "4" + callfunc("F_DLogMsg", 32) + callfunc("F_DLogColName", .@c4);
+
+	return .@out$;
+}
+
+
+//--------------------------------------------------------------
+// Cooldown helper (account variable #DPSLOG_NEXT)
+//--------------------------------------------------------------
+function	script	F_DLogCooldownLeft	{
+	.@now = gettimetick(2);
+	if (#DPSLOG_NEXT > .@now) return (#DPSLOG_NEXT - .@now);
+	return 0;
+}
+
+
+//--------------------------------------------------------------
+// Report getters/setters
+//--------------------------------------------------------------
+function	script	F_DLogGetName	{
+	.@slot = getarg(0);
+	if (.@slot == 1) return #DL_R1_NAME$;
+	if (.@slot == 2) return #DL_R2_NAME$;
+	if (.@slot == 3) return #DL_R3_NAME$;
+	return "";
+}
+
+function	script	F_DLogSetName	{
+	.@slot = getarg(0);
+	.@val$ = getarg(1);
+	.@val$ = callfunc("F_DLogSafeText", .@val$);
+
+	if (.@slot == 1) #DL_R1_NAME$ = .@val$;
+	else if (.@slot == 2) #DL_R2_NAME$ = .@val$;
+	else if (.@slot == 3) #DL_R3_NAME$ = .@val$;
+	return;
+}
+
+function	script	F_DLogGetCol	{
+	.@slot = getarg(0);
+	.@idx = getarg(1);
+
+	if (.@slot == 1) {
+		if (.@idx == 1) return #DL_R1_C1;
+		if (.@idx == 2) return #DL_R1_C2;
+		if (.@idx == 3) return #DL_R1_C3;
+		if (.@idx == 4) return #DL_R1_C4;
+	}
+	if (.@slot == 2) {
+		if (.@idx == 1) return #DL_R2_C1;
+		if (.@idx == 2) return #DL_R2_C2;
+		if (.@idx == 3) return #DL_R2_C3;
+		if (.@idx == 4) return #DL_R2_C4;
+	}
+	if (.@slot == 3) {
+		if (.@idx == 1) return #DL_R3_C1;
+		if (.@idx == 2) return #DL_R3_C2;
+		if (.@idx == 3) return #DL_R3_C3;
+		if (.@idx == 4) return #DL_R3_C4;
+	}
+	return 0;
+}
+
+function	script	F_DLogSetCols	{
+	.@slot = getarg(0);
+	.@c1 = getarg(1);
+	.@c2 = getarg(2);
+	.@c3 = getarg(3);
+	.@c4 = getarg(4);
+
+	if (.@slot == 1) { #DL_R1_C1=.@c1; #DL_R1_C2=.@c2; #DL_R1_C3=.@c3; #DL_R1_C4=.@c4; }
+	else if (.@slot == 2) { #DL_R2_C1=.@c1; #DL_R2_C2=.@c2; #DL_R2_C3=.@c3; #DL_R2_C4=.@c4; }
+	else if (.@slot == 3) { #DL_R3_C1=.@c1; #DL_R3_C2=.@c2; #DL_R3_C3=.@c3; #DL_R3_C4=.@c4; }
+	return;
+}
+
+
+//==============================================================
+// NPC Script
+//==============================================================
+-	script	TravelerDamageLog	-1,{
+
+OnInit:
+	.COMBAT_WINDOW_MINUTES = 30;
+	.DPSLOG_COOLDOWN = 5;
+	initnpctimer;
+	end;
+
+OnTimer1800000:
+	stopnpctimer;
+	.@rows = 0;
+	query_logsql("SELECT COUNT(*) FROM damage_log_entries", .@rows);
+	if (.@rows > 0) {
+		query_logsql("TRUNCATE TABLE damage_log_entries");
+		debugmes "[DAMAGE LOG] `damage_log_entries` was truncated based on scheduled cleanup.";
+	}
+	initnpctimer;
+	end;
+
+OnPCLoginEvent:
+	bindatcmd "damagelog", strnpcinfo(3)+"::OnDamageLogCmd";
+	bindatcmd "dpslog",    strnpcinfo(3)+"::OnDpsLogCmd";
+	end;
+
+
+//--------------------------------------------------------------
+// @damagelog
+//--------------------------------------------------------------
+OnDamageLogCmd:
+	if (!#DL_INIT) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",4);
+		callsub S_SetLanguage;
+		if (#DL_ACTIVE < 1 || #DL_ACTIVE > 3) #DL_ACTIVE = 1;
+		callsub S_EditReport, #DL_ACTIVE;
+		#DL_INIT = 1;
+		end;
+	}
+
+	while (1) {
+		.@active = #DL_ACTIVE;
+		if (.@active < 1 || .@active > 3) .@active = 1;
+
+		.@aname$ = callfunc("F_DLogGetName", .@active);
+		if (.@aname$ == "") .@aname$ = "(empty)";
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",47)+" ("+.@active+") ^0000ff"+.@aname$+"^000000";
+
+		.@menu$ = callfunc("F_DLogMsg",8)+":"+callfunc("F_DLogMsg",9)+":"+callfunc("F_DLogMsg",10)+":"+callfunc("F_DLogMsg",11)+":"+callfunc("F_DLogMsg",12);
+		.@m = select(.@menu$);
+
+		if (.@m == 1) callsub S_ManageReports;
+		else if (.@m == 2) callsub S_SetActiveReport;
+		else if (.@m == 3) callsub S_SetLanguage;
+		else if (.@m == 4) callsub S_ResetAll;
+		else end;
+	}
+	end;
+
+
+S_SetLanguage:
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",5);
+	.@menu$ = "English:Português:Español";
+	.@s = select(.@menu$);
+	#DL_LANG = .@s - 1;
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",6);
+	return;
+
+
+S_ResetAll:
+	#DL_INIT = 0;
+	#DL_LANG = 0;
+	#DL_ACTIVE = 1;
+
+	#DL_R1_NAME$ = ""; #DL_R2_NAME$ = ""; #DL_R3_NAME$ = "";
+	#DL_R1_C1=0; #DL_R1_C2=0; #DL_R1_C3=0; #DL_R1_C4=0;
+	#DL_R2_C1=0; #DL_R2_C2=0; #DL_R2_C3=0; #DL_R2_C4=0;
+	#DL_R3_C1=0; #DL_R3_C2=0; #DL_R3_C3=0; #DL_R3_C4=0;
+
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",40);
+
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",4);
+	callsub S_SetLanguage;
+	callsub S_EditReport, #DL_ACTIVE;
+	#DL_INIT = 1;
+	end;
+
+
+S_ManageReports:
+	.@n1$ = #DL_R1_NAME$; if (.@n1$ == "") .@n1$ = "(empty)";
+	.@n2$ = #DL_R2_NAME$; if (.@n2$ == "") .@n2$ = "(empty)";
+	.@n3$ = #DL_R3_NAME$; if (.@n3$ == "") .@n3$ = "(empty)";
+
+	.@m1$ = callfunc("F_DLogSafeText", .@n1$);
+	.@m2$ = callfunc("F_DLogSafeText", .@n2$);
+	.@m3$ = callfunc("F_DLogSafeText", .@n3$);
+
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",14);
+	.@menu$ = "^0000ff"+.@m1$+"^000000:^0000ff"+.@m2$+"^000000:^0000ff"+.@m3$+"^000000:"+callfunc("F_DLogMsg",18);
+	.@slot = select(.@menu$);
+	if (.@slot == 4) return;
+
+	callsub S_EditReport, .@slot;
+	return;
+
+
+S_SetActiveReport:
+	.@n1$ = #DL_R1_NAME$; if (.@n1$ == "") .@n1$ = "(empty)";
+	.@n2$ = #DL_R2_NAME$; if (.@n2$ == "") .@n2$ = "(empty)";
+	.@n3$ = #DL_R3_NAME$; if (.@n3$ == "") .@n3$ = "(empty)";
+
+	.@m1$ = callfunc("F_DLogSafeText", .@n1$);
+	.@m2$ = callfunc("F_DLogSafeText", .@n2$);
+	.@m3$ = callfunc("F_DLogSafeText", .@n3$);
+
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",21);
+	.@menu$ = "^0000ff"+.@m1$+"^000000:^0000ff"+.@m2$+"^000000:^0000ff"+.@m3$+"^000000:"+callfunc("F_DLogMsg",18);
+	.@s = select(.@menu$);
+	if (.@s == 4) return;
+
+	#DL_ACTIVE = .@s;
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",22);
+	return;
+
+
+S_EditReport:
+	.@slot = getarg(0);
+
+	while (1) {
+		.@name$ = callfunc("F_DLogGetName", .@slot);
+		if (.@name$ == "") .@name$ = "(empty)";
+
+		.@c1 = callfunc("F_DLogGetCol", .@slot, 1);
+		.@c2 = callfunc("F_DLogGetCol", .@slot, 2);
+		.@c3 = callfunc("F_DLogGetCol", .@slot, 3);
+		.@c4 = callfunc("F_DLogGetCol", .@slot, 4);
+
+		dispbottom callfunc("F_DLogMsg",0)+" Slot ("+.@slot+") ^0000ff"+.@name$+"^000000";
+		if (.@c1 > 0) dispbottom callfunc("F_DLogPreview", .@c1, .@c2, .@c3, .@c4);
+
+		.@menu$ = callfunc("F_DLogMsg",15)+":"+callfunc("F_DLogMsg",16)+":"+callfunc("F_DLogMsg",17)+":"+callfunc("F_DLogMsg",18);
+		.@m = select(.@menu$);
+
+		if (.@m == 1) {
+			dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",19);
+			input .@newname$;
+			callfunc "F_DLogSetName", .@slot, .@newname$;
+			dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",20);
+		}
+		else if (.@m == 2) {
+			callsub S_EditColumns, .@slot;
+		}
+		else if (.@m == 3) {
+			#DL_ACTIVE = .@slot;
+			dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",22);
+		}
+		else return;
+	}
+	return;
+
+
+S_EditColumns:
+	.@slot = getarg(0);
+
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",23);
+
+	.@c1 = 0; .@c2 = 0; .@c3 = 0; .@c4 = 0;
+
+	// Column 1 (no None)
+	while (1) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",24);
+		.@menu$ = callfunc("F_DLogColName",1)+":"+callfunc("F_DLogColName",2)+":"+callfunc("F_DLogColName",3)+":"+callfunc("F_DLogColName",4)+":"+callfunc("F_DLogColName",5)+":"+callfunc("F_DLogColName",6)+":"+callfunc("F_DLogColName",7)+":"+callfunc("F_DLogColName",8);
+		.@pick = select(.@menu$);
+		.@c1 = .@pick;
+		dispbottom callfunc("F_DLogPreview", .@c1, 0, 0, 0);
+		break;
+	}
+
+	// Column 2
+	while (1) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",25);
+		.@menu$ = callfunc("F_DLogColName",0)+":"+callfunc("F_DLogColName",1)+":"+callfunc("F_DLogColName",2)+":"+callfunc("F_DLogColName",3)+":"+callfunc("F_DLogColName",4)+":"+callfunc("F_DLogColName",5)+":"+callfunc("F_DLogColName",6)+":"+callfunc("F_DLogColName",7)+":"+callfunc("F_DLogColName",8);
+		.@pick = select(.@menu$);
+		.@c2 = .@pick - 1;
+		if (.@c2 == 0) { .@c2 = 0; dispbottom callfunc("F_DLogPreview", .@c1, 0, 0, 0); break; }
+		if (.@c2 == .@c1) { dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",28); continue; }
+		dispbottom callfunc("F_DLogPreview", .@c1, .@c2, 0, 0);
+		break;
+	}
+
+	// Column 3
+	while (1) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",26);
+		.@menu$ = callfunc("F_DLogColName",0)+":"+callfunc("F_DLogColName",1)+":"+callfunc("F_DLogColName",2)+":"+callfunc("F_DLogColName",3)+":"+callfunc("F_DLogColName",4)+":"+callfunc("F_DLogColName",5)+":"+callfunc("F_DLogColName",6)+":"+callfunc("F_DLogColName",7)+":"+callfunc("F_DLogColName",8);
+		.@pick = select(.@menu$);
+		.@c3 = .@pick - 1;
+		if (.@c3 == 0) { .@c3 = 0; dispbottom callfunc("F_DLogPreview", .@c1, .@c2, 0, 0); break; }
+		if (.@c3 == .@c1 || (.@c2 && .@c3 == .@c2)) { dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",28); continue; }
+		dispbottom callfunc("F_DLogPreview", .@c1, .@c2, .@c3, 0);
+		break;
+	}
+
+	// Column 4
+	while (1) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",27);
+		.@menu$ = callfunc("F_DLogColName",0)+":"+callfunc("F_DLogColName",1)+":"+callfunc("F_DLogColName",2)+":"+callfunc("F_DLogColName",3)+":"+callfunc("F_DLogColName",4)+":"+callfunc("F_DLogColName",5)+":"+callfunc("F_DLogColName",6)+":"+callfunc("F_DLogColName",7)+":"+callfunc("F_DLogColName",8);
+		.@pick = select(.@menu$);
+		.@c4 = .@pick - 1;
+		if (.@c4 == 0) { .@c4 = 0; dispbottom callfunc("F_DLogPreview", .@c1, .@c2, .@c3, 0); break; }
+		if (.@c4 == .@c1 || (.@c2 && .@c4 == .@c2) || (.@c3 && .@c4 == .@c3)) { dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",28); continue; }
+		dispbottom callfunc("F_DLogPreview", .@c1, .@c2, .@c3, .@c4);
+		break;
+	}
+
+	callfunc "F_DLogSetCols", .@slot, .@c1, .@c2, .@c3, .@c4;
+	dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",29);
+	return;
+
+
+//--------------------------------------------------------------
+// @dpslog
+//--------------------------------------------------------------
+OnDpsLogCmd:
+	// First-time safety
+	if (!#DL_INIT) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",4);
+		callsub S_SetLanguage;
+		if (#DL_ACTIVE < 1 || #DL_ACTIVE > 3) #DL_ACTIVE = 1;
+		callsub S_EditReport, #DL_ACTIVE;
+		#DL_INIT = 1;
+	}
+
+	// Cooldown
+	.@left = callfunc("F_DLogCooldownLeft");
+	if (.@left > 0) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",2)+.@left+callfunc("F_DLogMsg",3);
+		end;
+	}
+	#DPSLOG_NEXT = gettimetick(2) + .DPSLOG_COOLDOWN;
+
+	.@slot = #DL_ACTIVE;
+	if (.@slot < 1 || .@slot > 3) .@slot = 1;
+
+	.@rname$ = callfunc("F_DLogGetName", .@slot);
+	.@c1 = callfunc("F_DLogGetCol", .@slot, 1);
+	.@c2 = callfunc("F_DLogGetCol", .@slot, 2);
+	.@c3 = callfunc("F_DLogGetCol", .@slot, 3);
+	.@c4 = callfunc("F_DLogGetCol", .@slot, 4);
+
+	// Clamp
+	if (.@c1 < 0 || .@c1 > 8) .@c1 = 0;
+	if (.@c2 < 0 || .@c2 > 8) .@c2 = 0;
+	if (.@c3 < 0 || .@c3 > 8) .@c3 = 0;
+	if (.@c4 < 0 || .@c4 > 8) .@c4 = 0;
+
+	if (.@rname$ == "" || .@c1 <= 0) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",39);
+		end;
+	}
+
+	// Mode from Column 1 only
+	// 1 targets
+	// 2 you skills
+	// 3 you natures
+	// 4 target skills
+	// 5 target natures
+	.@mode = 1;
+	if (.@c1 == 2) .@mode = 2;
+	else if (.@c1 == 3) .@mode = 3;
+	else if (.@c1 == 6) .@mode = 4;
+	else if (.@c1 == 7) .@mode = 5;
+
+	.@char_id = getcharid(0);
+	.@rows = 0;
+
+	// Target buffers (formatted strings)
+	deletearray .@tkey$[0], 128;
+	deletearray .@tdisp$[0], 128;
+	deletearray .@you_dmg$[0], 128;
+	deletearray .@tar_dmg$[0], 128;
+	deletearray .@you_hits$[0], 128;
+	deletearray .@tar_hits$[0], 128;
+
+	// Dimension buffers
+	deletearray .@sid[0], 128;
+	deletearray .@nature$[0], 128;
+	deletearray .@dhits$[0], 128;
+	deletearray .@ddmg$[0], 128;
+
+	if (.@mode == 2) {
+		// Top 5 skills you used
+		.@rows = query_logsql(
+			"SELECT COALESCE(CAST(skill_id AS SIGNED),0) AS sid, " +
+			"COALESCE(FORMAT(COUNT(*),0),'0') AS hits, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_dealt AS SIGNED)),0),'0') AS dmg " +
+			"FROM damage_log_entries " +
+			"WHERE owner_char_id=" + .@char_id + " AND skill_side='user' AND damage_dealt > 0 " +
+			"AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+			"GROUP BY sid " +
+			"ORDER BY SUM(CAST(damage_dealt AS SIGNED)) DESC, COUNT(*) DESC " +
+			"LIMIT 5",
+			.@sid[0], .@dhits$[0], .@ddmg$[0]
+		);
+	}
+	else if (.@mode == 4) {
+		// Top 5 skills taken
+		.@rows = query_logsql(
+			"SELECT COALESCE(CAST(skill_id AS SIGNED),0) AS sid, " +
+			"COALESCE(FORMAT(COUNT(*),0),'0') AS hits, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_taken AS SIGNED)),0),'0') AS dmg " +
+			"FROM damage_log_entries " +
+			"WHERE owner_char_id=" + .@char_id + " AND skill_side='target' AND damage_taken > 0 " +
+			"AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+			"GROUP BY sid " +
+			"ORDER BY SUM(CAST(damage_taken AS SIGNED)) DESC, COUNT(*) DESC " +
+			"LIMIT 5",
+			.@sid[0], .@dhits$[0], .@ddmg$[0]
+		);
+	}
+	else if (.@mode == 3) {
+		// Top 5 natures you dealt
+		.@rows = query_logsql(
+			"SELECT CASE WHEN damage_nature IN ('magical','physical','misc') THEN damage_nature ELSE 'unknown' END AS nat, " +
+			"COALESCE(FORMAT(COUNT(*),0),'0') AS hits, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_dealt AS SIGNED)),0),'0') AS dmg " +
+			"FROM damage_log_entries " +
+			"WHERE owner_char_id=" + .@char_id + " AND skill_side='user' AND damage_dealt > 0 " +
+			"AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+			"GROUP BY nat " +
+			"ORDER BY SUM(CAST(damage_dealt AS SIGNED)) DESC, COUNT(*) DESC " +
+			"LIMIT 5",
+			.@nature$[0], .@dhits$[0], .@ddmg$[0]
+		);
+	}
+	else if (.@mode == 5) {
+		// Top 5 natures taken
+		.@rows = query_logsql(
+			"SELECT CASE WHEN damage_nature IN ('magical','physical','misc') THEN damage_nature ELSE 'unknown' END AS nat, " +
+			"COALESCE(FORMAT(COUNT(*),0),'0') AS hits, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_taken AS SIGNED)),0),'0') AS dmg " +
+			"FROM damage_log_entries " +
+			"WHERE owner_char_id=" + .@char_id + " AND skill_side='target' AND damage_taken > 0 " +
+			"AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+			"GROUP BY nat " +
+			"ORDER BY SUM(CAST(damage_taken AS SIGNED)) DESC, COUNT(*) DESC " +
+			"LIMIT 5",
+			.@nature$[0], .@dhits$[0], .@ddmg$[0]
+		);
+	}
+	else {
+		// Top 5 targets by outgoing damage
+		.@rows = query_logsql(
+			"SELECT target_name AS tkey, " +
+			"COALESCE(NULLIF(target_name,''),'Unknown') AS tdisp, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_dealt AS SIGNED)),0),'0') AS you_dmg, " +
+			"COALESCE(FORMAT(SUM(CAST(damage_taken AS SIGNED)),0),'0') AS tar_dmg, " +
+			"COALESCE(FORMAT(SUM(CASE WHEN skill_side='user' AND damage_dealt>0 THEN 1 ELSE 0 END),0),'0') AS you_hits, " +
+			"COALESCE(FORMAT(SUM(CASE WHEN skill_side='target' AND damage_taken>0 THEN 1 ELSE 0 END),0),'0') AS tar_hits " +
+			"FROM damage_log_entries " +
+			"WHERE owner_char_id=" + .@char_id + " " +
+			"AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+			"GROUP BY tkey, tdisp " +
+			"ORDER BY SUM(CAST(damage_dealt AS SIGNED)) DESC, SUM(CASE WHEN skill_side='user' AND damage_dealt>0 THEN 1 ELSE 0 END) DESC " +
+			"LIMIT 5",
+			.@tkey$[0], .@tdisp$[0], .@you_dmg$[0], .@tar_dmg$[0], .@you_hits$[0], .@tar_hits$[0]
+		);
+	}
+
+	if (.@rows <= 0) {
+		dispbottom callfunc("F_DLogMsg",0)+" "+callfunc("F_DLogMsg",1);
+		end;
+	}
+
+	// Header
+	dispbottom callfunc("F_DLogMsg",35);
+	dispbottom callfunc("F_DLogMsg",36);
+	dispbottom callfunc("F_DLogMsg",35);
+	dispbottom callfunc("F_DLogMsg",0)+" Report ^0000ff"+.@rname$+"^000000 - "+callfunc("F_DLogMsg",37)+.COMBAT_WINDOW_MINUTES+callfunc("F_DLogMsg",38);
+	dispbottom callfunc("F_DLogPreview", .@c1, .@c2, .@c3, .@c4);
+	dispbottom callfunc("F_DLogMsg",35);
+
+	.@col[0] = .@c1;
+	.@col[1] = .@c2;
+	.@col[2] = .@c3;
+	.@col[3] = .@c4;
+
+	for (.@i = 0; .@i < .@rows; ++.@i) {
+
+		// Row label + row metrics (strings)
+		.@row$ = "";
+		.@you_dmg_row$ = "0";
+		.@tar_dmg_row$ = "0";
+		.@you_hits_row$ = "0";
+		.@tar_hits_row$ = "0";
+
+		if (.@mode == 2) {
+			.@tmp_skill$ = getskillname(.@sid[.@i], 1);
+			.@row$ = callfunc("F_DLogSkillLabel", .@tmp_skill$);
+			.@you_dmg_row$ = .@ddmg$[.@i];
+			.@you_hits_row$ = .@dhits$[.@i];
+		}
+		else if (.@mode == 4) {
+			.@tmp_skill2$ = getskillname(.@sid[.@i], 1);
+			.@row$ = callfunc("F_DLogSkillLabel", .@tmp_skill2$);
+			.@tar_dmg_row$ = .@ddmg$[.@i];
+			.@tar_hits_row$ = .@dhits$[.@i];
+		}
+		else if (.@mode == 3) {
+			.@row$ = callfunc("F_DLogNatureLabel", .@nature$[.@i]);
+			.@you_dmg_row$ = .@ddmg$[.@i];
+			.@you_hits_row$ = .@dhits$[.@i];
+		}
+		else if (.@mode == 5) {
+			.@row$ = callfunc("F_DLogNatureLabel", .@nature$[.@i]);
+			.@tar_dmg_row$ = .@ddmg$[.@i];
+			.@tar_hits_row$ = .@dhits$[.@i];
+		}
+		else {
+			.@row$ = .@tdisp$[.@i];
+			.@you_dmg_row$ = .@you_dmg$[.@i];
+			.@tar_dmg_row$ = .@tar_dmg$[.@i];
+			.@you_hits_row$ = .@you_hits$[.@i];
+			.@tar_hits_row$ = .@tar_hits$[.@i];
+		}
+
+		.@line$ = "#^0000ff" + (.@i + 1) + " " + .@row$ + "^000000";
+
+		for (.@j = 0; .@j < 4; ++.@j) {
+			.@c = .@col[.@j];
+			if (.@c <= 0) continue;
+
+			// Basic metrics
+			if (.@c == 1) .@line$ = .@line$ + " | " + callfunc("F_DLogColName",1) + " ^0000ff" + .@you_dmg_row$ + "^000000";
+			else if (.@c == 4) .@line$ = .@line$ + " | " + callfunc("F_DLogColName",4) + " ^0000ff" + .@you_hits_row$ + "^000000";
+			else if (.@c == 5) .@line$ = .@line$ + " | " + callfunc("F_DLogColName",5) + " ^0000ff" + .@tar_dmg_row$ + "^000000";
+			else if (.@c == 8) .@line$ = .@line$ + " | " + callfunc("F_DLogColName",8) + " ^0000ff" + .@tar_hits_row$ + "^000000";
+
+			// Skill and Damage
+			else if (.@c == 2) {
+				if (.@mode == 2) {
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",2) + " ^0000ff" + .@you_dmg_row$ + "^000000";
+				}
+				else if (.@mode == 1) {
+					.@key_sql$ = callfunc("F_DLogSqlEscape", .@tkey$[.@i]);
+					.@sid2 = 0; .@sdmg2$ = "0";
+					query_logsql(
+						"SELECT COALESCE(CAST(skill_id AS SIGNED),0) AS sid, COALESCE(FORMAT(SUM(CAST(damage_dealt AS SIGNED)),0),'0') AS dmg " +
+						"FROM damage_log_entries WHERE owner_char_id=" + .@char_id + " AND target_name='" + .@key_sql$ + "' " +
+						"AND skill_side='user' AND damage_dealt > 0 AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+						"GROUP BY sid ORDER BY SUM(CAST(damage_dealt AS SIGNED)) DESC LIMIT 1",
+						.@sid2, .@sdmg2$
+					);
+					.@sname2$ = getskillname(.@sid2, 1);
+					if (.@sname2$ == "") .@sname2$ = callfunc("F_DLogMsg",41);
+					// Damage-first (less visual noise): [label] <damage> <identifier>
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",2) + " ^0000ff" + .@sdmg2$ + "^000000 " + callfunc("F_DLogSkillLabel", .@sname2$);
+				}
+				else .@line$ = .@line$ + " | " + callfunc("F_DLogColName",2) + " N A";
+			}
+			else if (.@c == 6) {
+				if (.@mode == 4) {
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",6) + " ^0000ff" + .@tar_dmg_row$ + "^000000";
+				}
+				else if (.@mode == 1) {
+					.@key_sql$ = callfunc("F_DLogSqlEscape", .@tkey$[.@i]);
+					.@sid3 = 0; .@sdmg3$ = "0";
+					query_logsql(
+						"SELECT COALESCE(CAST(skill_id AS SIGNED),0) AS sid, COALESCE(FORMAT(SUM(CAST(damage_taken AS SIGNED)),0),'0') AS dmg " +
+						"FROM damage_log_entries WHERE owner_char_id=" + .@char_id + " AND target_name='" + .@key_sql$ + "' " +
+						"AND skill_side='target' AND damage_taken > 0 AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+						"GROUP BY sid ORDER BY SUM(CAST(damage_taken AS SIGNED)) DESC LIMIT 1",
+						.@sid3, .@sdmg3$
+					);
+					.@sname3$ = getskillname(.@sid3, 1);
+					if (.@sname3$ == "") .@sname3$ = callfunc("F_DLogMsg",41);
+					// Damage-first (less visual noise): [label] <damage> <identifier>
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",6) + " ^0000ff" + .@sdmg3$ + "^000000 " + callfunc("F_DLogSkillLabel", .@sname3$);
+				}
+				else .@line$ = .@line$ + " | " + callfunc("F_DLogColName",6) + " N A";
+			}
+
+			// Nature and Damage (damage_nature)
+			else if (.@c == 3) {
+				if (.@mode == 3) {
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",3) + " ^0000ff" + .@you_dmg_row$ + "^000000";
+				}
+				else if (.@mode == 1) {
+					.@key_sql$ = callfunc("F_DLogSqlEscape", .@tkey$[.@i]);
+					.@nat$ = "unknown"; .@ndmg$ = "0";
+					query_logsql(
+						"SELECT CASE WHEN damage_nature IN ('magical','physical','misc') THEN damage_nature ELSE 'unknown' END AS nat, " +
+						"COALESCE(FORMAT(SUM(CAST(damage_dealt AS SIGNED)),0),'0') AS dmg " +
+						"FROM damage_log_entries WHERE owner_char_id=" + .@char_id + " AND target_name='" + .@key_sql$ + "' " +
+						"AND skill_side='user' AND damage_dealt > 0 AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+						"GROUP BY nat ORDER BY SUM(CAST(damage_dealt AS SIGNED)) DESC LIMIT 1",
+						.@nat$, .@ndmg$
+					);
+					.@nlabel$ = callfunc("F_DLogNatureLabel", .@nat$);
+					// Damage-first (less visual noise): [label] <damage> <identifier>
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",3) + " ^0000ff" + .@ndmg$ + "^000000 " + .@nlabel$;
+				}
+				else .@line$ = .@line$ + " | " + callfunc("F_DLogColName",3) + " N A";
+			}
+			else if (.@c == 7) {
+				if (.@mode == 5) {
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",7) + " ^0000ff" + .@tar_dmg_row$ + "^000000";
+				}
+				else if (.@mode == 1) {
+					.@key_sql$ = callfunc("F_DLogSqlEscape", .@tkey$[.@i]);
+					.@nat2$ = "unknown"; .@ndmg2$ = "0";
+					query_logsql(
+						"SELECT CASE WHEN damage_nature IN ('magical','physical','misc') THEN damage_nature ELSE 'unknown' END AS nat, " +
+						"COALESCE(FORMAT(SUM(CAST(damage_taken AS SIGNED)),0),'0') AS dmg " +
+						"FROM damage_log_entries WHERE owner_char_id=" + .@char_id + " AND target_name='" + .@key_sql$ + "' " +
+						"AND skill_side='target' AND damage_taken > 0 AND created_at >= (NOW() - INTERVAL " + .COMBAT_WINDOW_MINUTES + " MINUTE) " +
+						"GROUP BY nat ORDER BY SUM(CAST(damage_taken AS SIGNED)) DESC LIMIT 1",
+						.@nat2$, .@ndmg2$
+					);
+					.@nlabel2$ = callfunc("F_DLogNatureLabel", .@nat2$);
+					// Damage-first (less visual noise): [label] <damage> <identifier>
+					.@line$ = .@line$ + " | " + callfunc("F_DLogColName",7) + " ^0000ff" + .@ndmg2$ + "^000000 " + .@nlabel2$;
+				}
+				else .@line$ = .@line$ + " | " + callfunc("F_DLogColName",7) + " N A";
+			}
+		}
+
+		dispbottom .@line$;
+		dispbottom callfunc("F_DLogMsg",35);
+	}
+
+	end;
+
+}

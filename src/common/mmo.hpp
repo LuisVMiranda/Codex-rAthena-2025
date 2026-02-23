@@ -39,7 +39,7 @@
 	#define MAX_HOTKEYS_DB MAX_HOTKEYS
 #endif
 
-#define MAX_MAP_PER_SERVER 1500 /// Maximum amount of maps available on a server
+#define MAX_MAP_PER_SERVER 2000 /// Maximum amount of maps available on a server
 
 #ifndef INVENTORY_BASE_SIZE
 	#define INVENTORY_BASE_SIZE 100 // Amount of inventory slots each player has
@@ -65,7 +65,7 @@
 * Max value tested was 265 */
 #ifndef MAX_CHARS
 	#if PACKETVER >= 20180124
-		#define MAX_CHARS 15
+		#define MAX_CHARS 45
 	#elif PACKETVER >= 20100413
 		#define MAX_CHARS 12
 	#else
@@ -94,8 +94,8 @@ typedef uint32 t_itemid;
 #define DEFAULT_NPC_WALK_SPEED 200 ///Default NPC walk speed
 #define MIN_WALK_SPEED 20 ///Min walk speed
 #define MAX_WALK_SPEED 1000 ///Max walk speed
-#define MAX_STORAGE 600 ///Max number of storage slots a player can have
-#define MAX_GUILD_STORAGE 600 ///Max number of storage slots a guild
+#define MAX_STORAGE 700 ///Max number of storage slots a player can have
+#define MAX_GUILD_STORAGE 700 ///Max number of storage slots a guild
 #define MAX_PARTY 12 ///Max party member
 #define MAX_GUILD 16+10*6	///Increased max guild members +6 per 1 extension levels [Lupus]
 #define MAX_GUILDPOSITION 20	///Increased max guild positions to accomodate for all members [Valaris] (removed) [PoW]

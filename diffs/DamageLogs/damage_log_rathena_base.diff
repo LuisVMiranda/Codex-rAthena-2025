@@ -1,0 +1,221 @@
+diff --git a/src/map/log.cpp b/src/map/log.cpp
+index 47cd774..b7ee4fd 100644
+--- a/src/map/log.cpp
++++ b/src/map/log.cpp
+@@ -19,6 +19,8 @@
+ #include "npc.hpp"
+ #include "pc.hpp"
+ #include "pet.hpp"
++#include "skill.hpp"
++#include "status.hpp"
+ 
+ static char log_timestamp_format[20];
+ 
+@@ -571,6 +573,90 @@ void log_feeding( const map_session_data* sd, e_log_feeding_type type, t_itemid
+ 	}
+ }
+ 
++
++static bool g_damage_log_table_checked = false;
++static bool g_damage_log_table_available = false;
++
++static bool log_damage_table_ready() {
++	if (g_damage_log_table_checked)
++		return g_damage_log_table_available;
++
++	g_damage_log_table_checked = true;
++	if (!log_config.sql_logs || logmysql_handle == nullptr)
++		return false;
++
++	if (SQL_SUCCESS == Sql_Query(logmysql_handle, "SELECT 1 FROM `damage_log_entries` LIMIT 1")) {
++		g_damage_log_table_available = true;
++		Sql_FreeResult(logmysql_handle);
++		return true;
++	}
++
++	ShowWarning("DamageLog: table `damage_log_entries` not found. Create it using the SQL block in npc/custom/traveler_companion_damage_log_draft.txt.\n");
++	Sql_ShowDebug(logmysql_handle);
++	g_damage_log_table_available = false;
++	return false;
++}
++
++static const char* log_damage_target_type(const block_list* bl) {
++	if (bl == nullptr) return "NONE";
++	switch (bl->type) {
++		case BL_PC: return "PLAYER";
++		case BL_MOB: return "MONSTER";
++		default: return "OTHER";
++	}
++}
++
++void log_damage_entry(const map_session_data& owner_sd, const block_list* target, int64 damage_dealt, int64 damage_taken, uint16 skill_id, const char* damage_type, const char* damage_nature, const char* skill_side) {
++	if (!log_damage_table_ready())
++		return;
++
++	const map_session_data* target_sd = BL_CAST(BL_PC, target);
++	const mob_data* target_md = BL_CAST(BL_MOB, target);
++	const int32 target_account_id = (target_sd != nullptr) ? target_sd->status.account_id : 0;
++	const int32 target_char_id = (target_sd != nullptr) ? target_sd->status.char_id : 0;
++	const int32 target_mob_id = (target_md != nullptr) ? target_md->mob_id : 0;
++	const int32 target_job_id = (target_sd != nullptr) ? target_sd->status.class_ : 0;
++	const char* target_name = (target != nullptr) ? status_get_name(*target) : "";
++	const char* owner_job_name = job_name(owner_sd.status.class_);
++	const char* target_job_name = (target_sd != nullptr) ? job_name(target_sd->status.class_) : "";
++	const char* skill_name = (skill_id > 0) ? skill_get_name(skill_id) : "Basic Attack";
++
++	char owner_name_esc[NAME_LENGTH * 2 + 1] = { 0 };
++	char owner_job_name_esc[NAME_LENGTH * 2 + 1] = { 0 };
++	char target_name_esc[NAME_LENGTH * 2 + 1] = { 0 };
++	char target_job_name_esc[NAME_LENGTH * 2 + 1] = { 0 };
++	char skill_name_esc[NAME_LENGTH * 2 + 1] = { 0 };
++	char skill_side_esc[16] = { 0 };
++	char damage_type_esc[16] = { 0 };
++	char damage_nature_esc[16] = { 0 };
++
++	Sql_EscapeStringLen(logmysql_handle, owner_name_esc, owner_sd.status.name, strnlen(owner_sd.status.name, NAME_LENGTH));
++	Sql_EscapeStringLen(logmysql_handle, owner_job_name_esc, owner_job_name, strnlen(owner_job_name, NAME_LENGTH));
++	Sql_EscapeStringLen(logmysql_handle, target_name_esc, target_name, strnlen(target_name, NAME_LENGTH));
++	Sql_EscapeStringLen(logmysql_handle, target_job_name_esc, target_job_name, strnlen(target_job_name, NAME_LENGTH));
++	Sql_EscapeStringLen(logmysql_handle, skill_name_esc, skill_name, strnlen(skill_name, NAME_LENGTH));
++	Sql_EscapeStringLen(logmysql_handle, skill_side_esc, skill_side != nullptr ? skill_side : "unknown", strnlen(skill_side != nullptr ? skill_side : "unknown", 15));
++	Sql_EscapeStringLen(logmysql_handle, damage_type_esc, damage_type != nullptr ? damage_type : "unknown", strnlen(damage_type != nullptr ? damage_type : "unknown", 15));
++	Sql_EscapeStringLen(logmysql_handle, damage_nature_esc, damage_nature != nullptr ? damage_nature : "unknown", strnlen(damage_nature != nullptr ? damage_nature : "unknown", 15));
++
++	if (SQL_ERROR == Sql_Query(logmysql_handle,
++		"INSERT INTO `damage_log_entries` ("
++		"`created_at`,`map`,`x`,`y`,"
++		"`owner_account_id`,`owner_char_id`,`owner_name`,`owner_job_id`,`owner_job_name`,"
++		"`target_type`,`target_account_id`,`target_char_id`,`target_name`,`target_mob_id`,`target_job_id`,`target_job_name`,"
++		"`skill_id`,`skill_name`,`skill_side`,`damage_type`,`damage_nature`,`damage_dealt`,`damage_taken`) VALUES ("
++		"NOW(),'%s','%d','%d','%d','%d','%s','%d','%s','%s','%d','%d','%s','%d','%d','%s','%u','%s','%s','%s','%s','%" PRId64 "','%" PRId64 "')",
++		mapindex_id2name(owner_sd.mapindex), owner_sd.x, owner_sd.y,
++		owner_sd.status.account_id, owner_sd.status.char_id, owner_name_esc, owner_sd.status.class_, owner_job_name_esc,
++		log_damage_target_type(target), target_account_id, target_char_id, target_name_esc, target_mob_id, target_job_id, target_job_name_esc,
++		skill_id, skill_name_esc, skill_side_esc, damage_type_esc, damage_nature_esc, damage_dealt, damage_taken)) {
++		Sql_ShowDebug(logmysql_handle);
++	}
++}
++
++void log_damage_death(const map_session_data& owner_sd, const block_list* killer) {
++	log_damage_entry(owner_sd, killer, 0, 0, 0, "death", "unknown", "target");
++}
++
++
+ void log_set_defaults(void)
+ {
+ 	memset(&log_config, 0, sizeof(log_config));
+diff --git a/src/map/log.hpp b/src/map/log.hpp
+index 2a9931f..d932298 100644
+--- a/src/map/log.hpp
++++ b/src/map/log.hpp
+@@ -86,6 +86,8 @@ void log_npc( map_session_data* sd, const char *message );
+ void log_chat( e_log_chat_type type, int32 type_id, int32 src_charid, int32 src_accid, const char* map, int32 x, int32 y, const char* dst_charname, const char* message );
+ void log_atcommand( map_session_data* sd, const char* message );
+ void log_feeding( const map_session_data* sd, e_log_feeding_type type, t_itemid nameid );
++void log_damage_entry(const map_session_data& owner_sd, const block_list* target, int64 damage_dealt, int64 damage_taken, uint16 skill_id, const char* damage_type, const char* damage_nature, const char* skill_side);
++void log_damage_death(const map_session_data& owner_sd, const block_list* killer);
+ 
+ /// old, but useful logs
+ void log_branch( map_session_data* sd );
+diff --git a/src/map/pc.cpp b/src/map/pc.cpp
+index 29bde3e..64de96f 100644
+--- a/src/map/pc.cpp
++++ b/src/map/pc.cpp
+@@ -9771,6 +9777,8 @@ int32 pc_dead(map_session_data *sd,block_list *src)
+ 	int32 i=0,k=0;
+ 	t_tick tick = gettick();
+ 	struct map_data *mapdata = map_getmapdata(sd->m);
++	if (pc_readaccountreg(sd, add_str("#DAMAGELOG")) > 0)
++		log_damage_death(*sd, src);
+ 
+ 	// Activate Steel body if a super novice dies at 99+% exp [celest]
+ 	// Super Novices have no kill or die functions attached when saved by their angel
+diff --git a/src/map/script.cpp b/src/map/script.cpp
+index 6ab5524..23ac943 100644
+--- a/src/map/script.cpp
++++ b/src/map/script.cpp
+@@ -10432,6 +10432,28 @@ BUILDIN_FUNC(getskilllv)
+ 	return SCRIPT_CMD_SUCCESS;
+ }
+ 
++/// Returns the skill name resolved from db/re/skill.yml using skill id.
++///
++/// getskillname(<skill id>{,<use_description_name>}) -> <name>
++///   <use_description_name>: 0 = AEGIS/internal name (default), 1 = display/description name
++BUILDIN_FUNC(getskillname)
++{
++	uint16 skill_id = static_cast<uint16>(script_getnum(st, 2));
++	bool use_desc = script_hasdata(st, 3) && script_getnum(st, 3) != 0;
++
++	if (skill_id == 0 || skill_db.find(skill_id) == nullptr) {
++		script_pushconststr(st, "");
++		return SCRIPT_CMD_SUCCESS;
++	}
++
++	if (use_desc)
++		script_pushstrcopy(st, skill_get_desc(skill_id));
++	else
++		script_pushstrcopy(st, skill_get_name(skill_id));
++
++	return SCRIPT_CMD_SUCCESS;
++}
++
+ /// Returns the level of the guild skill.
+ ///
+ /// getgdskilllv(<guild id>,<skill id>) -> <level>
+@@ -27965,6 +27987,7 @@ struct script_function buildin_func[] = {
+ 	BUILDIN_DEF2(skill,"addtoskill","vi?"), // [Valaris]
+ 	BUILDIN_DEF(guildskill,"vi"),
+ 	BUILDIN_DEF(getskilllv,"v"),
++	BUILDIN_DEF(getskillname,"i?"),
+ 	BUILDIN_DEF(getgdskilllv,"iv"),
+ 	BUILDIN_DEF(basicskillcheck,""),
+ 	BUILDIN_DEF(getgmlevel,"?"),
+diff --git a/src/map/status.cpp b/src/map/status.cpp
+index 8b0a584..164f559 100644
+--- a/src/map/status.cpp
++++ b/src/map/status.cpp
+@@ -35,6 +35,8 @@
+ #include "pc_groups.hpp"
+ #include "pet.hpp"
+ #include "script.hpp"
++#include "skill.hpp"
++#include "log.hpp"
+ 
+ using namespace rathena;
+ 
+@@ -1671,6 +1673,34 @@ int32 status_damage(block_list *src,block_list *target,int64 dhp, int64 dsp, int
+ 	if (src && src->type == BL_MOB && skill_id == 0)
+ 		mob_log_damage(reinterpret_cast<mob_data*>(src), target, 0, dhp);
+ 
++	if (hp > 0) {
++		int32 nature_flags = 0;
++		if (skill_id > 0)
++			nature_flags = skill_get_type(skill_id);
++		if (nature_flags == 0)
++			nature_flags = flag;
++
++		const char* damage_nature = "unknown";
++		if (nature_flags & BF_MAGIC)
++			damage_nature = "magical";
++		else if (nature_flags & BF_MISC)
++			damage_nature = "misc";
++		else if (nature_flags & BF_WEAPON)
++			damage_nature = "physical";
++
++		if (src && src->type == BL_PC) {
++			TBL_PC* attacker_sd = BL_CAST(BL_PC, src);
++			if (attacker_sd && pc_readaccountreg(attacker_sd, add_str("#DAMAGELOG")) > 0)
++				log_damage_entry(*attacker_sd, target, hp, 0, skill_id, "outgoing", damage_nature, "user");
++		}
++
++		if (target && target->type == BL_PC) {
++			TBL_PC* target_sd = BL_CAST(BL_PC, target);
++			if (target_sd && pc_readaccountreg(target_sd, add_str("#DAMAGELOG")) > 0)
++				log_damage_entry(*target_sd, src, 0, hp, skill_id, "incoming", damage_nature, "target");
++		}
++	}
++
+ 	if( src && target->type == BL_PC && ((TBL_PC*)target)->disguise ) { // Stop walking when attacked in disguise to prevent walk-delay bug
+ 		unit_stop_walking( target, USW_FIXPOS );
+ 	}

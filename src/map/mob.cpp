@@ -3442,6 +3442,24 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 			}
 		}
 
+		// Process MF_MOBDROP custom mapflag drops
+		if (map_getmapflag(md->m, MF_MOBDROP)) {
+			for (const s_mapflag_mobdrop& rule : map[md->m].mobdrop_rules) {
+				if (rule.mob_id != 0 && rule.mob_id != md->mob_id)
+					continue;
+
+				if (rnd() % 10000 >= rule.rate)
+					continue;
+
+				std::shared_ptr<s_mob_drop> custom_drop = std::make_shared<s_mob_drop>();
+				custom_drop->nameid = rule.item_id;
+				custom_drop->rate = rule.rate;
+
+				std::shared_ptr<s_item_drop> ditem = mob_setdropitem(custom_drop, 1, md->mob_id);
+				mob_item_drop(md, dlist, ditem, 0, rule.rate, homkillonly || merckillonly);
+			}
+		}
+
 		// There are drop items.
 		if (!dlist->items.empty() || !lootlist->items.empty()) {
 			mob_delayed_drops[md->id] = dlist;

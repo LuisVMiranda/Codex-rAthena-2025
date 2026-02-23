@@ -1,0 +1,50 @@
+# This file is a part of rAthena.
+# Custom YAML database for mapflag mobdrop rules.
+#
+# Rate values are in 1~10000 (10000 = 100%).
+# Bind values:
+#   - Free      : normal tradable drop
+#   - Account   : account-bound drop
+#   - Character : character-bound drop
+#
+# RandomOptionGroup is optional and must exist in item_randomopt_group.yml.
+
+Header:
+  Type: MAPFLAG_MOBDROP_DB
+  Version: 1
+
+Body:
+  # ============================================================
+  # BOILERPLATE / PRODUCTION SYNTAX
+  # ============================================================
+  # - Map: <map_name>
+  #   Monster: <mob_aegis_name | All | *>
+  #   Item: <item_aegis_name>
+  #   Rate:
+  #     Min: <1..10000>
+  #     Max: <1..10000>   # optional (defaults to Min)
+  #   Bind: <Free | Account | Character> # optional (defaults to Free)
+  #   RandomOptionGroup: <group_name>    # optional
+  #
+  # Example 1: Any monster in prontera, 1.00%~3.00%, free trade
+  # - Map: prontera
+  #   Monster: All
+  #   Item: Apple
+  #   Rate:
+  #     Min: 100
+  #     Max: 300
+  #   Bind: Free
+
+  # Example 2: Poring-only drop, account bound, with random option group
+  # - Map: prontera
+  #   Monster: Poring
+  #   Item: Jellopy
+  #   Rate:
+  #     Min: 50
+  #     Max: 125
+  #   Bind: Account
+  #   RandomOptionGroup: Group_Test
+
+Footer:
+  Imports:
+    - Path: db/import/mapflag_mobdrop.yml

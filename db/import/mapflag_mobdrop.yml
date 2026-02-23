@@ -1,0 +1,19 @@
+# ============================================================
+# mapflag_mobdrop custom overrides
+# ============================================================
+# Add production-only entries here.
+# This file is imported by db/mapflag_mobdrop.yml.
+
+Header:
+  Type: MAPFLAG_MOBDROP_DB
+  Version: 1
+
+Body:
+  # - Map: geffen
+  #   Monster: Poring
+  #   Item: Red_Potion
+  #   Rate:
+  #     Min: 100
+  #     Max: 200
+  #   Bind: Character
+  #   RandomOptionGroup: Group_Test

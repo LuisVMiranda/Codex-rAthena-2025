@@ -5993,11 +5993,11 @@ static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int3
 			lang = char_lang;
 	}
 
-	int32 msg_id = 24001;
+	int32 msg_id = 2901;
 	switch( key ){
-		case 0: msg_id = ( lang == 2 ? 24011 : ( lang == 3 ? 24021 : 24001 ) ); break;
-		case 1: msg_id = ( lang == 2 ? 24012 : ( lang == 3 ? 24022 : 24002 ) ); break;
-		case 2: msg_id = ( lang == 2 ? 24013 : ( lang == 3 ? 24023 : 24003 ) ); break;
+		case 0: msg_id = ( lang == 2 ? 2911 : ( lang == 3 ? 2921 : 2901 ) ); break;
+		case 1: msg_id = ( lang == 2 ? 2912 : ( lang == 3 ? 2922 : 2902 ) ); break;
+		case 2: msg_id = ( lang == 2 ? 2913 : ( lang == 3 ? 2923 : 2903 ) ); break;
 		default: return "";
 	}
 
@@ -6111,6 +6111,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 		const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
 		const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
 		status_heal( tsd, hp_gain, sp_gain, 3 );
+		clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, AREA );
 	}
 
 	return 0;

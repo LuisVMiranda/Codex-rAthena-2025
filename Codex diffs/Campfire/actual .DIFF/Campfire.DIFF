@@ -30,7 +30,7 @@ index 50f3388..4862ac8 100644
 +// Campfire display language: 1=English, 2=Portuguese, 3=Spanish
 +feature.campfire_language: 1
 diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
-index dd530df..eda2b8a 100644
+index dd530df..d310f6a 100644
 --- a/conf/msg_conf/map_msg.conf
 +++ b/conf/msg_conf/map_msg.conf
 @@ -1848,3 +1848,14 @@ import: conf/msg_conf/import/map_msg_eng_conf.txt
@@ -39,15 +39,15 @@ index dd530df..eda2b8a 100644
  1073: Displaying party member's buffs enabled.
 +
 +// ----- Campfire localized messages ----- //
-+24001: You entered the Campfire regeneration zone.
-+24002: You left the Campfire regeneration zone.
-+24003: Campfire ends in %d...
-+24011: Voce entrou na area de regeneracao da Fogueira.
-+24012: Voce saiu da area de regeneracao da Fogueira.
-+24013: Fogueira termina em %d...
-+24021: Has entrado en la zona de regeneracion de la Fogata.
-+24022: Has salido de la zona de regeneracion de la Fogata.
-+24023: La fogata termina en %d...
++2901: You entered the Campfire regeneration zone.
++2902: You left the Campfire regeneration zone.
++2903: Campfire ends in %d...
++2911: Voce entrou na area de regeneracao da Fogueira.
++2912: Voce saiu da area de regeneracao da Fogueira.
++2913: Fogueira termina em %d...
++2921: Has entrado en la zona de regeneracion de la Fogata.
++2922: Has salido de la zona de regeneracion de la Fogata.
++2923: La fogata termina en %d...
 diff --git a/npc/custom/campfire_system.txt b/npc/custom/campfire_system.txt
 new file mode 100644
 index 0000000..0f3696f
@@ -165,19 +165,63 @@ index b373e7c..cf2e5b9 100644
  	int32 mob_unlock_time;
  	int32 map_edge_size;
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 26a8ed5..40acc79 100644
+index 26a8ed5..814cafa 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
-@@ -8254,7 +8254,7 @@ void clif_party_hp( const map_session_data& sd ){
+@@ -3524,7 +3524,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
+ 	nullpo_ret(tsd);
+ 
+ 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
+-		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
++		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, sd->battle_status.sp, sd->battle_status.max_sp );
+ 	}
+ 	return 0;
+ }
+@@ -5019,7 +5019,7 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
+ 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
+ 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
+ 	)
+-		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
++		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, dstsd->battle_status.sp, dstsd->battle_status.max_sp );
+ 
+ 	// display link (sd - dstsd) to sd
+ 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
+@@ -8252,9 +8252,13 @@ void clif_party_hp( const map_session_data& sd ){
+ #else
+ 	p.hp = sd.battle_status.hp;
  	p.maxhp = sd.battle_status.max_hp;
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
++	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
++	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
++#endif
  #endif
  
 -	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
-+	clif_send( &p, sizeof( p ), &sd, PARTY );
++	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
  }
  
  /// Notifies the party members of a character's death or revival.
-@@ -10224,14 +10224,15 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+@@ -8289,7 +8293,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
+ /*==========================================
+  * Sends HP bar to a single fd. [Skotlex]
+  *------------------------------------------*/
+-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
++void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
+ 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
+ 
+ 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
+@@ -8306,6 +8310,10 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
+ #else
+ 	p.hp = hp;
+ 	p.maxhp = maxhp;
++#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
++	p.sp = battle_config.party_sp_on ? sp : 0;
++	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
++#endif
+ #endif
+ 
+ 	clif_send( &p, sizeof( p ), &sd, SELF );
+@@ -10224,14 +10232,15 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
  				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
  				packet.gid = bl->id;
  
@@ -249,7 +293,7 @@ index 2b9de28..300fb1f 100644
  	struct s_skill_damage damage_adjust; // Used for overall skill damage adjustment
  	std::unordered_map<uint16, s_skill_damage> skill_damage; // Used for single skill damage adjustment
 diff --git a/src/map/npc.cpp b/src/map/npc.cpp
-index 1523845..0acdf17 100644
+index 1523845..be67854 100644
 --- a/src/map/npc.cpp
 +++ b/src/map/npc.cpp
 @@ -3,9 +3,11 @@
@@ -352,7 +396,7 @@ index 1523845..0acdf17 100644
  		case MF_BATTLEGROUND:
  			if (state) {
  				union u_mapflag_args args = {};
-@@ -5922,6 +5984,266 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
+@@ -5922,6 +5984,267 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
  	return dnd;
  }
  
@@ -365,11 +409,11 @@ index 1523845..0acdf17 100644
 +			lang = char_lang;
 +	}
 +
-+	int32 msg_id = 24001;
++	int32 msg_id = 2901;
 +	switch( key ){
-+		case 0: msg_id = ( lang == 2 ? 24011 : ( lang == 3 ? 24021 : 24001 ) ); break;
-+		case 1: msg_id = ( lang == 2 ? 24012 : ( lang == 3 ? 24022 : 24002 ) ); break;
-+		case 2: msg_id = ( lang == 2 ? 24013 : ( lang == 3 ? 24023 : 24003 ) ); break;
++		case 0: msg_id = ( lang == 2 ? 2911 : ( lang == 3 ? 2921 : 2901 ) ); break;
++		case 1: msg_id = ( lang == 2 ? 2912 : ( lang == 3 ? 2922 : 2902 ) ); break;
++		case 2: msg_id = ( lang == 2 ? 2913 : ( lang == 3 ? 2923 : 2903 ) ); break;
 +		default: return "";
 +	}
 +
@@ -483,6 +527,7 @@ index 1523845..0acdf17 100644
 +		const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
 +		const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
 +		status_heal( tsd, hp_gain, sp_gain, 3 );
++		clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, AREA );
 +	}
 +
 +	return 0;
@@ -619,7 +664,7 @@ index 1523845..0acdf17 100644
  TIMER_FUNC(npc_dynamicnpc_removal_timer){
  	npc_data* nd = map_id2nd( id );
  
-@@ -6308,6 +6630,9 @@ void do_final_npc(void) {
+@@ -6308,6 +6631,9 @@ void do_final_npc(void) {
  #endif
  	stylist_db.clear();
  	barter_db.clear();
@@ -629,7 +674,7 @@ index 1523845..0acdf17 100644
  	ers_destroy(timer_event_ers);
  	ers_destroy(npc_sc_display_ers);
  	npc_src_files.clear();
-@@ -6396,6 +6721,8 @@ void do_init_npc(void){
+@@ -6396,6 +6722,8 @@ void do_init_npc(void){
  	add_timer_func_list(npc_event_do_clock,"npc_event_do_clock");
  	add_timer_func_list(npc_timerevent,"npc_timerevent");
  	add_timer_func_list( npc_dynamicnpc_removal_timer, "npc_dynamicnpc_removal_timer" );
@@ -639,9 +684,18 @@ index 1523845..0acdf17 100644
  	add_timer_func_list( npc_secure_timeout_timer, "npc_secure_timeout_timer" );
  #endif
 diff --git a/src/map/party.cpp b/src/map/party.cpp
-index a65eb8d..a580839 100644
+index a65eb8d..938c76f 100644
 --- a/src/map/party.cpp
 +++ b/src/map/party.cpp
+@@ -685,7 +685,7 @@ int32 party_member_added(int32 party_id,uint32 account_id,uint32 char_id, int32
+ 		sd2 = p->data[i].sd;
+ 
+ 		if( sd2 && sd2->status.account_id != account_id && sd2->status.char_id != char_id )
+-			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp );
++			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp, sd2->battle_status.sp, sd2->battle_status.max_sp );
+ 	}
+ 
+ 	clif_party_hp( *sd );
 @@ -1212,9 +1212,17 @@ TIMER_FUNC(party_send_xy_timer){
  				p->data[i].y = sd->y;
  			}
@@ -655,8 +709,8 @@ index a65eb8d..a580839 100644
 +					map_session_data* tsd = p->data[j].sd;
 +					if( tsd == nullptr || tsd == sd || tsd->m != sd->m )
 +						continue;
-+					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp );
-+					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp );
++					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp, sd->battle_status.sp, sd->battle_status.max_sp );
++					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp, tsd->battle_status.sp, tsd->battle_status.max_sp );
 +				}
  			}
  		}

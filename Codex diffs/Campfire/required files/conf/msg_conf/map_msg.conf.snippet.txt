@@ -1,10 +1,10 @@
 // ----- Campfire localized messages ----- //
-24001: You entered the Campfire regeneration zone.
-24002: You left the Campfire regeneration zone.
-24003: Campfire ends in %d...
-24011: Voce entrou na area de regeneracao da Fogueira.
-24012: Voce saiu da area de regeneracao da Fogueira.
-24013: Fogueira termina em %d...
-24021: Has entrado en la zona de regeneracion de la Fogata.
-24022: Has salido de la zona de regeneracion de la Fogata.
-24023: La fogata termina en %d...
+2901: You entered the Campfire regeneration zone.
+2902: You left the Campfire regeneration zone.
+2903: Campfire ends in %d...
+2911: Voce entrou na area de regeneracao da Fogueira.
+2912: Voce saiu da area de regeneracao da Fogueira.
+2913: Fogueira termina em %d...
+2921: Has entrado en la zona de regeneracion de la Fogata.
+2922: Has salido de la zona de regeneracion de la Fogata.
+2923: La fogata termina en %d...

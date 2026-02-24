@@ -7,7 +7,7 @@ Reusable diff package for an item-driven temporary campfire system.
 - Spawns a temporary **bonfire NPC sprite** (`class: 10252`) near the player.
 - Duration, pulse interval, regen rates, range, cooldown and icon are now configurable via `battle_config` entries (`feature.campfire_*`).
 - Disabled automatically on **GvG** and **Battleground** maps.
-- Every pulse, the campfire heals owner and party members in range and shows icon `992` (or configured icon id) while active.
+- Every pulse, the campfire heals owner and party members in range and shows icon `992` (or configured icon id) while active, with visible recovery numbers.
 - Campfire auto-removes when time expires.
 
 ## Files in this package

@@ -40,4 +40,4 @@
 
 ## UI and progress
 - Icon is shown to healed targets while pulse effect is active.
-- Campfire template uses `progressbar_npc` labels (`OnCampfireStart`, `OnCampfireStartVIP`) and they are triggered on creation.
+- Campfire countdown (final 5 seconds) is shown through `showscript` from source timers to avoid movement lock from progressbar-style blocking.

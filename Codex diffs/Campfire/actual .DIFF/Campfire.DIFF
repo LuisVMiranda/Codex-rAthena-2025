@@ -1,195 +1,108 @@
-diff --git a/conf/battle/feature.conf b/conf/battle/feature.conf
-index 50f3388..3bdc343 100644
---- a/conf/battle/feature.conf
-+++ b/conf/battle/feature.conf
-@@ -209,3 +209,18 @@ feature.stylist: on
- // If this is allowed the "nosave" mapflag is still being respected
- // and may prevent players from warping back into the instance.
- //feature.instance_allow_reconnect: yes
-+
-+// Campfire system (Matchstick 7035)
-+// Duration in seconds for non-VIP and VIP users.
-+feature.campfire_nonvip_duration: 60
-+feature.campfire_vip_duration: 120
-+// Pulse interval in seconds and effect range in cells.
-+feature.campfire_tick_interval: 10
-+feature.campfire_range: 9
-+// Regeneration applied every pulse (percentage of Max HP/SP).
-+feature.campfire_hp_percent: 3
-+feature.campfire_sp_percent: 3
-+// Reuse cooldown in seconds after using Matchstick.
-+feature.campfire_cooldown: 30
-+// Icon ID shown while campfire effect is active. 0 disables icon.
-+feature.campfire_icon: 992
 diff --git a/npc/custom/campfire_system.txt b/npc/custom/campfire_system.txt
-index 9ad817a..ea729c9 100644
+index ea729c9..0f3696f 100644
 --- a/npc/custom/campfire_system.txt
 +++ b/npc/custom/campfire_system.txt
-@@ -2,4 +2,12 @@
+@@ -1,13 +1,6 @@
+ // Campfire runtime template for Matchstick item (ID 7035).
  // This NPC is duplicated dynamically by source code and should remain hidden.
++// Progress display and zone feedback are handled by source timers to avoid movement lock.
  -	script	Campfire Controller::CAMPFIRE_TEMPLATE	-1,{
  	end;
-+
-+OnCampfireStart:
-+	progressbar_npc "00FF00", getbattleflag("feature.campfire_nonvip_duration");
-+	end;
-+
-+OnCampfireStartVIP:
-+	progressbar_npc "00FF00", getbattleflag("feature.campfire_vip_duration");
-+	end;
+-
+-OnCampfireStart:
+-	progressbar_npc "00FF00", getbattleflag("feature.campfire_nonvip_duration");
+-	end;
+-
+-OnCampfireStartVIP:
+-	progressbar_npc "00FF00", getbattleflag("feature.campfire_vip_duration");
+-	end;
  }
-diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index 2a7d03a..19c4445 100644
---- a/src/map/battle.cpp
-+++ b/src/map/battle.cpp
-@@ -10720,6 +10720,14 @@ static const struct _battle_data {
- 	{ "feature.dynamicnpc_rangex",          &battle_config.feature_dynamicnpc_rangex,       2,      0,      INT_MAX,        },
- 	{ "feature.dynamicnpc_rangey",          &battle_config.feature_dynamicnpc_rangey,       2,      0,      INT_MAX,        },
- 	{ "feature.dynamicnpc_direction",       &battle_config.feature_dynamicnpc_direction,    0,      0,      1,              },
-+	{ "feature.campfire_nonvip_duration",   &battle_config.feature_campfire_nonvip_duration,60,     1,      INT_MAX,        },
-+	{ "feature.campfire_vip_duration",      &battle_config.feature_campfire_vip_duration,   120,    1,      INT_MAX,        },
-+	{ "feature.campfire_tick_interval",     &battle_config.feature_campfire_tick_interval,  10,     1,      INT_MAX,        },
-+	{ "feature.campfire_range",             &battle_config.feature_campfire_range,          9,      1,      AREA_SIZE,      },
-+	{ "feature.campfire_hp_percent",        &battle_config.feature_campfire_hp_percent,     3,      0,      100,            },
-+	{ "feature.campfire_sp_percent",        &battle_config.feature_campfire_sp_percent,     3,      0,      100,            },
-+	{ "feature.campfire_cooldown",          &battle_config.feature_campfire_cooldown,       30,     0,      INT_MAX,        },
-+	{ "feature.campfire_icon",              &battle_config.feature_campfire_icon,           992,    0,      INT_MAX,        },
- 
- 	{ "mob_respawn_time",                   &battle_config.mob_respawn_time,                1000,   1000,   INT_MAX,        },
- 	{ "mob_unlock_time",                    &battle_config.mob_unlock_time,                 2000,   0,      INT_MAX,        },
-diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index b373e7c..5bc3170 100644
---- a/src/map/battle.hpp
-+++ b/src/map/battle.hpp
-@@ -797,6 +797,15 @@ struct Battle_Config
- 	int32 feature_dynamicnpc_rangey;
- 	int32 feature_dynamicnpc_direction;
- 
-+	int32 feature_campfire_nonvip_duration;
-+	int32 feature_campfire_vip_duration;
-+	int32 feature_campfire_tick_interval;
-+	int32 feature_campfire_range;
-+	int32 feature_campfire_hp_percent;
-+	int32 feature_campfire_sp_percent;
-+	int32 feature_campfire_cooldown;
-+	int32 feature_campfire_icon;
-+
- 	int32 mob_respawn_time;
- 	int32 mob_unlock_time;
- 	int32 map_edge_size;
 diff --git a/src/map/npc.cpp b/src/map/npc.cpp
-index c2757ab..b812df3 100644
+index b812df3..a1822b7 100644
 --- a/src/map/npc.cpp
 +++ b/src/map/npc.cpp
-@@ -133,6 +133,7 @@ struct s_campfire_runtime {
+@@ -7,6 +7,7 @@
+ #include <cerrno>
+ #include <cstdlib>
+ #include <map>
++#include <set>
+ #include <vector>
+ 
+ #include <common/cbasetypes.hpp>
+@@ -129,6 +130,7 @@ struct s_campfire_runtime {
+ 	t_tick end_tick = 0;
+ 	int32 tick_tid = INVALID_TIMER;
+ 	int32 expire_tid = INVALID_TIMER;
++	std::map<int32, bool> zone_state_by_char;
+ };
  
  static std::map<int32, s_campfire_runtime> campfire_runtime_by_npc;
- static std::map<int32, int32> campfire_npc_by_owner;
-+static std::map<int32, t_tick> campfire_cooldown_by_owner;
+@@ -6039,9 +6041,6 @@ bool npc_campfire_use_item( map_session_data& sd ){
  
- static void npc_campfire_cleanup( int32 npc_id, bool unload_npc );
- static int32 npc_campfire_regen_sub( block_list* bl, va_list ap );
-@@ -5983,6 +5984,17 @@ bool npc_campfire_use_item( map_session_data& sd ){
- 		return false;
- 	}
+ 	campfire_cooldown_by_owner[sd.status.char_id] = now + battle_config.feature_campfire_cooldown * 1000;
  
-+	if( mapdata_flag_gvg2( map_getmapdata( sd.m ) ) || map_getmapflag( sd.m, MF_BATTLEGROUND ) ){
-+		clif_displaymessage( sd.fd, "Campfire cannot be used on GvG or Battleground maps." );
-+		return false;
-+	}
-+
-+	auto cooldown_it = campfire_cooldown_by_owner.find( sd.status.char_id );
-+	if( cooldown_it != campfire_cooldown_by_owner.end() && DIFF_TICK( cooldown_it->second, gettick() ) > 0 ){
-+		clif_displaymessage( sd.fd, "Campfire is on cooldown." );
-+		return false;
-+	}
-+
- 	auto owner_it = campfire_npc_by_owner.find( sd.status.char_id );
- 	if( owner_it != campfire_npc_by_owner.end() && campfire_runtime_by_npc.find( owner_it->second ) != campfire_runtime_by_npc.end() ){
- 		clif_displaymessage( sd.fd, "You already have an active campfire." );
-@@ -6011,19 +6023,27 @@ bool npc_campfire_use_item( map_session_data& sd ){
- 	}
+-	char event_name[EVENT_NAME_LENGTH] = {};
+-	safesnprintf( event_name, sizeof(event_name), "%s::%s", campfire_nd->exname, pc_isvip(&sd) ? "OnCampfireStartVIP" : "OnCampfireStart" );
+-	npc_event_do_id( event_name, sd.id );
  
- 	const t_tick now = gettick();
--	const int32 duration_ms = pc_isvip( &sd ) ? 120000 : 60000;
-+	const int32 duration_sec = pc_isvip( &sd ) ? battle_config.feature_campfire_vip_duration : battle_config.feature_campfire_nonvip_duration;
-+	const int32 duration_ms = duration_sec * 1000;
-+	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
- 
- 	s_campfire_runtime runtime = {};
- 	runtime.owner_char_id = sd.status.char_id;
- 	runtime.party_id = sd.status.party_id;
- 	runtime.end_tick = now + duration_ms;
--	runtime.tick_tid = add_timer( now + 10000, npc_campfire_tick_timer, campfire_nd->id, 0 );
-+	runtime.tick_tid = add_timer( now + tick_interval_ms, npc_campfire_tick_timer, campfire_nd->id, 0 );
- 	runtime.expire_tid = add_timer( runtime.end_tick, npc_campfire_expire_timer, campfire_nd->id, 0 );
- 
- 	campfire_runtime_by_npc[campfire_nd->id] = runtime;
- 	campfire_npc_by_owner[sd.status.char_id] = campfire_nd->id;
- 
--	clif_displaymessage( sd.fd, pc_isvip( &sd ) ? "VIP Campfire created for 120 seconds." : "Campfire created for 60 seconds." );
-+	campfire_cooldown_by_owner[sd.status.char_id] = now + battle_config.feature_campfire_cooldown * 1000;
-+
-+	char event_name[EVENT_NAME_LENGTH] = {};
-+	safesnprintf( event_name, sizeof(event_name), "%s::%s", campfire_nd->exname, pc_isvip(&sd) ? "OnCampfireStartVIP" : "OnCampfireStart" );
-+	npc_event_do_id( event_name, sd.id );
-+
-+	clif_displaymessage( sd.fd, pc_isvip( &sd ) ? "VIP Campfire created." : "Campfire created." );
+ 	clif_displaymessage( sd.fd, pc_isvip( &sd ) ? "VIP Campfire created." : "Campfire created." );
  	return true;
- }
+@@ -6053,6 +6052,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
+ 		return 0;
  
-@@ -6040,9 +6060,11 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
+ 	int32 campfire_npc_id = va_arg( ap, int32 );
++	std::set<int32>* in_range_chars = va_arg( ap, std::set<int32>* );
+ 	auto it = campfire_runtime_by_npc.find( campfire_npc_id );
+ 	if( it == campfire_runtime_by_npc.end() )
+ 		return 0;
+@@ -6060,9 +6060,15 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
  	if( tsd->status.char_id != it->second.owner_char_id && (it->second.party_id == 0 || tsd->status.party_id != it->second.party_id) )
  		return 0;
  
--	const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * 3 / 100 );
--	const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * 3 / 100 );
-+	const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
-+	const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
- 	status_heal( tsd, hp_gain, sp_gain, battle_config.show_hp_sp_gain ? 3 : 1 );
-+	if( battle_config.feature_campfire_icon > 0 )
-+		clif_status_change( tsd, battle_config.feature_campfire_icon, 1, battle_config.feature_campfire_tick_interval * 1000 + 1000, 0, 0, 0 );
++	in_range_chars->insert( tsd->status.char_id );
++	if( !it->second.zone_state_by_char[tsd->status.char_id] ){
++		it->second.zone_state_by_char[tsd->status.char_id] = true;
++		clif_displaymessage( tsd->fd, "You entered the Campfire regeneration zone." );
++	}
++
+ 	const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
+ 	const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
+-	status_heal( tsd, hp_gain, sp_gain, battle_config.show_hp_sp_gain ? 3 : 1 );
++	status_heal( tsd, hp_gain, sp_gain, 3 );
+ 	if( battle_config.feature_campfire_icon > 0 )
+ 		clif_status_change( tsd, battle_config.feature_campfire_icon, 1, battle_config.feature_campfire_tick_interval * 1000 + 1000, 0, 0, 0 );
  
- 	return 0;
- }
-@@ -6080,11 +6102,12 @@ TIMER_FUNC(npc_campfire_tick_timer){
+@@ -6102,12 +6108,30 @@ TIMER_FUNC(npc_campfire_tick_timer){
  		return 0;
  	}
  
--	map_foreachinallrange( npc_campfire_regen_sub, nd, 9, BL_PC, id );
-+	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id );
+-	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id );
++	std::set<int32> in_range_chars;
++	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id, &in_range_chars );
++
++	for( auto &pair : it->second.zone_state_by_char ){
++		if( pair.second && in_range_chars.find( pair.first ) == in_range_chars.end() ){
++			pair.second = false;
++			map_session_data* tsd = map_charid2sd( pair.first );
++			if( tsd != nullptr )
++				clif_displaymessage( tsd->fd, "You left the Campfire regeneration zone." );
++		}
++	}
  
  	const t_tick now = gettick();
--	if( DIFF_TICK( it->second.end_tick, now ) > 10000 )
--		it->second.tick_tid = add_timer( now + 10000, npc_campfire_tick_timer, id, 0 );
-+	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
-+	if( DIFF_TICK( it->second.end_tick, now ) > tick_interval_ms )
-+		it->second.tick_tid = add_timer( now + tick_interval_ms, npc_campfire_tick_timer, id, 0 );
+ 	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
+-	if( DIFF_TICK( it->second.end_tick, now ) > tick_interval_ms )
+-		it->second.tick_tid = add_timer( now + tick_interval_ms, npc_campfire_tick_timer, id, 0 );
++	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
++	if( remain <= 5000 && remain > 0 ){
++		char countdown[32] = {};
++		safesnprintf( countdown, sizeof(countdown), "Campfire ends in %d...", static_cast<int32>((remain + 999) / 1000) );
++		clif_showscript( nd, countdown, AREA );
++	}
++
++	const int32 next_delay = (remain <= 5000) ? 1000 : tick_interval_ms;
++	if( remain > next_delay )
++		it->second.tick_tid = add_timer( now + next_delay, npc_campfire_tick_timer, id, 0 );
  
  	return 0;
  }
-@@ -6485,6 +6508,9 @@ void do_final_npc(void) {
- #endif
- 	stylist_db.clear();
- 	barter_db.clear();
-+	campfire_runtime_by_npc.clear();
-+	campfire_npc_by_owner.clear();
-+	campfire_cooldown_by_owner.clear();
- 	ers_destroy(timer_event_ers);
- 	ers_destroy(npc_sc_display_ers);
- 	npc_src_files.clear();
-diff --git a/Codex diffs/Campfire/required files/conf/battle/feature.conf.snippet.txt b/Codex diffs/Campfire/required files/conf/battle/feature.conf.snippet.txt
-new file mode 100644
-index 0000000..241cc16
---- /dev/null
-+++ b/Codex diffs/Campfire/required files/conf/battle/feature.conf.snippet.txt	
-@@ -0,0 +1,9 @@
-+// Campfire system (Matchstick 7035)
-+feature.campfire_nonvip_duration: 60
-+feature.campfire_vip_duration: 120
-+feature.campfire_tick_interval: 10
-+feature.campfire_range: 9
-+feature.campfire_hp_percent: 3
-+feature.campfire_sp_percent: 3
-+feature.campfire_cooldown: 30
-+feature.campfire_icon: 992

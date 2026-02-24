@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <map>
+#include <set>
 #include <vector>
 
 #include <common/cbasetypes.hpp>
@@ -129,6 +130,7 @@ struct s_campfire_runtime {
 	t_tick end_tick = 0;
 	int32 tick_tid = INVALID_TIMER;
 	int32 expire_tid = INVALID_TIMER;
+	std::map<int32, bool> zone_state_by_char;
 };
 
 static std::map<int32, s_campfire_runtime> campfire_runtime_by_npc;
@@ -6039,9 +6041,6 @@ bool npc_campfire_use_item( map_session_data& sd ){
 
 	campfire_cooldown_by_owner[sd.status.char_id] = now + battle_config.feature_campfire_cooldown * 1000;
 
-	char event_name[EVENT_NAME_LENGTH] = {};
-	safesnprintf( event_name, sizeof(event_name), "%s::%s", campfire_nd->exname, pc_isvip(&sd) ? "OnCampfireStartVIP" : "OnCampfireStart" );
-	npc_event_do_id( event_name, sd.id );
 
 	clif_displaymessage( sd.fd, pc_isvip( &sd ) ? "VIP Campfire created." : "Campfire created." );
 	return true;
@@ -6053,6 +6052,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 		return 0;
 
 	int32 campfire_npc_id = va_arg( ap, int32 );
+	std::set<int32>* in_range_chars = va_arg( ap, std::set<int32>* );
 	auto it = campfire_runtime_by_npc.find( campfire_npc_id );
 	if( it == campfire_runtime_by_npc.end() )
 		return 0;
@@ -6060,9 +6060,15 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 	if( tsd->status.char_id != it->second.owner_char_id && (it->second.party_id == 0 || tsd->status.party_id != it->second.party_id) )
 		return 0;
 
+	in_range_chars->insert( tsd->status.char_id );
+	if( !it->second.zone_state_by_char[tsd->status.char_id] ){
+		it->second.zone_state_by_char[tsd->status.char_id] = true;
+		clif_displaymessage( tsd->fd, "You entered the Campfire regeneration zone." );
+	}
+
 	const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
 	const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
-	status_heal( tsd, hp_gain, sp_gain, battle_config.show_hp_sp_gain ? 3 : 1 );
+	status_heal( tsd, hp_gain, sp_gain, 3 );
 	if( battle_config.feature_campfire_icon > 0 )
 		clif_status_change( tsd, battle_config.feature_campfire_icon, 1, battle_config.feature_campfire_tick_interval * 1000 + 1000, 0, 0, 0 );
 
@@ -6102,12 +6108,30 @@ TIMER_FUNC(npc_campfire_tick_timer){
 		return 0;
 	}
 
-	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id );
+	std::set<int32> in_range_chars;
+	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id, &in_range_chars );
+
+	for( auto &pair : it->second.zone_state_by_char ){
+		if( pair.second && in_range_chars.find( pair.first ) == in_range_chars.end() ){
+			pair.second = false;
+			map_session_data* tsd = map_charid2sd( pair.first );
+			if( tsd != nullptr )
+				clif_displaymessage( tsd->fd, "You left the Campfire regeneration zone." );
+		}
+	}
 
 	const t_tick now = gettick();
 	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
-	if( DIFF_TICK( it->second.end_tick, now ) > tick_interval_ms )
-		it->second.tick_tid = add_timer( now + tick_interval_ms, npc_campfire_tick_timer, id, 0 );
+	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
+	if( remain <= 5000 && remain > 0 ){
+		char countdown[32] = {};
+		safesnprintf( countdown, sizeof(countdown), "Campfire ends in %d...", static_cast<int32>((remain + 999) / 1000) );
+		clif_showscript( nd, countdown, AREA );
+	}
+
+	const int32 next_delay = (remain <= 5000) ? 1000 : tick_interval_ms;
+	if( remain > next_delay )
+		it->second.tick_tid = add_timer( now + next_delay, npc_campfire_tick_timer, id, 0 );
 
 	return 0;
 }

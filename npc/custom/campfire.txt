@@ -1,24 +1,23 @@
 gonryun,160,120,5	script	Fogueira	10252,8,11,{
 
 OnTouch:
-	getmapxy(.@map$,.@x,.@y,BL_PC);
-	if( distance(.x,.y,.@x,.@y)<=11
-	&& .@map$==.map$ )
-		dispbottom "Você entrou numa área de recuperação.";
+	dispbottom "Você entrou numa área de recuperação.";
 	attachnpctimer();
 	startnpctimer();
 	end;
 OnTimer10000:
+	if (rand(0,100) <= 20)
+		showscript "Área de Regeneração";
 	getmapxy(.@map$,.@x,.@y,BL_PC);
-	if( distance(.x,.y,.@x,.@y)<=11
-	&& .@map$==.map$ ) {
-	//specialeffect2 363;
+	if( distance(.x,.y,.@x,.@y) <= 11 && .@map$ == .map$ ) {
 		if (Hp != MaxHp && Sp != MaxSp) {
+			.regen = rand(1, 3);
+			F_VipBonusRegen(.regen, getcharid(3));
 			specialeffect2 313;
-			.@hp = (MaxHp*10/100);
-			.@sp = (MaxSp*10/100);
+			.@hp = (MaxHp * .regen / 100);
+			.@sp = (MaxSp * .regen / 100);
 			heal .@hp, .@sp;
-			message strcharinfo(0),"+["+.@hp+" HP], +["+.@sp+" SP]";
+			message strcharinfo(0),"Rate ["+.regen+"%], +["+.@hp+" HP], +["+.@sp+" SP]";
 		}
 		//sc_start4 SC_REGENERATION,10000,2,2,2,0;
 		attachnpctimer();
@@ -31,4 +30,16 @@ OnTimer10000:
 OnInit:
 	getmapxy(.map$,.x,.y,BL_NPC);
 end;
+}
+
+function	script	F_VipBonusRegen	{
+	
+	.@parameter = getarg(0);
+	.@account_id = getarg(1);
+	attachrid .@account_id;
+	
+	if (vip_status(vip_status_active))
+		.@parameter = .@parameter * 2;
+	
+	return .@parameter;
 }

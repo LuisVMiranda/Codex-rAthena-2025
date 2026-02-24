@@ -3524,7 +3524,7 @@ static int32 clif_hpmeter_sub( block_list *bl, va_list ap ){
 	nullpo_ret(tsd);
 
 	if( pc_has_permission( tsd, PC_PERM_VIEW_HPMETER ) ){
-		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp );
+		 clif_hpmeter_single( *tsd, sd->status.account_id, sd->battle_status.hp, sd->battle_status.max_hp, sd->battle_status.sp, sd->battle_status.max_sp );
 	}
 	return 0;
 }
@@ -5019,7 +5019,7 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
 	)
-		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
+		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp, dstsd->battle_status.sp, dstsd->battle_status.max_sp );
 
 	// display link (sd - dstsd) to sd
 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
@@ -8252,9 +8252,13 @@ void clif_party_hp( const map_session_data& sd ){
 #else
 	p.hp = sd.battle_status.hp;
 	p.maxhp = sd.battle_status.max_hp;
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
+	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
+#endif
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, battle_config.party_sp_on ? PARTY : PARTY_AREA_WOS );
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -8289,7 +8293,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
 /*==========================================
  * Sends HP bar to a single fd. [Skotlex]
  *------------------------------------------*/
-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
 
 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
@@ -8306,6 +8310,10 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #else
 	p.hp = hp;
 	p.maxhp = maxhp;
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+	p.sp = battle_config.party_sp_on ? sp : 0;
+	p.maxsp = battle_config.party_sp_on ? maxsp : 0;
+#endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, SELF );
@@ -10224,13 +10232,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				safestrncpy( packet.name, name_line, NAME_LENGTH );
-
+				// Client renders title above name for this packet, so keep name+HP in title (line 1).
 				char title_line[NAME_LENGTH] = {};
-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				memcpy( packet.title, title_line, NAME_LENGTH );
+
+				char name_line[NAME_LENGTH] = {};
+				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safestrncpy( packet.name, name_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;

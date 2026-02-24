@@ -1080,7 +1080,7 @@ void clif_party_message( const party_data& party, uint32 account_id, const char*
 void clif_party_xy( const map_session_data& sd );
 void clif_party_xy_single( const map_session_data& sd, const map_session_data& tsd );
 void clif_party_hp( const map_session_data& sd );
-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp );
+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp = 0, uint32 maxsp = 0 );
 void clif_party_job_and_level( const map_session_data& sd );
 void clif_party_dead( const map_session_data& sd );
 

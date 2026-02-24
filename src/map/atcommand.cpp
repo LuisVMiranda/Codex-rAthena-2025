@@ -4569,6 +4569,15 @@ ACMD_FUNC(reloadlogconf){
 	return 0;
 }
 
+ACMD_FUNC(reloadmapdb){
+	nullpo_retr(-1, sd);
+
+	mapflag_mobdrop_reload();
+	clif_displaymessage(fd, "Map mobdrop YAML database has been reloaded.");
+
+	return 0;
+}
+
 ACMD_FUNC( reload ){
 	static const struct{
 		const char* type;
@@ -4583,6 +4592,7 @@ ACMD_FUNC( reload ){
 		{ "instancedb", atcommand_reloadinstancedb },
 		{ "itemdb", atcommand_reloaditemdb },
 		{ "logconf", atcommand_reloadlogconf },
+		{ "mapdb", atcommand_reloadmapdb },
 		{ "mobdb", atcommand_reloadmobdb },
 		{ "motd", atcommand_reloadmotd },
 		{ "msgconf", atcommand_reloadmsgconf },
@@ -9340,7 +9350,7 @@ ACMD_FUNC(partybuff) {
 	}
 
 	sd->state.spb = !sd->state.spb;
-	clif_party_info(*p, sd);
+	clif_party_info(*p, sd); // send UI update first
 	clif_displaymessage(fd, sd->state.spb ? msg_txt(sd,1073) : msg_txt(sd,1072));
 	return 0;
 }
@@ -11756,6 +11766,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(reloaditemdb),
 		ACMD_DEF(reloadcashdb),
 		ACMD_DEF(reloadmobdb),
+		ACMD_DEF(reloadmapdb),
 		ACMD_DEF(reloadskilldb),
 		ACMD_DEFR(reloadscript, ATCMD_NOSCRIPT),
 		ACMD_DEF(reloadatcommand),

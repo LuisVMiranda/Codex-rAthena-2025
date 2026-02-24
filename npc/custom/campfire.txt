@@ -1,0 +1,34 @@
+gonryun,160,120,5	script	Fogueira	10252,8,11,{
+
+OnTouch:
+	getmapxy(.@map$,.@x,.@y,BL_PC);
+	if( distance(.x,.y,.@x,.@y)<=11
+	&& .@map$==.map$ )
+		dispbottom "Você entrou numa área de recuperação.";
+	attachnpctimer();
+	startnpctimer();
+	end;
+OnTimer10000:
+	getmapxy(.@map$,.@x,.@y,BL_PC);
+	if( distance(.x,.y,.@x,.@y)<=11
+	&& .@map$==.map$ ) {
+	//specialeffect2 363;
+		if (Hp != MaxHp && Sp != MaxSp) {
+			specialeffect2 313;
+			.@hp = (MaxHp*10/100);
+			.@sp = (MaxSp*10/100);
+			heal .@hp, .@sp;
+			message strcharinfo(0),"+["+.@hp+" HP], +["+.@sp+" SP]";
+		}
+		//sc_start4 SC_REGENERATION,10000,2,2,2,0;
+		attachnpctimer();
+		initnpctimer();
+	} else {
+		dispbottom "Você deixou a área e perdeu a regeneração adicional.";
+		stopnpctimer();
+	}
+	end;
+OnInit:
+	getmapxy(.map$,.x,.y,BL_NPC);
+end;
+}

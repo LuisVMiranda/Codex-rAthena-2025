@@ -537,6 +537,8 @@
 	export_constant(MF_SPECIALPOPUP);
 	export_constant(MF_NOMACROCHECKER);
 	export_constant(MF_INVINCIBLE_TIME);
+	export_constant(MF_MOBDROP);
+		export_constant(MF_NOCAMPFIRE);
 
 	/* setcell types */
 	export_constant(CELL_WALKABLE);

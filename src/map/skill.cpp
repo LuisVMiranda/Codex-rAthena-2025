@@ -766,6 +766,9 @@ int32 skill_calc_heal(block_list *src, block_list *target, uint16 skill_id, uint
 		}
 	}
 
+	if( heal && target != nullptr && map_getmapflag( target->m, MF_NO_MERCY ) )
+		hp = hp * battle_config.feature_no_mercy_recover_rate / 100;
+
 #ifdef RENEWAL
 	hp = (int32)(hp * global_bonus);
 

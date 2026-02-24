@@ -537,6 +537,9 @@
 	export_constant(MF_SPECIALPOPUP);
 	export_constant(MF_NOMACROCHECKER);
 	export_constant(MF_INVINCIBLE_TIME);
+	export_constant(MF_MOBDROP);
+	export_constant(MF_NOCAMPFIRE);
+	export_constant(MF_NO_MERCY);
 
 	/* setcell types */
 	export_constant(CELL_WALKABLE);
@@ -750,6 +753,7 @@
 	export_constant2("bAddEffOnSkill",SP_ADDEFF_ONSKILL);
 	export_constant2("bHealPower",SP_ADD_HEAL_RATE);
 	export_constant2("bHealPower2",SP_ADD_HEAL2_RATE);
+	export_constant2("bCampfireHeal",SP_CAMPFIRE_HEAL_RATE);
 	export_constant2("bIgnoreResRaceRate",SP_SP_IGNORE_RES_RACE_RATE);
 	export_constant2("bIgnoreMResRaceRate",SP_SP_IGNORE_MRES_RACE_RATE);
 

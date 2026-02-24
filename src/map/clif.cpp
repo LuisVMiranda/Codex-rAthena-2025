@@ -8252,6 +8252,10 @@ void clif_party_hp( const map_session_data& sd ){
 #else
 	p.hp = sd.battle_status.hp;
 	p.maxhp = sd.battle_status.max_hp;
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+	p.sp = battle_config.party_sp_on ? sd.battle_status.sp : 0;
+	p.maxsp = battle_config.party_sp_on ? sd.battle_status.max_sp : 0;
+#endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
@@ -10224,13 +10228,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				safestrncpy( packet.name, name_line, NAME_LENGTH );
-
+				// Client renders title above name for this packet, so keep name+HP in title (line 1).
 				char title_line[NAME_LENGTH] = {};
-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				memcpy( packet.title, title_line, NAME_LENGTH );
+
+				char name_line[NAME_LENGTH] = {};
+				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safestrncpy( packet.name, name_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;

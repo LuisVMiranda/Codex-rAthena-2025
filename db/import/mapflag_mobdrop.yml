@@ -13,6 +13,7 @@
 #     Max: 10000 (1 = 0.01%; 10000 = 100%) 
 #   Bind: Account (Item behavior; Free = tradable / Account = account-bound / Character = character-bound)
 #   RandomGroup: Group_Test
+#  -------------------------------- Use  @reloadmapdb  to refresh the YML entries ----------------------------------
 
 Header:
   Type: MAPFLAG_MOBDROP_DB
@@ -21,7 +22,7 @@ Header:
 Body:
   - Map: gon_dun01
     Monster: all
-    Item: Blue_Potion
+    Item: Strawberry
     Rate:
       Min: 1000
     Bind: Free

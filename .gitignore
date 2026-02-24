@@ -69,6 +69,7 @@ Thumbs.db
 /db/import/*
 !/db/import/item_db_extended_vending.yml
 !/db/import/item_db_bg.yml
+!/db/import/mapflag_mobdrop.yml
 
 # /conf/
 /conf/import

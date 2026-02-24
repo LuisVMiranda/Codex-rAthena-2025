@@ -3473,7 +3473,7 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 
 		if (yaml_mobdrop != nullptr) {
 			for (const s_mapflag_mobdrop_rule& rule : yaml_mobdrop->rules) {
-				if (rule.mob_id != 0 && rule.mob_id != md->mob_id)
+				if (!rule.mob_ids.empty() && std::find(rule.mob_ids.begin(), rule.mob_ids.end(), md->mob_id) == rule.mob_ids.end())
 					continue;
 
 				uint16 final_rate = (rule.rate_min == rule.rate_max ? rule.rate_min : rnd_value(rule.rate_min, rule.rate_max));
@@ -3481,8 +3481,19 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 				if (!rnd_chance(final_rate, static_cast<uint16>(10000)))
 					continue;
 
+				t_itemid final_item = rule.item_id;
+
+				if (rule.item_group_id > 0) {
+					std::shared_ptr<s_item_group_entry> entry = itemdb_group.get_random_entry(rule.item_group_id, 1, GROUP_ALGORITHM_DROP);
+
+					if (entry == nullptr || entry->nameid == 0)
+						continue;
+
+					final_item = entry->nameid;
+				}
+
 				std::shared_ptr<s_mob_drop> custom_drop = std::make_shared<s_mob_drop>();
-				custom_drop->nameid = rule.item_id;
+				custom_drop->nameid = final_item;
 				custom_drop->rate = final_rate;
 				custom_drop->randomopt_group = rule.randomopt_group;
 				custom_drop->steal_protected = true;
@@ -7191,7 +7202,7 @@ const std::string MapFlagMobDropDatabase::getDefaultLocation(){
 }
 
 uint64 MapFlagMobDropDatabase::parseBodyNode(const ryml::NodeRef& node){
-	if( !this->nodesExist( node, { "Map", "Item", "Rate" } ) ){
+	if( !this->nodesExist( node, { "Map", "Rate" } ) ){
 		return 0;
 	}
 
@@ -7224,7 +7235,8 @@ uint64 MapFlagMobDropDatabase::parseBodyNode(const ryml::NodeRef& node){
 	}
 
 	s_mapflag_mobdrop_rule rule = {};
-	rule.mob_id = 0;
+	rule.item_id = 0;
+	rule.item_group_id = 0;
 	rule.bound = BOUND_NONE;
 	rule.randomopt_group = 0;
 
@@ -7243,24 +7255,89 @@ uint64 MapFlagMobDropDatabase::parseBodyNode(const ryml::NodeRef& node){
 				return 0;
 			}
 
-			rule.mob_id = mob->id;
+			rule.mob_ids.push_back( mob->id );
+		}
+	}else if( this->nodeExists( node, "Monsters" ) ){
+		for( const ryml::NodeRef& mobNode : node["Monsters"] ){
+			std::string mobname;
+
+			c4::from_chars( mobNode.val(), &mobname );
+
+			if( mobname.empty() ){
+				this->invalidWarning( mobNode, "Monster entry cannot be empty.\n" );
+				return 0;
+			}
+
+			if( strcmpi( mobname.c_str(), "all" ) == 0 || mobname == "*" ){
+				rule.mob_ids.clear();
+				break;
+			}
+
+			std::shared_ptr<s_mob_db> mob = mobdb_search_aegisname( mobname.c_str() );
+
+			if( mob == nullptr ){
+				this->invalidWarning( mobNode, "Unknown monster \"%s\".\n", mobname.c_str() );
+				return 0;
+			}
+
+			if( std::find( rule.mob_ids.begin(), rule.mob_ids.end(), mob->id ) == rule.mob_ids.end() ){
+				rule.mob_ids.push_back( mob->id );
+			}
 		}
 	}
 
-	std::string itemname;
+	if( this->nodeExists( node, "Item" ) ){
+		std::string itemname;
 
-	if( !this->asString( node, "Item", itemname ) ){
+		if( !this->asString( node, "Item", itemname ) ){
+			return 0;
+		}
+
+		std::shared_ptr<item_data> item = item_db.search_aegisname( itemname.c_str() );
+
+		if( item == nullptr ){
+			this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", itemname.c_str() );
+			return 0;
+		}
+
+		rule.item_id = item->nameid;
+	}
+
+	if( this->nodeExists( node, "ItemGroup" ) ){
+		std::string group_name;
+
+		if( !this->asString( node, "ItemGroup", group_name ) ){
+			return 0;
+		}
+
+		if( group_name.empty() ){
+			this->invalidWarning( node["ItemGroup"], "ItemGroup cannot be empty.\n" );
+			return 0;
+		}
+
+		if( ISDIGIT( group_name[0] ) ){
+			rule.item_group_id = static_cast<uint16>( std::stoul( group_name ) );
+		}else{
+			int64 group_constant;
+
+			if( !script_get_constant( group_name.c_str(), &group_constant ) ){
+				this->invalidWarning( node["ItemGroup"], "Unknown item group constant \"%s\".\n", group_name.c_str() );
+				return 0;
+			}
+
+			rule.item_group_id = static_cast<uint16>( group_constant );
+		}
+	}
+
+	if( ( rule.item_id == 0 && rule.item_group_id == 0 ) || ( rule.item_id != 0 && rule.item_group_id != 0 ) ){
+		this->invalidWarning( node, "Specify exactly one of Item or ItemGroup.\n" );
 		return 0;
 	}
 
-	std::shared_ptr<item_data> item = item_db.search_aegisname( itemname.c_str() );
-
-	if( item == nullptr ){
-		this->invalidWarning( node["Item"], "Unknown item \"%s\".\n", itemname.c_str() );
+	if( rule.item_group_id > 0 && itemdb_group.find( rule.item_group_id ) == nullptr ){
+		this->invalidWarning( node["ItemGroup"], "Unknown ItemGroup id %hu.\n", rule.item_group_id );
 		return 0;
 	}
-
-	rule.item_id = item->nameid;
 
 	const ryml::NodeRef& rateNode = node["Rate"];
 
@@ -7288,14 +7365,14 @@ uint64 MapFlagMobDropDatabase::parseBodyNode(const ryml::NodeRef& node){
 			return 0;
 		}
 
-		if( bind == "Account" || bind == "account" || bind == "account_bound" ){
+		if( bind == "Account" || bind == "account" || bind == "account_bound" || bind == "BOUND_ACCOUNT" ){
 			rule.bound = BOUND_ACCOUNT;
-		}else if( bind == "Character" || bind == "character" || bind == "Char" || bind == "char" || bind == "char_bound" ){
+		}else if( bind == "Character" || bind == "character" || bind == "Char" || bind == "char" || bind == "char_bound" || bind == "BOUND_CHAR" ){
 			rule.bound = BOUND_CHAR;
-		}else if( bind == "Free" || bind == "free" || bind == "Trade" || bind == "trade" || bind == "none" ){
+		}else if( bind == "Free" || bind == "free" || bind == "Trade" || bind == "trade" || bind == "none" || bind == "BOUND_NONE" ){
 			rule.bound = BOUND_NONE;
 		}else{
-			this->invalidWarning( node["Bind"], "Invalid Bind value \"%s\". Use Free, Account or Character.\n", bind.c_str() );
+			this->invalidWarning( node["Bind"], "Invalid Bind value \"%s\". Use Free/Trade/None, Account or Character.\n", bind.c_str() );
 			return 0;
 		}
 	}
@@ -7321,6 +7398,7 @@ uint64 MapFlagMobDropDatabase::parseBodyNode(const ryml::NodeRef& node){
 
 	return 1;
 }
+
 
 /**
  * Copy skill from DB to monster
@@ -7555,6 +7633,11 @@ void mob_reload(void) {
 	mob_db_load(true);
 	map_foreachmob(mob_reload_sub);
 	map_foreachnpc(mob_reload_sub_npc);
+}
+
+void mapflag_mobdrop_reload(){
+	mapflag_mobdrop_db.clear();
+	mapflag_mobdrop_db.load();
 }
 
 /**

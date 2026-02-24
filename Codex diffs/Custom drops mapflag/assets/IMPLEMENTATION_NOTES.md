@@ -1,27 +1,33 @@
 # Custom Drops Mapflag - Implementation Notes
 
 ## Goal
-Create a new mapflag (`mobdrop`) that allows map-specific extra drops from monster deaths.
+Create a mapflag system (`mobdrop`) that supports both legacy script mapflag lines and production-grade YAML rules.
 
-## Behavior
-- Mapflag can be declared multiple times per map.
-- Each declaration appends a new drop rule.
-- Rule can be global (all monsters) or scoped to a single monster ID.
-- Rules are rolled independently at death time.
+## YAML Rule Capabilities
+- Map-scoped rules.
+- Optional monster filter:
+  - single monster (`Monster`)
+  - multiple monsters (`Monsters` list)
+  - omitted = all monsters.
+- Item source:
+  - exact item (`Item`), or
+  - random group source (`ItemGroup`).
+- Dynamic drop chance range (`Rate.Min` to `Rate.Max`).
+- Bind mode selection (`Free`, `Account`, `Character` aliases supported).
+- Optional random option group (`RandomOptionGroup`).
 
-## Intended Parsing Rule
-`<mapname> mapflag mobdrop <item_id>,<rate>{,<mob_id>}`
+## Runtime Reload
+- Added `@reloadmapdb` atcommand.
+- Reload target: `mapflag_mobdrop.yml` + imported override YAML.
 
-## Limits
-- Maximum 128 rules per map (adjustable in patch with `MAX_MOBDROP_RULES_PER_MAP`).
-- Rate is capped to `1..10000`.
-
-## Security / Integrity Checks
-- Reject invalid item IDs.
-- Reject invalid mob IDs when provided.
-- Reject malformed input lines.
-- Prevent adding rules beyond configured per-map limit.
+## Validation Rules
+- Unknown map/item/mob rejected.
+- Unknown random option group rejected.
+- Unknown item group rejected.
+- `Rate.Max >= Rate.Min` required.
+- Exactly one of `Item` or `ItemGroup` must be set.
 
 ## Compatibility Notes
-- Designed to be self-contained and not alter existing `map_drop_db.yml` behavior.
-- Does not require SQL migration.
+- Keeps legacy `mapflag mobdrop` parser behavior.
+- YAML and legacy rules are additive.
+- No SQL migration required.

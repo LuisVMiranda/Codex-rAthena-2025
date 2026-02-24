@@ -11,7 +11,7 @@ Create a mapflag system (`mobdrop`) that supports both legacy script mapflag lin
   - omitted = all monsters.
 - Item source:
   - exact item (`Item`), or
-  - random group source (`ItemGroup`).
+  - random group source (`ItemGroup`, subgroup 1 list-only selection).
 - Dynamic drop chance range (`Rate.Min` to `Rate.Max`).
 - Bind mode selection (`Free`, `Account`, `Character` aliases supported).
 - Optional random option group (`RandomOptionGroup`).
@@ -26,6 +26,7 @@ Create a mapflag system (`mobdrop`) that supports both legacy script mapflag lin
 - Unknown item group rejected.
 - `Rate.Max >= Rate.Min` required.
 - Exactly one of `Item` or `ItemGroup` must be set.
+- ItemGroup internal entry drop percentages are ignored by MF_MOBDROP.
 
 ## Compatibility Notes
 - Keeps legacy `mapflag mobdrop` parser behavior.

@@ -37,6 +37,10 @@
 #   - Item: <item aegis name>
 #   - ItemGroup: <group id OR group constant like IG_ORE>
 #
+# ItemGroup behavior in MF_MOBDROP: one item is selected from subgroup 1
+# using the list only; item-group internal drop-rate percentages are ignored.
+# Final drop chance is always controlled by this file's Rate.Min/Rate.Max.
+#
 # RandomOptionGroup is optional and must exist in item_randomopt_group.yml.
 
 Header:

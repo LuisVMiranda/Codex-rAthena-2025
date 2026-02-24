@@ -46,7 +46,9 @@ After applying the diff:
    - During migration, avoid duplicating the same rule in both systems.
 
 3. **ItemGroup behavior**
-   - `ItemGroup` selects one random item from the configured pool per successful rule roll.
+   - `ItemGroup` selects one random item from subgroup 1 per successful rule roll.
+   - Item-group internal drop-rate percentages are intentionally ignored for this system.
+   - Final chance is fully controlled by `Rate.Min`/`Rate.Max` in `mapflag_mobdrop.yml`.
    - Ensure referenced group exists in `item_group_db.yml`.
 
 ## Recommended rollout checklist

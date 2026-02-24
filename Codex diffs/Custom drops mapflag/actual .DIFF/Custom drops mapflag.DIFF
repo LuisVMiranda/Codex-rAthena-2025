@@ -55,10 +55,10 @@ index 0000000..2a8c6a2
 +  #   Bind: Character
 diff --git a/db/mapflag_mobdrop.yml b/db/mapflag_mobdrop.yml
 new file mode 100644
-index 0000000..56841ad
+index 0000000..54b12ee
 --- /dev/null
 +++ b/db/mapflag_mobdrop.yml
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,98 @@
 +# This file is a part of rAthena.
 +# MF_MOBDROP YAML database.
 +#
@@ -97,6 +97,10 @@ index 0000000..56841ad
 +# You must choose EXACTLY ONE of:
 +#   - Item: <item aegis name>
 +#   - ItemGroup: <group id OR group constant like IG_ORE>
++#
++# ItemGroup behavior in MF_MOBDROP: one item is selected from subgroup 1
++# using the list only; item-group internal drop-rate percentages are ignored.
++# Final drop chance is always controlled by this file's Rate.Min/Rate.Max.
 +#
 +# RandomOptionGroup is optional and must exist in item_randomopt_group.yml.
 +
@@ -267,7 +271,7 @@ index 2b9de28..99923e9 100644
  	struct s_skill_damage damage_adjust; // Used for overall skill damage adjustment
  	std::unordered_map<uint16, s_skill_damage> skill_damage; // Used for single skill damage adjustment
 diff --git a/src/map/mob.cpp b/src/map/mob.cpp
-index b2f7bfc..0496cd2 100644
+index b2f7bfc..5e94749 100644
 --- a/src/map/mob.cpp
 +++ b/src/map/mob.cpp
 @@ -86,6 +86,7 @@ std::unordered_map<uint32, std::shared_ptr<s_item_drop_list>> mob_looted_drops;
@@ -278,7 +282,37 @@ index b2f7bfc..0496cd2 100644
  
  /*==========================================
   * Local prototype declaration   (only required thing)
-@@ -3442,6 +3443,67 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
+@@ -2941,6 +2942,29 @@ map_session_data* mob_data::get_mvp_player(map_session_data* first_sd) {
+  * Signals death of mob.
+  * type&1 -> no drops, type&2 -> no exp
+  *------------------------------------------*/
++
++static t_itemid mapflag_mobdrop_pick_itemgroup_item( uint16 group_id ){
++	std::shared_ptr<s_item_group_db> group = itemdb_group.find( group_id );
++
++	if( group == nullptr ){
++		return 0;
++	}
++
++	std::shared_ptr<s_item_group_random> subgroup = util::umap_find( group->random, static_cast<uint16>(1) );
++
++	if( subgroup == nullptr || subgroup->data.empty() ){
++		return 0;
++	}
++
++	std::shared_ptr<s_item_group_entry> entry = util::umap_random( subgroup->data );
++
++	if( entry == nullptr ){
++		return 0;
++	}
++
++	return entry->nameid;
++}
++
+ int32 mob_dead(mob_data *md, block_list *src, int32 type)
+ {
+ 	struct status_data *status;
+@@ -3442,6 +3466,65 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
  			}
  		}
  
@@ -323,12 +357,10 @@ index b2f7bfc..0496cd2 100644
 +				t_itemid final_item = rule.item_id;
 +
 +				if (rule.item_group_id > 0) {
-+					std::shared_ptr<s_item_group_entry> entry = itemdb_group.get_random_entry(rule.item_group_id, 1, GROUP_ALGORITHM_DROP);
++					final_item = mapflag_mobdrop_pick_itemgroup_item(rule.item_group_id);
 +
-+					if (entry == nullptr || entry->nameid == 0)
++					if (final_item == 0)
 +						continue;
-+
-+					final_item = entry->nameid;
 +				}
 +
 +				std::shared_ptr<s_mob_drop> custom_drop = std::make_shared<s_mob_drop>();
@@ -346,7 +378,7 @@ index b2f7bfc..0496cd2 100644
  		// There are drop items.
  		if (!dlist->items.empty() || !lootlist->items.empty()) {
  			mob_delayed_drops[md->id] = dlist;
-@@ -7134,6 +7196,210 @@ bool MapDropDatabase::parseDrop( const ryml::NodeRef& node, std::unordered_map<u
+@@ -7134,6 +7217,210 @@ bool MapDropDatabase::parseDrop( const ryml::NodeRef& node, std::unordered_map<u
  	return true;
  }
  
@@ -557,7 +589,7 @@ index b2f7bfc..0496cd2 100644
  /**
   * Copy skill from DB to monster
   * @param mob Monster DB entry
-@@ -7246,6 +7512,7 @@ static void mob_load(void)
+@@ -7246,6 +7533,7 @@ static void mob_load(void)
  	mob_avail_db.load();
  	mob_summon_db.load();
  	map_drop_db.load();
@@ -565,7 +597,7 @@ index b2f7bfc..0496cd2 100644
  
  	mob_drop_ratio_adjust();
  	mob_skill_db_set();
-@@ -7368,6 +7635,11 @@ void mob_reload(void) {
+@@ -7368,6 +7656,11 @@ void mob_reload(void) {
  	map_foreachnpc(mob_reload_sub_npc);
  }
  
@@ -577,7 +609,7 @@ index b2f7bfc..0496cd2 100644
  /**
   * Clear spawn data for all monsters
   */
-@@ -7406,6 +7678,7 @@ void do_final_mob(bool is_reload){
+@@ -7406,6 +7699,7 @@ void do_final_mob(bool is_reload){
  	mob_item_drop_ratio.clear();
  	mob_summon_db.clear();
  	map_drop_db.clear();

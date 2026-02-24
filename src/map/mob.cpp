@@ -2942,6 +2942,29 @@ map_session_data* mob_data::get_mvp_player(map_session_data* first_sd) {
  * Signals death of mob.
  * type&1 -> no drops, type&2 -> no exp
  *------------------------------------------*/
+
+static t_itemid mapflag_mobdrop_pick_itemgroup_item( uint16 group_id ){
+	std::shared_ptr<s_item_group_db> group = itemdb_group.find( group_id );
+
+	if( group == nullptr ){
+		return 0;
+	}
+
+	std::shared_ptr<s_item_group_random> subgroup = util::umap_find( group->random, static_cast<uint16>(1) );
+
+	if( subgroup == nullptr || subgroup->data.empty() ){
+		return 0;
+	}
+
+	std::shared_ptr<s_item_group_entry> entry = util::umap_random( subgroup->data );
+
+	if( entry == nullptr ){
+		return 0;
+	}
+
+	return entry->nameid;
+}
+
 int32 mob_dead(mob_data *md, block_list *src, int32 type)
 {
 	struct status_data *status;
@@ -3484,12 +3507,10 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 				t_itemid final_item = rule.item_id;
 
 				if (rule.item_group_id > 0) {
-					std::shared_ptr<s_item_group_entry> entry = itemdb_group.get_random_entry(rule.item_group_id, 1, GROUP_ALGORITHM_DROP);
+					final_item = mapflag_mobdrop_pick_itemgroup_item(rule.item_group_id);
 
-					if (entry == nullptr || entry->nameid == 0)
+					if (final_item == 0)
 						continue;
-
-					final_item = entry->nameid;
 				}
 
 				std::shared_ptr<s_mob_drop> custom_drop = std::make_shared<s_mob_drop>();

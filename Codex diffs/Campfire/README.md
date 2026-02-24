@@ -11,6 +11,7 @@ Reusable diff package for an item-driven temporary campfire system.
 - Every active heal pulse, campfire heals owner and party members in range with visible recovery numbers.
 - Status icon is applied when entering the zone and removed when leaving/expiring (no countdown timer behavior).
 - NPC-top progress bar is sent from source packet handling (`clif_progressbar_npc_area`) without locking player movement.
+- Ground visuals use an AppleIdun-style cross footprint (reduced packets vs full square).
 - Campfire auto-removes when time expires.
 
 ## Files in this package
@@ -29,3 +30,15 @@ Reusable diff package for an item-driven temporary campfire system.
 ## Scope and safety
 - The logic is isolated to item `7035` handling and NPC runtime duplication flow.
 - Does not modify drop, battle formula, status formula, or mob AI systems.
+
+## About OnCampfireStart / OnCampfireStartVIP
+- In the current implementation these labels are not used by source logic anymore; campfire timing/visuals are source-driven.
+- You can still define those labels for custom script-side hooks if you later call them manually from source or scripts.
+- Default behavior does not require them.
+
+## Optional per-player language
+- Set character variable `CAMPFIRE_LANG` to:
+  - `0` = English (default)
+  - `1` = Portuguese
+  - `2` = Spanish
+- This affects enter/leave zone messages and countdown text.

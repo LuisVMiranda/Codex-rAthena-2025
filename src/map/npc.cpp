@@ -141,6 +141,7 @@ static std::map<int32, t_tick> campfire_cooldown_by_owner;
 static void npc_campfire_cleanup( int32 npc_id, bool unload_npc );
 static int32 npc_campfire_regen_sub( block_list* bl, va_list ap );
 static void npc_campfire_emit_ground_effect( npc_data* nd );
+static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int32 value = 0 );
 
 // Static functions
 static npc_data* npc_create_npc( int16 m, int16 x, int16 y );
@@ -5982,6 +5983,30 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
 	return dnd;
 }
 
+static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int32 value ){
+	static char buffer[96];
+	int32 lang = 0;
+	if( sd != nullptr )
+		lang = pc_readglobalreg( sd, add_str("CAMPFIRE_LANG") ); // 0=EN,1=PT,2=ES
+
+	switch( key ){
+		case 0: // enter
+			if( lang == 1 ) return "Voce entrou na area de regeneracao da Fogueira.";
+			if( lang == 2 ) return "Has entrado en la zona de regeneracion de la Fogata.";
+			return "You entered the Campfire regeneration zone.";
+		case 1: // leave
+			if( lang == 1 ) return "Voce saiu da area de regeneracao da Fogueira.";
+			if( lang == 2 ) return "Has salido de la zona de regeneracion de la Fogata.";
+			return "You left the Campfire regeneration zone.";
+		case 2: // countdown
+			if( lang == 1 ) safesnprintf(buffer, sizeof(buffer), "Fogueira termina em %d...", value);
+			else if( lang == 2 ) safesnprintf(buffer, sizeof(buffer), "La fogata termina en %d...", value);
+			else safesnprintf(buffer, sizeof(buffer), "Campfire ends in %d...", value);
+			return buffer;
+	}
+	return "";
+}
+
 bool npc_campfire_use_item( map_session_data& sd ){
 	if( pc_isdead( &sd ) ){
 		clif_displaymessage( sd.fd, "You cannot use a Matchstick while dead." );
@@ -6071,7 +6096,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 	in_range_chars->insert( tsd->status.char_id );
 	if( !it->second.zone_state_by_char[tsd->status.char_id] ){
 		it->second.zone_state_by_char[tsd->status.char_id] = true;
-		clif_displaymessage( tsd->fd, "You entered the Campfire regeneration zone." );
+		clif_displaymessage( tsd->fd, npc_campfire_localized( tsd, 0 ) );
 		if( battle_config.feature_campfire_icon > 0 )
 			clif_status_change( tsd, battle_config.feature_campfire_icon, 1, INFINITE_TICK, 0, 0, 0 );
 	}
@@ -6145,7 +6170,7 @@ TIMER_FUNC(npc_campfire_tick_timer){
 			pair.second = false;
 			map_session_data* tsd = map_charid2sd( pair.first );
 			if( tsd != nullptr ){
-				clif_displaymessage( tsd->fd, "You left the Campfire regeneration zone." );
+				clif_displaymessage( tsd->fd, npc_campfire_localized( tsd, 1 ) );
 				if( battle_config.feature_campfire_icon > 0 )
 					clif_status_change( tsd, battle_config.feature_campfire_icon, 0, 0, 0, 0, 0 );
 			}
@@ -6158,9 +6183,12 @@ TIMER_FUNC(npc_campfire_tick_timer){
 
 	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
 	if( remain <= 5000 && remain > 0 ){
-		char countdown[32] = {};
-		safesnprintf( countdown, sizeof(countdown), "Campfire ends in %d...", static_cast<int32>((remain + 999) / 1000) );
-		clif_showscript( nd, countdown, AREA );
+		const int32 secs = static_cast<int32>((remain + 999) / 1000);
+		for( int32 char_id : in_range_chars ){
+			map_session_data* tsd = map_charid2sd( char_id );
+			if( tsd != nullptr )
+				clif_showscript( tsd, npc_campfire_localized( tsd, 2, secs ), SELF );
+		}
 	}
 
 	if( remain > 1000 )
@@ -6178,16 +6206,21 @@ static void npc_campfire_emit_ground_effect( npc_data* nd ){
 		return;
 
 	const int32 size = std::max<int32>( 1, battle_config.feature_campfire_range );
-	const int32 radius = (size - 1) / 2;
+	const int32 radius = size / 2;
 
-	for( int32 y = nd->y - radius; y <= nd->y + radius; ++y ){
-		if( y < 0 || y >= mapdata->ys )
-			continue;
-		for( int32 x = nd->x - radius; x <= nd->x + radius; ++x ){
-			if( x < 0 || x >= mapdata->xs )
-				continue;
-			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, x, y, gettick() );
-		}
+	// Center
+	clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y, gettick() );
+
+	// Cross shape (N/S/E/W), using integer half-range to reduce packet count.
+	for( int32 i = 1; i <= radius; ++i ){
+		if( nd->y - i >= 0 )
+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y - i, gettick() );
+		if( nd->y + i < mapdata->ys )
+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y + i, gettick() );
+		if( nd->x - i >= 0 )
+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x - i, nd->y, gettick() );
+		if( nd->x + i < mapdata->xs )
+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x + i, nd->y, gettick() );
 	}
 }
 

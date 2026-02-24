@@ -51,5 +51,13 @@
 - This keeps players fully movable while still showing progress over the campfire NPC.
 
 ## Ground effects
-- Every 1000ms tick, ground skill poseffects are emitted across a square footprint derived from `feature.campfire_range`.
+- Every 1000ms tick, ground skill poseffects are emitted in a cross footprint (center + N/S/E/W arms) using integer half-range derived from `feature.campfire_range`.
 - Effects naturally stop when the campfire expires/unloads.
+
+## Localization
+- Source checks per-character global variable `CAMPFIRE_LANG`:
+  - `0` EN, `1` PT, `2` ES
+- Applied to zone enter/leave and final countdown text.
+
+## OnCampfireStart labels
+- `OnCampfireStart` and `OnCampfireStartVIP` are currently informational only in script template; the source implementation no longer depends on them to avoid blocking behavior.

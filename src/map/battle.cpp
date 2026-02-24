@@ -10728,7 +10728,7 @@ static const struct _battle_data {
 	{ "feature.campfire_sp_percent",        &battle_config.feature_campfire_sp_percent,     3,      0,      100,            },
 	{ "feature.campfire_cooldown",          &battle_config.feature_campfire_cooldown,       30,     0,      INT_MAX,        },
 	{ "feature.campfire_icon",              &battle_config.feature_campfire_icon,           992,    0,      INT_MAX,        },
-	{ "feature.campfire_ground_skill",      &battle_config.feature_campfire_ground_skill,   AL_WARP, 0,      MAX_SKILL,      },
+	{ "feature.campfire_ground_skill",      &battle_config.feature_campfire_ground_skill,   BA_APPLEIDUN, 0,      MAX_SKILL,      },
 	{ "feature.campfire_ground_skill_lv",   &battle_config.feature_campfire_ground_skill_lv,1,      1,      MAX_SKILL_LEVEL, },
 
 	{ "mob_respawn_time",                   &battle_config.mob_respawn_time,                1000,   1000,   INT_MAX,        },

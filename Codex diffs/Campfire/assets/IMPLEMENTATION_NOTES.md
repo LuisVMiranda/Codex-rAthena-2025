@@ -36,6 +36,7 @@
 
 ## Abuse prevention
 - Campfire use is blocked on GvG and Battleground maps.
+- Campfire use is also blocked when mapflag `nocampfire` is set.
 - Owner-level cooldown is enforced after use.
 
 ## UI and progress
@@ -55,8 +56,8 @@
 - Effects naturally stop when the campfire expires/unloads.
 
 ## Localization
-- Source checks per-character global variable `CAMPFIRE_LANG`:
-  - `0` EN, `1` PT, `2` ES
+- Source checks battle config `feature.campfire_language` (`1` EN, `2` PT, `3` ES).
+- Optional per-character override via global variable `CAMPFIRE_LANG`.
 - Applied to zone enter/leave and final countdown text.
 
 ## OnCampfireStart labels

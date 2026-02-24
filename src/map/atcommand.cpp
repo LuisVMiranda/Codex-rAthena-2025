@@ -9350,7 +9350,7 @@ ACMD_FUNC(partybuff) {
 	}
 
 	sd->state.spb = !sd->state.spb;
-	clif_party_info(*p, sd);
+	clif_party_info(*p, sd); // send UI update first
 	clif_displaymessage(fd, sd->state.spb ? msg_txt(sd,1073) : msg_txt(sd,1072));
 	return 0;
 }

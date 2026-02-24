@@ -7,6 +7,7 @@ Reusable diff package for an item-driven temporary campfire system.
 - Spawns a temporary **bonfire NPC sprite** (`class: 10252`) near the player.
 - Duration, pulse interval, regen rates, range, cooldown and icon are now configurable via `battle_config` entries (`feature.campfire_*`).
 - Disabled automatically on **GvG** and **Battleground** maps.
+- Supports mapflag **`nocampfire`** (constant `MF_NOCAMPFIRE`) to block Matchstick usage per-map.
 - Campfire logic updates every 1000ms for zone/visual sync, while healing cadence follows `feature.campfire_tick_interval`.
 - Every active heal pulse, campfire heals owner and party members in range with visible recovery numbers.
 - Status icon is applied when entering the zone and removed when leaving/expiring (no countdown timer behavior).
@@ -37,8 +38,14 @@ Reusable diff package for an item-driven temporary campfire system.
 - Default behavior does not require them.
 
 ## Optional per-player language
-- Set character variable `CAMPFIRE_LANG` to:
-  - `0` = English (default)
-  - `1` = Portuguese
-  - `2` = Spanish
-- This affects enter/leave zone messages and countdown text.
+- Set `feature.campfire_language` in battle config:
+  - `1` = English (default)
+  - `2` = Portuguese
+  - `3` = Spanish
+- Optional per-character override: `CAMPFIRE_LANG` (same values).
+
+
+## Optional mapflag
+```txt
+prontera	mapflag	nocampfire
+```

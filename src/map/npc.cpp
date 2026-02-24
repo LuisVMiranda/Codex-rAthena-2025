@@ -5985,22 +5985,25 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
 
 static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int32 value ){
 	static char buffer[96];
-	int32 lang = 0;
-	if( sd != nullptr )
-		lang = pc_readglobalreg( sd, add_str("CAMPFIRE_LANG") ); // 0=EN,1=PT,2=ES
+	int32 lang = battle_config.feature_campfire_language; // 1=EN,2=PT,3=ES
+	if( sd != nullptr ) {
+		int32 char_lang = pc_readglobalreg( sd, add_str("CAMPFIRE_LANG") ); // backward compatible override
+		if( char_lang >= 1 && char_lang <= 3 )
+			lang = char_lang;
+	}
 
 	switch( key ){
 		case 0: // enter
-			if( lang == 1 ) return "Voce entrou na area de regeneracao da Fogueira.";
-			if( lang == 2 ) return "Has entrado en la zona de regeneracion de la Fogata.";
+			if( lang == 2 ) return "Voce entrou na area de regeneracao da Fogueira.";
+			if( lang == 3 ) return "Has entrado en la zona de regeneracion de la Fogata.";
 			return "You entered the Campfire regeneration zone.";
 		case 1: // leave
-			if( lang == 1 ) return "Voce saiu da area de regeneracao da Fogueira.";
-			if( lang == 2 ) return "Has salido de la zona de regeneracion de la Fogata.";
+			if( lang == 2 ) return "Voce saiu da area de regeneracao da Fogueira.";
+			if( lang == 3 ) return "Has salido de la zona de regeneracion de la Fogata.";
 			return "You left the Campfire regeneration zone.";
 		case 2: // countdown
-			if( lang == 1 ) safesnprintf(buffer, sizeof(buffer), "Fogueira termina em %d...", value);
-			else if( lang == 2 ) safesnprintf(buffer, sizeof(buffer), "La fogata termina en %d...", value);
+			if( lang == 2 ) safesnprintf(buffer, sizeof(buffer), "Fogueira termina em %d...", value);
+			else if( lang == 3 ) safesnprintf(buffer, sizeof(buffer), "La fogata termina en %d...", value);
 			else safesnprintf(buffer, sizeof(buffer), "Campfire ends in %d...", value);
 			return buffer;
 	}
@@ -6010,6 +6013,11 @@ static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int3
 bool npc_campfire_use_item( map_session_data& sd ){
 	if( pc_isdead( &sd ) ){
 		clif_displaymessage( sd.fd, "You cannot use a Matchstick while dead." );
+		return false;
+	}
+
+	if( map_getmapflag( sd.m, MF_NOCAMPFIRE ) ){
+		clif_displaymessage( sd.fd, "Campfire cannot be used on this map." );
 		return false;
 	}
 

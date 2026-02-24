@@ -14,3 +14,4 @@ feature.campfire_ground_skill: 653
 feature.campfire_ground_skill_lv: 1
 feature.campfire_ground_effect: 313
 feature.campfire_language: 1
+feature.no_mercy_recover_rate: 20

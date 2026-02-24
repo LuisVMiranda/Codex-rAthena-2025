@@ -10735,6 +10735,7 @@ static const struct _battle_data {
 	{ "feature.campfire_ground_skill_lv",   &battle_config.feature_campfire_ground_skill_lv,1,      1,      MAX_SKILL_LEVEL, },
 	{ "feature.campfire_ground_effect",     &battle_config.feature_campfire_ground_effect,  313,    0,      INT_MAX,        },
 	{ "feature.campfire_language",          &battle_config.feature_campfire_language,       1,      1,      3,              },
+	{ "feature.no_mercy_recover_rate",     &battle_config.feature_no_mercy_recover_rate,    20,     0,      100,            },
 
 	{ "mob_respawn_time",                   &battle_config.mob_respawn_time,                1000,   1000,   INT_MAX,        },
 	{ "mob_unlock_time",                    &battle_config.mob_unlock_time,                 2000,   0,      INT_MAX,        },

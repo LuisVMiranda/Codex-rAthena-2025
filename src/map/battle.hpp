@@ -812,6 +812,7 @@ struct Battle_Config
 	int32 feature_campfire_ground_skill_lv;
 	int32 feature_campfire_ground_effect;
 	int32 feature_campfire_language;
+	int32 feature_no_mercy_recover_rate;
 
 	int32 mob_respawn_time;
 	int32 mob_unlock_time;

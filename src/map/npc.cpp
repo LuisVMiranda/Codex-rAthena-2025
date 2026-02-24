@@ -5725,6 +5725,10 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 			}
 			break;
 
+		case MF_NO_MERCY:
+			map_setmapflag(m, mapflag, state);
+			break;
+
 		// All others do not need special treatment
 		default:
 			map_setmapflag(m, mapflag, state);
@@ -6139,7 +6143,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 		sp_gain = std::max<int32>( 0, sp_gain );
 		if( hp_gain > 0 || sp_gain > 0 ){
 			status_heal( tsd, hp_gain, sp_gain, 3 );
-			clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, AREA );
+			clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, SELF );
 		}
 	}
 

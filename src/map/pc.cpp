@@ -10769,6 +10769,11 @@ int32 pc_itemheal(map_session_data *sd, t_itemid itemid, int32 hp, int32 sp)
 			sp += sp / 10;
 		}
 
+		if( map_getmapflag( sd->m, MF_NO_MERCY ) ) {
+			hp = hp * battle_config.feature_no_mercy_recover_rate / 100;
+			sp = sp * battle_config.feature_no_mercy_recover_rate / 100;
+		}
+
 #ifdef RENEWAL
 		if (sd->sc.getSCE(SC_APPLEIDUN))
 			hp += sd->sc.getSCE(SC_APPLEIDUN)->val3 / 100;

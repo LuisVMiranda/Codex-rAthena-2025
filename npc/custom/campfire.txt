@@ -43,3 +43,16 @@ function	script	F_VipBonusRegen	{
 	
 	return .@parameter;
 }
+
+
+-	script	Campfire Controller	-1,{
+	end;
+
+OnCampfireStart:
+	//progressbar_npc "00FF00", getbattleflag("feature.campfire_nonvip_duration");
+	end;
+
+OnCampfireStartVIP:
+	//progressbar_npc "00FF00", getbattleflag("feature.campfire_vip_duration");
+	end;
+}

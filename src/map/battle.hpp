@@ -805,6 +805,8 @@ struct Battle_Config
 	int32 feature_campfire_sp_percent;
 	int32 feature_campfire_cooldown;
 	int32 feature_campfire_icon;
+	int32 feature_campfire_ground_skill;
+	int32 feature_campfire_ground_skill_lv;
 
 	int32 mob_respawn_time;
 	int32 mob_unlock_time;

@@ -41,3 +41,15 @@
 ## UI and progress
 - Icon is shown to healed targets while pulse effect is active.
 - Campfire countdown (final 5 seconds) is shown through `showscript` from source timers to avoid movement lock from progressbar-style blocking.
+
+## Tick/Heal split model
+- Runtime tick loop is fixed at **1000ms** for smooth zone enter/leave checks, icon state, and countdown/effect updates.
+- Actual HP/SP healing cadence remains controlled by `feature.campfire_tick_interval`.
+
+## Progress bar behavior
+- Instead of script-sleep `progressbar_npc`, the system updates NPC progressbar packets directly each tick (`nd->progressbar.*` + `clif_progressbar_npc_area`).
+- This keeps players fully movable while still showing progress over the campfire NPC.
+
+## Ground effects
+- Every 1000ms tick, ground skill poseffects are emitted across a square footprint derived from `feature.campfire_range`.
+- Effects naturally stop when the campfire expires/unloads.

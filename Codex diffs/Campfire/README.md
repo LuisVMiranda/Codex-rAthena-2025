@@ -7,7 +7,10 @@ Reusable diff package for an item-driven temporary campfire system.
 - Spawns a temporary **bonfire NPC sprite** (`class: 10252`) near the player.
 - Duration, pulse interval, regen rates, range, cooldown and icon are now configurable via `battle_config` entries (`feature.campfire_*`).
 - Disabled automatically on **GvG** and **Battleground** maps.
-- Every pulse, the campfire heals owner and party members in range and shows icon `992` (or configured icon id) while active, with visible recovery numbers.
+- Campfire logic updates every 1000ms for zone/visual sync, while healing cadence follows `feature.campfire_tick_interval`.
+- Every active heal pulse, campfire heals owner and party members in range with visible recovery numbers.
+- Status icon is applied when entering the zone and removed when leaving/expiring (no countdown timer behavior).
+- NPC-top progress bar is sent from source packet handling (`clif_progressbar_npc_area`) without locking player movement.
 - Campfire auto-removes when time expires.
 
 ## Files in this package

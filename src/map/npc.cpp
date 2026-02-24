@@ -130,6 +130,7 @@ struct s_campfire_runtime {
 	t_tick end_tick = 0;
 	int32 tick_tid = INVALID_TIMER;
 	int32 expire_tid = INVALID_TIMER;
+	t_tick next_heal_tick = 0;
 	std::map<int32, bool> zone_state_by_char;
 };
 
@@ -139,6 +140,7 @@ static std::map<int32, t_tick> campfire_cooldown_by_owner;
 
 static void npc_campfire_cleanup( int32 npc_id, bool unload_npc );
 static int32 npc_campfire_regen_sub( block_list* bl, va_list ap );
+static void npc_campfire_emit_ground_effect( npc_data* nd );
 
 // Static functions
 static npc_data* npc_create_npc( int16 m, int16 x, int16 y );
@@ -6027,17 +6029,22 @@ bool npc_campfire_use_item( map_session_data& sd ){
 	const t_tick now = gettick();
 	const int32 duration_sec = pc_isvip( &sd ) ? battle_config.feature_campfire_vip_duration : battle_config.feature_campfire_nonvip_duration;
 	const int32 duration_ms = duration_sec * 1000;
-	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
+	const int32 tick_interval_ms = 1000;
 
 	s_campfire_runtime runtime = {};
 	runtime.owner_char_id = sd.status.char_id;
 	runtime.party_id = sd.status.party_id;
 	runtime.end_tick = now + duration_ms;
+	runtime.next_heal_tick = now;
 	runtime.tick_tid = add_timer( now + tick_interval_ms, npc_campfire_tick_timer, campfire_nd->id, 0 );
 	runtime.expire_tid = add_timer( runtime.end_tick, npc_campfire_expire_timer, campfire_nd->id, 0 );
 
 	campfire_runtime_by_npc[campfire_nd->id] = runtime;
 	campfire_npc_by_owner[sd.status.char_id] = campfire_nd->id;
+
+	campfire_nd->progressbar.color = 0x00FF00;
+	campfire_nd->progressbar.timeout = runtime.end_tick;
+	clif_progressbar_npc_area( campfire_nd );
 
 	campfire_cooldown_by_owner[sd.status.char_id] = now + battle_config.feature_campfire_cooldown * 1000;
 
@@ -6053,6 +6060,7 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 
 	int32 campfire_npc_id = va_arg( ap, int32 );
 	std::set<int32>* in_range_chars = va_arg( ap, std::set<int32>* );
+	bool do_heal = va_arg( ap, int32 ) != 0;
 	auto it = campfire_runtime_by_npc.find( campfire_npc_id );
 	if( it == campfire_runtime_by_npc.end() )
 		return 0;
@@ -6064,13 +6072,15 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 	if( !it->second.zone_state_by_char[tsd->status.char_id] ){
 		it->second.zone_state_by_char[tsd->status.char_id] = true;
 		clif_displaymessage( tsd->fd, "You entered the Campfire regeneration zone." );
+		if( battle_config.feature_campfire_icon > 0 )
+			clif_status_change( tsd, battle_config.feature_campfire_icon, 1, INFINITE_TICK, 0, 0, 0 );
 	}
 
-	const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
-	const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
-	status_heal( tsd, hp_gain, sp_gain, 3 );
-	if( battle_config.feature_campfire_icon > 0 )
-		clif_status_change( tsd, battle_config.feature_campfire_icon, 1, battle_config.feature_campfire_tick_interval * 1000 + 1000, 0, 0, 0 );
+	if( do_heal ){
+		const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
+		const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
+		status_heal( tsd, hp_gain, sp_gain, 3 );
+	}
 
 	return 0;
 }
@@ -6085,13 +6095,26 @@ static void npc_campfire_cleanup( int32 npc_id, bool unload_npc ){
 	if( it->second.expire_tid != INVALID_TIMER )
 		delete_timer( it->second.expire_tid, npc_campfire_expire_timer );
 
+	if( battle_config.feature_campfire_icon > 0 ){
+		for( const auto &pair : it->second.zone_state_by_char ){
+			if( pair.second ){
+				map_session_data* tsd = map_charid2sd( pair.first );
+				if( tsd != nullptr )
+					clif_status_change( tsd, battle_config.feature_campfire_icon, 0, 0, 0, 0, 0 );
+			}
+		}
+	}
+
 	campfire_npc_by_owner.erase( it->second.owner_char_id );
 	campfire_runtime_by_npc.erase( it );
 
 	if( unload_npc ){
 		npc_data* nd = map_id2nd( npc_id );
-		if( nd != nullptr )
+		if( nd != nullptr ){
+			nd->progressbar.timeout = 0;
+			clif_progressbar_npc_area( nd );
 			npc_unload( nd, true );
+		}
 	}
 }
 
@@ -6108,20 +6131,31 @@ TIMER_FUNC(npc_campfire_tick_timer){
 		return 0;
 	}
 
+	const t_tick now = gettick();
+	const int32 heal_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
+	const bool do_heal = DIFF_TICK( now, it->second.next_heal_tick ) >= 0;
+	if( do_heal )
+		it->second.next_heal_tick = now + heal_interval_ms;
+
 	std::set<int32> in_range_chars;
-	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id, &in_range_chars );
+	map_foreachinallrange( npc_campfire_regen_sub, nd, battle_config.feature_campfire_range, BL_PC, id, &in_range_chars, do_heal ? 1 : 0 );
 
 	for( auto &pair : it->second.zone_state_by_char ){
 		if( pair.second && in_range_chars.find( pair.first ) == in_range_chars.end() ){
 			pair.second = false;
 			map_session_data* tsd = map_charid2sd( pair.first );
-			if( tsd != nullptr )
+			if( tsd != nullptr ){
 				clif_displaymessage( tsd->fd, "You left the Campfire regeneration zone." );
+				if( battle_config.feature_campfire_icon > 0 )
+					clif_status_change( tsd, battle_config.feature_campfire_icon, 0, 0, 0, 0, 0 );
+			}
 		}
 	}
 
-	const t_tick now = gettick();
-	const int32 tick_interval_ms = battle_config.feature_campfire_tick_interval * 1000;
+	nd->progressbar.timeout = it->second.end_tick;
+	clif_progressbar_npc_area( nd );
+	npc_campfire_emit_ground_effect( nd );
+
 	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
 	if( remain <= 5000 && remain > 0 ){
 		char countdown[32] = {};
@@ -6129,11 +6163,32 @@ TIMER_FUNC(npc_campfire_tick_timer){
 		clif_showscript( nd, countdown, AREA );
 	}
 
-	const int32 next_delay = (remain <= 5000) ? 1000 : tick_interval_ms;
-	if( remain > next_delay )
-		it->second.tick_tid = add_timer( now + next_delay, npc_campfire_tick_timer, id, 0 );
+	if( remain > 1000 )
+		it->second.tick_tid = add_timer( now + 1000, npc_campfire_tick_timer, id, 0 );
 
 	return 0;
+}
+
+static void npc_campfire_emit_ground_effect( npc_data* nd ){
+	if( nd == nullptr || battle_config.feature_campfire_ground_skill <= 0 )
+		return;
+
+	map_data* mapdata = map_getmapdata( nd->m );
+	if( mapdata == nullptr )
+		return;
+
+	const int32 size = std::max<int32>( 1, battle_config.feature_campfire_range );
+	const int32 radius = (size - 1) / 2;
+
+	for( int32 y = nd->y - radius; y <= nd->y + radius; ++y ){
+		if( y < 0 || y >= mapdata->ys )
+			continue;
+		for( int32 x = nd->x - radius; x <= nd->x + radius; ++x ){
+			if( x < 0 || x >= mapdata->xs )
+				continue;
+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, x, y, gettick() );
+		}
+	}
 }
 
 TIMER_FUNC(npc_campfire_expire_timer){

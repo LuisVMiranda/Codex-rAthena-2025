@@ -1,0 +1,25 @@
+diff --git a/Codex diffs/Campfire/README.md b/Codex diffs/Campfire/README.md
+index 432d6d7..266980c 100644
+--- a/Codex diffs/Campfire/README.md	
++++ b/Codex diffs/Campfire/README.md	
+@@ -11,6 +11,7 @@ Reusable diff package for an item-driven temporary campfire system.
+ - Every active heal pulse, campfire heals owner and party members in range with visible recovery numbers.
+ - Status icon is applied when entering the zone and removed when leaving/expiring (no countdown timer behavior).
+ - NPC-top progress bar is sent from source packet handling (`clif_progressbar_npc_area`) without locking player movement.
++- Ground visuals use an AppleIdun-style cross footprint (reduced packets vs full square).
+ - Campfire auto-removes when time expires.
+ 
+ ## Files in this package
+diff --git a/Codex diffs/Campfire/assets/IMPLEMENTATION_NOTES.md b/Codex diffs/Campfire/assets/IMPLEMENTATION_NOTES.md
+index 1a2276b..78822c8 100644
+--- a/Codex diffs/Campfire/assets/IMPLEMENTATION_NOTES.md	
++++ b/Codex diffs/Campfire/assets/IMPLEMENTATION_NOTES.md	
+@@ -51,7 +51,7 @@
+ - This keeps players fully movable while still showing progress over the campfire NPC.
+ 
+ ## Ground effects
+-- Every 1000ms tick, ground skill poseffects are emitted across a square footprint derived from `feature.campfire_range`.
++- Every 1000ms tick, ground skill poseffects are emitted in a cross footprint (center + N/S/E/W arms) using integer half-range derived from `feature.campfire_range`.
+ - Effects naturally stop when the campfire expires/unloads.
+ 
+ ## Localization

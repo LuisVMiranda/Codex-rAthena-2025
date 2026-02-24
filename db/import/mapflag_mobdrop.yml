@@ -2,36 +2,26 @@
 # mapflag_mobdrop custom production overrides
 # ============================================================
 # Add live-server entries here.
+# - Map: geffen
+#   Monsters: (Use 'all' to apply drops to any monster; ex: Monsters: all)
+#     - Poring (Monster 1)
+#     - Drops (Monster 2)...
+#   Item: Apple (Aegis)
+#   ItemGroup: IG_ORE (Use itemgroup to pull random items from a group)
+#   Rate:
+#     Min: 1 (If only Min is available, drop rate will be fixed)
+#     Max: 10000 (1 = 0.01%; 10000 = 100%) 
+#   Bind: Account (Item behavior; Free = tradable / Account = account-bound / Character = character-bound)
+#   RandomGroup: Group_Test
 
 Header:
   Type: MAPFLAG_MOBDROP_DB
   Version: 1
 
 Body:
-  # Single monster + fixed rate
-  # - Map: geffen
-  #   Monster: Poring
-  #   Item: Red_Potion
-  #   Rate:
-  #     Min: 100
-  #   Bind: Free
-
-  # Multiple monsters + dynamic rate + account bound
-  # - Map: geffen
-  #   Monsters:
-  #     - Poring
-  #     - Drops
-  #   Item: Apple
-  #   Rate:
-  #     Min: 100
-  #     Max: 250
-  #   Bind: Account
-
-  # ItemGroup random pool usage
-  # - Map: payon
-  #   Monster: Poporing
-  #   ItemGroup: IG_ORE
-  #   Rate:
-  #     Min: 50
-  #     Max: 150
-  #   Bind: Character
+  - Map: gon_dun01
+    Monster: all
+    Item: Blue_Potion
+    Rate:
+      Min: 1000
+    Bind: Free

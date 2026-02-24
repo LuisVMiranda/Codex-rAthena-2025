@@ -6000,6 +6000,8 @@ static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int3
 		case 1: msg_id = ( lang == 2 ? 2912 : ( lang == 3 ? 2922 : 2902 ) ); break;
 		case 2: msg_id = ( lang == 2 ? 2913 : ( lang == 3 ? 2923 : 2903 ) ); break;
 		case 3: msg_id = ( lang == 2 ? 2914 : ( lang == 3 ? 2924 : 2904 ) ); break;
+		case 4: msg_id = ( lang == 2 ? 2915 : ( lang == 3 ? 2925 : 2905 ) ); break;
+		case 5: msg_id = ( lang == 2 ? 2916 : ( lang == 3 ? 2926 : 2906 ) ); break;
 		default: return "";
 	}
 
@@ -6088,7 +6090,7 @@ bool npc_campfire_use_item( map_session_data& sd ){
 	campfire_cooldown_by_owner[sd.status.char_id] = now + battle_config.feature_campfire_cooldown * 1000;
 
 
-	clif_displaymessage( sd.fd, pc_isvip( &sd ) ? "VIP Campfire created." : "Campfire created." );
+	clif_displaymessage( sd.fd, npc_campfire_localized( &sd, pc_isvip( &sd ) ? 5 : 4 ) );
 	return true;
 }
 
@@ -6118,10 +6120,27 @@ static int32 npc_campfire_regen_sub( block_list* bl, va_list ap ){
 	}
 
 	if( do_heal ){
-		const int32 hp_gain = std::max<int32>( 1, status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100 );
-		const int32 sp_gain = std::max<int32>( 1, status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100 );
-		status_heal( tsd, hp_gain, sp_gain, 3 );
-		clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, AREA );
+		int32 hp_gain = 0;
+		int32 sp_gain = 0;
+		if( battle_config.feature_campfire_heal_mode == 1 ){
+			hp_gain = battle_config.feature_campfire_hp_fixed;
+			sp_gain = battle_config.feature_campfire_sp_fixed;
+		}else{
+			hp_gain = status_get_max_hp( tsd ) * battle_config.feature_campfire_hp_percent / 100;
+			sp_gain = status_get_max_sp( tsd ) * battle_config.feature_campfire_sp_percent / 100;
+		}
+
+		if( tsd->bonus.campfire_heal_rate != 0 ){
+			hp_gain += hp_gain * tsd->bonus.campfire_heal_rate / 100;
+			sp_gain += sp_gain * tsd->bonus.campfire_heal_rate / 100;
+		}
+
+		hp_gain = std::max<int32>( 0, hp_gain );
+		sp_gain = std::max<int32>( 0, sp_gain );
+		if( hp_gain > 0 || sp_gain > 0 ){
+			status_heal( tsd, hp_gain, sp_gain, 3 );
+			clif_specialeffect( tsd, battle_config.feature_campfire_ground_effect > 0 ? battle_config.feature_campfire_ground_effect : 313, AREA );
+		}
 	}
 
 	return 0;

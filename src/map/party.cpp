@@ -685,7 +685,7 @@ int32 party_member_added(int32 party_id,uint32 account_id,uint32 char_id, int32 
 		sd2 = p->data[i].sd;
 
 		if( sd2 && sd2->status.account_id != account_id && sd2->status.char_id != char_id )
-			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp, sd2->battle_status.sp, sd2->battle_status.max_sp );
+			clif_hpmeter_single( *sd, sd2->id, sd2->battle_status.hp, sd2->battle_status.max_hp );
 	}
 
 	clif_party_hp( *sd );
@@ -1220,8 +1220,8 @@ TIMER_FUNC(party_send_xy_timer){
 					map_session_data* tsd = p->data[j].sd;
 					if( tsd == nullptr || tsd == sd || tsd->m != sd->m )
 						continue;
-					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp, sd->battle_status.sp, sd->battle_status.max_sp );
-					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp, tsd->battle_status.sp, tsd->battle_status.max_sp );
+					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp );
+					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp );
 				}
 			}
 		}

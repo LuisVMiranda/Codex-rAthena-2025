@@ -803,6 +803,9 @@ struct Battle_Config
 	int32 feature_campfire_range;
 	int32 feature_campfire_hp_percent;
 	int32 feature_campfire_sp_percent;
+	int32 feature_campfire_heal_mode;
+	int32 feature_campfire_hp_fixed;
+	int32 feature_campfire_sp_fixed;
 	int32 feature_campfire_cooldown;
 	int32 feature_campfire_icon;
 	int32 feature_campfire_ground_skill;

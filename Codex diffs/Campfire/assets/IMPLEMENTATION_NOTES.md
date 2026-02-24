@@ -65,5 +65,10 @@
 
 
 ## Message source
-- Runtime texts are loaded via `msg_txt()` ids in `conf/msg_conf/map_msg.conf` (ids `2901..2924`).
+- Runtime texts are loaded via `msg_txt()` ids in `conf/msg_conf/map_msg.conf` (ids `2901..2926`).
 - Helper function: `npc_campfire_localized()` in `src/map/npc.cpp`.
+
+
+## Campfire heal bonus
+- New script bonus `bCampfireHeal,<percent>;` modifies campfire healing (positive amplifies, negative reduces).
+- Works from item scripts and random options because it is implemented as a normal `bonus` parameter.

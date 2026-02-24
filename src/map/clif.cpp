@@ -8254,7 +8254,7 @@ void clif_party_hp( const map_session_data& sd ){
 	p.maxhp = sd.battle_status.max_hp;
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, PARTY );
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -10224,13 +10224,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				safestrncpy( packet.name, name_line, NAME_LENGTH );
-
+				// Client renders title above name for this packet, so keep name+HP in title (line 1).
 				char title_line[NAME_LENGTH] = {};
-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				memcpy( packet.title, title_line, NAME_LENGTH );
+
+				char name_line[NAME_LENGTH] = {};
+				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safestrncpy( packet.name, name_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;

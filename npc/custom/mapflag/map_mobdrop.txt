@@ -13,10 +13,10 @@
 //
 // Examples:
 // Every monster in prontera has a 5% chance to drop Apple (id 512)
-gon_dun01	mapflag	mobdrop	2258,5000
+//gon_dun01	mapflag	mobdrop	2258,5000
 
 // Only Poring (id 1002) in prontera has a 1% chance to drop Jellopy (id 909)
-prontera	mapflag	mobdrop	909,100,1002
+//prontera	mapflag	mobdrop	909,100,1002
 
 // Disable custom drops on map
 // prontera	mapflag	mobdrop	off

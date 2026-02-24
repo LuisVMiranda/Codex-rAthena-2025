@@ -52,8 +52,8 @@
 - This keeps players fully movable while still showing progress over the campfire NPC.
 
 ## Ground effects
-- Every 1000ms tick, ground skill poseffects are emitted in a cross footprint (center + N/S/E/W arms) using integer half-range derived from `feature.campfire_range`.
-- Effects naturally stop when the campfire expires/unloads.
+- Every 1000ms tick, non-skill effect ids are emitted to players standing on campfire cells in a cross footprint (center + N/S/E/W arms) using integer half-range derived from `feature.campfire_range`.
+- Effect id is configurable via `feature.campfire_ground_effect`.
 
 ## Localization
 - Source checks battle config `feature.campfire_language` (`1` EN, `2` PT, `3` ES).
@@ -62,3 +62,8 @@
 
 ## OnCampfireStart labels
 - `OnCampfireStart` and `OnCampfireStartVIP` are currently informational only in script template; the source implementation no longer depends on them to avoid blocking behavior.
+
+
+## Message source
+- Runtime texts are loaded via `msg_txt()` ids in `conf/msg_conf/map_msg.conf` (ids `24001..24023`).
+- Helper function: `npc_campfire_localized()` in `src/map/npc.cpp`.

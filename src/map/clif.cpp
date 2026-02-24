@@ -8254,7 +8254,7 @@ void clif_party_hp( const map_session_data& sd ){
 	p.maxhp = sd.battle_status.max_hp;
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, PARTY );
 }
 
 /// Notifies the party members of a character's death or revival.

@@ -12,7 +12,7 @@ Reusable diff package for an item-driven temporary campfire system.
 - Every active heal pulse, campfire heals owner and party members in range with visible recovery numbers.
 - Status icon is applied when entering the zone and removed when leaving/expiring (no countdown timer behavior).
 - NPC-top progress bar is sent from source packet handling (`clif_progressbar_npc_area`) without locking player movement.
-- Ground visuals use an AppleIdun-style cross footprint (reduced packets vs full square).
+- Ground visuals use non-skill visual effects (`feature.campfire_ground_effect`) on campfire cells in a cross footprint.
 - Campfire auto-removes when time expires.
 
 ## Files in this package
@@ -20,13 +20,15 @@ Reusable diff package for an item-driven temporary campfire system.
 - `required files/npc/custom/campfire_system.txt` - runtime duplication template NPC.
 - `required files/npc/scripts_custom.conf.snippet.txt` - line to enable script loading.
 - `required files/conf/battle/feature.conf.snippet.txt` - configurable Campfire battle_config keys.
+- `required files/conf/msg_conf/map_msg.conf.snippet.txt` - Campfire localized message ids.
 - `assets/IMPLEMENTATION_NOTES.md` - behavior, constraints, and extension notes.
 
 ## Integration checklist
 1. Apply `actual .DIFF/Campfire.DIFF`.
 2. Copy `required files/npc/custom/campfire_system.txt` to `npc/custom/campfire_system.txt`.
 3. Add snippet line to your active scripts conf (commonly `npc/scripts_custom.conf`).
-4. Reload/restart map-server.
+4. Append `required files/conf/msg_conf/map_msg.conf.snippet.txt` into `conf/msg_conf/map_msg.conf`.
+5. Reload/restart map-server.
 
 ## Scope and safety
 - The logic is isolated to item `7035` handling and NPC runtime duplication flow.
@@ -49,3 +51,7 @@ Reusable diff package for an item-driven temporary campfire system.
 ```txt
 prontera	mapflag	nocampfire
 ```
+
+
+## Message source
+- Campfire UI strings are generated in source by `npc_campfire_localized()` in `src/map/npc.cpp` and honor `feature.campfire_language` (optional `CAMPFIRE_LANG` override).

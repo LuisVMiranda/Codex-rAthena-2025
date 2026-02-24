@@ -140,6 +140,7 @@ static std::map<int32, t_tick> campfire_cooldown_by_owner;
 
 static void npc_campfire_cleanup( int32 npc_id, bool unload_npc );
 static int32 npc_campfire_regen_sub( block_list* bl, va_list ap );
+static int32 npc_campfire_cell_effect_sub( block_list* bl, va_list ap );
 static void npc_campfire_emit_ground_effect( npc_data* nd );
 static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int32 value = 0 );
 
@@ -5992,22 +5993,19 @@ static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int3
 			lang = char_lang;
 	}
 
+	int32 msg_id = 24001;
 	switch( key ){
-		case 0: // enter
-			if( lang == 2 ) return "Voce entrou na area de regeneracao da Fogueira.";
-			if( lang == 3 ) return "Has entrado en la zona de regeneracion de la Fogata.";
-			return "You entered the Campfire regeneration zone.";
-		case 1: // leave
-			if( lang == 2 ) return "Voce saiu da area de regeneracao da Fogueira.";
-			if( lang == 3 ) return "Has salido de la zona de regeneracion de la Fogata.";
-			return "You left the Campfire regeneration zone.";
-		case 2: // countdown
-			if( lang == 2 ) safesnprintf(buffer, sizeof(buffer), "Fogueira termina em %d...", value);
-			else if( lang == 3 ) safesnprintf(buffer, sizeof(buffer), "La fogata termina en %d...", value);
-			else safesnprintf(buffer, sizeof(buffer), "Campfire ends in %d...", value);
-			return buffer;
+		case 0: msg_id = ( lang == 2 ? 24011 : ( lang == 3 ? 24021 : 24001 ) ); break;
+		case 1: msg_id = ( lang == 2 ? 24012 : ( lang == 3 ? 24022 : 24002 ) ); break;
+		case 2: msg_id = ( lang == 2 ? 24013 : ( lang == 3 ? 24023 : 24003 ) ); break;
+		default: return "";
 	}
-	return "";
+
+	if( key == 2 ){
+		safesnprintf( buffer, sizeof(buffer), msg_txt( sd, msg_id ), value );
+		return buffer;
+	}
+	return msg_txt( sd, msg_id );
 }
 
 bool npc_campfire_use_item( map_session_data& sd ){
@@ -6185,8 +6183,6 @@ TIMER_FUNC(npc_campfire_tick_timer){
 		}
 	}
 
-	nd->progressbar.timeout = it->second.end_tick;
-	clif_progressbar_npc_area( nd );
 	npc_campfire_emit_ground_effect( nd );
 
 	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
@@ -6205,8 +6201,17 @@ TIMER_FUNC(npc_campfire_tick_timer){
 	return 0;
 }
 
+static int32 npc_campfire_cell_effect_sub( block_list* bl, va_list ap ){
+	map_session_data* tsd = BL_CAST( BL_PC, bl );
+	if( tsd == nullptr )
+		return 0;
+	const int32 effect = va_arg( ap, int32 );
+	clif_specialeffect( tsd, effect, AREA );
+	return 0;
+}
+
 static void npc_campfire_emit_ground_effect( npc_data* nd ){
-	if( nd == nullptr || battle_config.feature_campfire_ground_skill <= 0 )
+	if( nd == nullptr || battle_config.feature_campfire_ground_effect <= 0 )
 		return;
 
 	map_data* mapdata = map_getmapdata( nd->m );
@@ -6216,19 +6221,16 @@ static void npc_campfire_emit_ground_effect( npc_data* nd ){
 	const int32 size = std::max<int32>( 1, battle_config.feature_campfire_range );
 	const int32 radius = size / 2;
 
-	// Center
-	clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y, gettick() );
-
-	// Cross shape (N/S/E/W), using integer half-range to reduce packet count.
+	map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 	for( int32 i = 1; i <= radius; ++i ){
 		if( nd->y - i >= 0 )
-			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y - i, gettick() );
+			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y - i, BL_PC, battle_config.feature_campfire_ground_effect );
 		if( nd->y + i < mapdata->ys )
-			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y + i, gettick() );
+			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y + i, BL_PC, battle_config.feature_campfire_ground_effect );
 		if( nd->x - i >= 0 )
-			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x - i, nd->y, gettick() );
+			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x - i, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 		if( nd->x + i < mapdata->xs )
-			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x + i, nd->y, gettick() );
+			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x + i, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 	}
 }
 

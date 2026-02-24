@@ -1212,9 +1212,17 @@ TIMER_FUNC(party_send_xy_timer){
 				p->data[i].y = sd->y;
 			}
 
-			if (battle_config.party_hp_mode && p->data[i].hp != sd->battle_status.hp) { // perform hp update
+			if (battle_config.party_hp_mode) { // keep party window HP synchronized
 				clif_party_hp( *sd );
 				p->data[i].hp = sd->battle_status.hp;
+
+				for( int32 j = 0; j < MAX_PARTY; ++j ) {
+					map_session_data* tsd = p->data[j].sd;
+					if( tsd == nullptr || tsd == sd || tsd->m != sd->m )
+						continue;
+					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp );
+					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp );
+				}
 			}
 		}
 	}

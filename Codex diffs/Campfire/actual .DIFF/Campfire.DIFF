@@ -1,8 +1,8 @@
 diff --git a/conf/battle/feature.conf b/conf/battle/feature.conf
-index 50f3388..4d41466 100644
+index 50f3388..4862ac8 100644
 --- a/conf/battle/feature.conf
 +++ b/conf/battle/feature.conf
-@@ -209,3 +209,25 @@ feature.stylist: on
+@@ -209,3 +209,26 @@ feature.stylist: on
  // If this is allowed the "nosave" mapflag is still being respected
  // and may prevent players from warping back into the instance.
  //feature.instance_allow_reconnect: yes
@@ -23,11 +23,31 @@ index 50f3388..4d41466 100644
 +feature.campfire_icon: 992
 +
 +// Ground pulse visual effect (skill id/level) used on campfire area every second.
-+feature.campfire_ground_skill: 304
++feature.campfire_ground_skill: 653
 +feature.campfire_ground_skill_lv: 1
++feature.campfire_ground_effect: 313
 +
 +// Campfire display language: 1=English, 2=Portuguese, 3=Spanish
 +feature.campfire_language: 1
+diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
+index dd530df..eda2b8a 100644
+--- a/conf/msg_conf/map_msg.conf
++++ b/conf/msg_conf/map_msg.conf
+@@ -1848,3 +1848,14 @@ import: conf/msg_conf/import/map_msg_eng_conf.txt
+ 1071: You're not in a party.
+ 1072: Displaying party member's buffs disabled.
+ 1073: Displaying party member's buffs enabled.
++
++// ----- Campfire localized messages ----- //
++24001: You entered the Campfire regeneration zone.
++24002: You left the Campfire regeneration zone.
++24003: Campfire ends in %d...
++24011: Voce entrou na area de regeneracao da Fogueira.
++24012: Voce saiu da area de regeneracao da Fogueira.
++24013: Fogueira termina em %d...
++24021: Has entrado en la zona de regeneracion de la Fogata.
++24022: Has salido de la zona de regeneracion de la Fogata.
++24023: La fogata termina en %d...
 diff --git a/npc/custom/campfire_system.txt b/npc/custom/campfire_system.txt
 new file mode 100644
 index 0000000..0f3696f
@@ -98,10 +118,10 @@ index af090c6..4f7c173 100644
  		ACMD_DEFR(reloadscript, ATCMD_NOSCRIPT),
  		ACMD_DEF(reloadatcommand),
 diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index 2a7d03a..fe19e75 100644
+index 2a7d03a..778d466 100644
 --- a/src/map/battle.cpp
 +++ b/src/map/battle.cpp
-@@ -10720,6 +10720,17 @@ static const struct _battle_data {
+@@ -10720,6 +10720,18 @@ static const struct _battle_data {
  	{ "feature.dynamicnpc_rangex",          &battle_config.feature_dynamicnpc_rangex,       2,      0,      INT_MAX,        },
  	{ "feature.dynamicnpc_rangey",          &battle_config.feature_dynamicnpc_rangey,       2,      0,      INT_MAX,        },
  	{ "feature.dynamicnpc_direction",       &battle_config.feature_dynamicnpc_direction,    0,      0,      1,              },
@@ -113,17 +133,18 @@ index 2a7d03a..fe19e75 100644
 +	{ "feature.campfire_sp_percent",        &battle_config.feature_campfire_sp_percent,     3,      0,      100,            },
 +	{ "feature.campfire_cooldown",          &battle_config.feature_campfire_cooldown,       30,     0,      INT_MAX,        },
 +	{ "feature.campfire_icon",              &battle_config.feature_campfire_icon,           992,    0,      INT_MAX,        },
-+	{ "feature.campfire_ground_skill",      &battle_config.feature_campfire_ground_skill,   BA_APPLEIDUN, 0,      MAX_SKILL,      },
++	{ "feature.campfire_ground_skill",      &battle_config.feature_campfire_ground_skill,   NPC_EARTHQUAKE, 0,      MAX_SKILL,      },
 +	{ "feature.campfire_ground_skill_lv",   &battle_config.feature_campfire_ground_skill_lv,1,      1,      MAX_SKILL_LEVEL, },
++	{ "feature.campfire_ground_effect",     &battle_config.feature_campfire_ground_effect,  313,    0,      INT_MAX,        },
 +	{ "feature.campfire_language",          &battle_config.feature_campfire_language,       1,      1,      3,              },
  
  	{ "mob_respawn_time",                   &battle_config.mob_respawn_time,                1000,   1000,   INT_MAX,        },
  	{ "mob_unlock_time",                    &battle_config.mob_unlock_time,                 2000,   0,      INT_MAX,        },
 diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index b373e7c..1e0a746 100644
+index b373e7c..cf2e5b9 100644
 --- a/src/map/battle.hpp
 +++ b/src/map/battle.hpp
-@@ -797,6 +797,18 @@ struct Battle_Config
+@@ -797,6 +797,19 @@ struct Battle_Config
  	int32 feature_dynamicnpc_rangey;
  	int32 feature_dynamicnpc_direction;
  
@@ -137,11 +158,46 @@ index b373e7c..1e0a746 100644
 +	int32 feature_campfire_icon;
 +	int32 feature_campfire_ground_skill;
 +	int32 feature_campfire_ground_skill_lv;
++	int32 feature_campfire_ground_effect;
 +	int32 feature_campfire_language;
 +
  	int32 mob_respawn_time;
  	int32 mob_unlock_time;
  	int32 map_edge_size;
+diff --git a/src/map/clif.cpp b/src/map/clif.cpp
+index 26a8ed5..40acc79 100644
+--- a/src/map/clif.cpp
++++ b/src/map/clif.cpp
+@@ -8254,7 +8254,7 @@ void clif_party_hp( const map_session_data& sd ){
+ 	p.maxhp = sd.battle_status.max_hp;
+ #endif
+ 
+-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
++	clif_send( &p, sizeof( p ), &sd, PARTY );
+ }
+ 
+ /// Notifies the party members of a character's death or revival.
+@@ -10224,14 +10224,15 @@ void clif_name( const block_list* src, const block_list* bl, send_target target
+ 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
+ 				packet.gid = bl->id;
+ 
+-				char name_line[NAME_LENGTH] = {};
+-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
+-				safestrncpy( packet.name, name_line, NAME_LENGTH );
+-
++				// Client renders title above name for this packet, so keep name+HP in title (line 1).
+ 				char title_line[NAME_LENGTH] = {};
+-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
++				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
+ 				memcpy( packet.title, title_line, NAME_LENGTH );
+ 
++				char name_line[NAME_LENGTH] = {};
++				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
++				safestrncpy( packet.name, name_line, NAME_LENGTH );
++
+ 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
+ 					packet.groupId = 51 + md->status.def_ele;
+ 
 diff --git a/src/map/map.hpp b/src/map/map.hpp
 index 2b9de28..300fb1f 100644
 --- a/src/map/map.hpp
@@ -193,7 +249,7 @@ index 2b9de28..300fb1f 100644
  	struct s_skill_damage damage_adjust; // Used for overall skill damage adjustment
  	std::unordered_map<uint16, s_skill_damage> skill_damage; // Used for single skill damage adjustment
 diff --git a/src/map/npc.cpp b/src/map/npc.cpp
-index 1523845..3d342cd 100644
+index 1523845..0acdf17 100644
 --- a/src/map/npc.cpp
 +++ b/src/map/npc.cpp
 @@ -3,9 +3,11 @@
@@ -217,7 +273,7 @@ index 1523845..3d342cd 100644
  
  /// Returns a new npc id that isn't being used in id_db.
  /// Fatal error if nothing is available.
-@@ -120,6 +124,25 @@ struct script_event_s{
+@@ -120,6 +124,26 @@ struct script_event_s{
  // Holds pointers to the commonly executed scripts for speedup. [Skotlex]
  std::map<enum npce_event, std::vector<struct script_event_s>> script_event;
  
@@ -237,13 +293,14 @@ index 1523845..3d342cd 100644
 +
 +static void npc_campfire_cleanup( int32 npc_id, bool unload_npc );
 +static int32 npc_campfire_regen_sub( block_list* bl, va_list ap );
++static int32 npc_campfire_cell_effect_sub( block_list* bl, va_list ap );
 +static void npc_campfire_emit_ground_effect( npc_data* nd );
 +static const char* npc_campfire_localized( map_session_data* sd, uint8 key, int32 value = 0 );
 +
  // Static functions
  static npc_data* npc_create_npc( int16 m, int16 x, int16 y );
  static void npc_parsename( npc_data* nd, const char* name, const char* start, const char* buffer, const char* filepath );
-@@ -3579,6 +3602,8 @@ int32 npc_unload(npc_data* nd, bool single) {
+@@ -3579,6 +3603,8 @@ int32 npc_unload(npc_data* nd, bool single) {
  		nd->dynamicnpc.removal_tid = INVALID_TIMER;
  	}
  
@@ -252,7 +309,7 @@ index 1523845..3d342cd 100644
  	if( nd->dynamicnpc.owner_char_id != 0 ){
  		map_session_data* owner = map_charid2sd( nd->dynamicnpc.owner_char_id );
  
-@@ -5525,6 +5550,42 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
+@@ -5525,6 +5551,42 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
  			break;
  		}
  
@@ -295,7 +352,7 @@ index 1523845..3d342cd 100644
  		case MF_BATTLEGROUND:
  			if (state) {
  				union u_mapflag_args args = {};
-@@ -5922,6 +5983,265 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
+@@ -5922,6 +5984,266 @@ npc_data* npc_duplicate_npc( npc_data& nd, char name[NPC_NAME_LENGTH + 1], int16
  	return dnd;
  }
  
@@ -308,22 +365,19 @@ index 1523845..3d342cd 100644
 +			lang = char_lang;
 +	}
 +
++	int32 msg_id = 24001;
 +	switch( key ){
-+		case 0: // enter
-+			if( lang == 2 ) return "Voce entrou na area de regeneracao da Fogueira.";
-+			if( lang == 3 ) return "Has entrado en la zona de regeneracion de la Fogata.";
-+			return "You entered the Campfire regeneration zone.";
-+		case 1: // leave
-+			if( lang == 2 ) return "Voce saiu da area de regeneracao da Fogueira.";
-+			if( lang == 3 ) return "Has salido de la zona de regeneracion de la Fogata.";
-+			return "You left the Campfire regeneration zone.";
-+		case 2: // countdown
-+			if( lang == 2 ) safesnprintf(buffer, sizeof(buffer), "Fogueira termina em %d...", value);
-+			else if( lang == 3 ) safesnprintf(buffer, sizeof(buffer), "La fogata termina en %d...", value);
-+			else safesnprintf(buffer, sizeof(buffer), "Campfire ends in %d...", value);
-+			return buffer;
++		case 0: msg_id = ( lang == 2 ? 24011 : ( lang == 3 ? 24021 : 24001 ) ); break;
++		case 1: msg_id = ( lang == 2 ? 24012 : ( lang == 3 ? 24022 : 24002 ) ); break;
++		case 2: msg_id = ( lang == 2 ? 24013 : ( lang == 3 ? 24023 : 24003 ) ); break;
++		default: return "";
 +	}
-+	return "";
++
++	if( key == 2 ){
++		safesnprintf( buffer, sizeof(buffer), msg_txt( sd, msg_id ), value );
++		return buffer;
++	}
++	return msg_txt( sd, msg_id );
 +}
 +
 +bool npc_campfire_use_item( map_session_data& sd ){
@@ -501,8 +555,6 @@ index 1523845..3d342cd 100644
 +		}
 +	}
 +
-+	nd->progressbar.timeout = it->second.end_tick;
-+	clif_progressbar_npc_area( nd );
 +	npc_campfire_emit_ground_effect( nd );
 +
 +	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
@@ -521,8 +573,17 @@ index 1523845..3d342cd 100644
 +	return 0;
 +}
 +
++static int32 npc_campfire_cell_effect_sub( block_list* bl, va_list ap ){
++	map_session_data* tsd = BL_CAST( BL_PC, bl );
++	if( tsd == nullptr )
++		return 0;
++	const int32 effect = va_arg( ap, int32 );
++	clif_specialeffect( tsd, effect, AREA );
++	return 0;
++}
++
 +static void npc_campfire_emit_ground_effect( npc_data* nd ){
-+	if( nd == nullptr || battle_config.feature_campfire_ground_skill <= 0 )
++	if( nd == nullptr || battle_config.feature_campfire_ground_effect <= 0 )
 +		return;
 +
 +	map_data* mapdata = map_getmapdata( nd->m );
@@ -532,19 +593,16 @@ index 1523845..3d342cd 100644
 +	const int32 size = std::max<int32>( 1, battle_config.feature_campfire_range );
 +	const int32 radius = size / 2;
 +
-+	// Center
-+	clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y, gettick() );
-+
-+	// Cross shape (N/S/E/W), using integer half-range to reduce packet count.
++	map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 +	for( int32 i = 1; i <= radius; ++i ){
 +		if( nd->y - i >= 0 )
-+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y - i, gettick() );
++			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y - i, BL_PC, battle_config.feature_campfire_ground_effect );
 +		if( nd->y + i < mapdata->ys )
-+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x, nd->y + i, gettick() );
++			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x, nd->y + i, BL_PC, battle_config.feature_campfire_ground_effect );
 +		if( nd->x - i >= 0 )
-+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x - i, nd->y, gettick() );
++			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x - i, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 +		if( nd->x + i < mapdata->xs )
-+			clif_skill_poseffect( *nd, battle_config.feature_campfire_ground_skill, battle_config.feature_campfire_ground_skill_lv, nd->x + i, nd->y, gettick() );
++			map_foreachincell( npc_campfire_cell_effect_sub, nd->m, nd->x + i, nd->y, BL_PC, battle_config.feature_campfire_ground_effect );
 +	}
 +}
 +
@@ -561,7 +619,7 @@ index 1523845..3d342cd 100644
  TIMER_FUNC(npc_dynamicnpc_removal_timer){
  	npc_data* nd = map_id2nd( id );
  
-@@ -6308,6 +6628,9 @@ void do_final_npc(void) {
+@@ -6308,6 +6630,9 @@ void do_final_npc(void) {
  #endif
  	stylist_db.clear();
  	barter_db.clear();
@@ -571,7 +629,7 @@ index 1523845..3d342cd 100644
  	ers_destroy(timer_event_ers);
  	ers_destroy(npc_sc_display_ers);
  	npc_src_files.clear();
-@@ -6396,6 +6719,8 @@ void do_init_npc(void){
+@@ -6396,6 +6721,8 @@ void do_init_npc(void){
  	add_timer_func_list(npc_event_do_clock,"npc_event_do_clock");
  	add_timer_func_list(npc_timerevent,"npc_timerevent");
  	add_timer_func_list( npc_dynamicnpc_removal_timer, "npc_dynamicnpc_removal_timer" );
@@ -580,6 +638,29 @@ index 1523845..3d342cd 100644
  #ifdef SECURE_NPCTIMEOUT
  	add_timer_func_list( npc_secure_timeout_timer, "npc_secure_timeout_timer" );
  #endif
+diff --git a/src/map/party.cpp b/src/map/party.cpp
+index a65eb8d..a580839 100644
+--- a/src/map/party.cpp
++++ b/src/map/party.cpp
+@@ -1212,9 +1212,17 @@ TIMER_FUNC(party_send_xy_timer){
+ 				p->data[i].y = sd->y;
+ 			}
+ 
+-			if (battle_config.party_hp_mode && p->data[i].hp != sd->battle_status.hp) { // perform hp update
++			if (battle_config.party_hp_mode) { // keep party window HP synchronized
+ 				clif_party_hp( *sd );
+ 				p->data[i].hp = sd->battle_status.hp;
++
++				for( int32 j = 0; j < MAX_PARTY; ++j ) {
++					map_session_data* tsd = p->data[j].sd;
++					if( tsd == nullptr || tsd == sd || tsd->m != sd->m )
++						continue;
++					clif_hpmeter_single( *tsd, sd->id, sd->battle_status.hp, sd->battle_status.max_hp );
++					clif_hpmeter_single( *sd, tsd->id, tsd->battle_status.hp, tsd->battle_status.max_hp );
++				}
+ 			}
+ 		}
+ 	}
 diff --git a/src/map/pc.cpp b/src/map/pc.cpp
 index 6619439..54dda2b 100644
 --- a/src/map/pc.cpp
@@ -604,7 +685,7 @@ index 6619439..54dda2b 100644
  #ifdef RENEWAL
  			val = sd->bonus.eatk;
 diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
-index 489f7ef..0f777ac 100644
+index 489f7ef..3bb0a5e 100644
 --- a/src/map/script_constants.hpp
 +++ b/src/map/script_constants.hpp
 @@ -537,6 +537,8 @@
@@ -612,7 +693,7 @@ index 489f7ef..0f777ac 100644
  	export_constant(MF_NOMACROCHECKER);
  	export_constant(MF_INVINCIBLE_TIME);
 +	export_constant(MF_MOBDROP);
-+		export_constant(MF_NOCAMPFIRE);
++	export_constant(MF_NOCAMPFIRE);
  
  	/* setcell types */
  	export_constant(CELL_WALKABLE);

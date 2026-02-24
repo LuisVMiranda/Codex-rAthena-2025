@@ -65,5 +65,5 @@
 
 
 ## Message source
-- Runtime texts are loaded via `msg_txt()` ids in `conf/msg_conf/map_msg.conf` (ids `2901..2923`).
+- Runtime texts are loaded via `msg_txt()` ids in `conf/msg_conf/map_msg.conf` (ids `2901..2924`).
 - Helper function: `npc_campfire_localized()` in `src/map/npc.cpp`.

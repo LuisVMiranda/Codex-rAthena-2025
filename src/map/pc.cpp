@@ -4447,6 +4447,10 @@ void pc_bonus(map_session_data *sd,int32 type,int32 val)
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.campfire_heal_rate += val;
 			break;
+		case SP_MONSTER_SCHOLAR:
+			if (sd->state.lr_flag != LR_FLAG_ARROW)
+				sd->bonus.monster_scholar += val;
+			break;
 		case SP_ADD_ITEM_HEAL_RATE:
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.itemhealrate2 += val;
@@ -10452,6 +10456,7 @@ int64 pc_readparam( const map_session_data* sd, int64 type )
 		case SP_ADD_HEAL_RATE:   val = sd->bonus.add_heal_rate; break;
 		case SP_ADD_HEAL2_RATE:  val = sd->bonus.add_heal2_rate; break;
 		case SP_CAMPFIRE_HEAL_RATE: val = sd->bonus.campfire_heal_rate; break;
+		case SP_MONSTER_SCHOLAR: val = sd->bonus.monster_scholar; break;
 		case SP_PARTY_SYNERGY: val = pc_party_synergy_bonus( *sd ); break;
 		case SP_ADD_ITEM_HEAL_RATE: val = sd->bonus.itemhealrate2; break;
 		case SP_EMATK:           val = sd->bonus.ematk; break;

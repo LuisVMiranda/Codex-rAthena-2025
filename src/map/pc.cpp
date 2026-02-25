@@ -3707,6 +3707,44 @@ static void pc_bonus_addvanish(std::vector<s_vanish_bonus> &bonus, int16 rate, i
 	bonus.push_back(entry);
 }
 
+static int32 pc_party_synergy_bonus( const map_session_data& sd ){
+	if( sd.status.party_id == 0 )
+		return 0;
+
+	party_data* p = party_search( sd.status.party_id );
+	if( p == nullptr )
+		return 0;
+
+	const char* map_name = mapindex_id2name( sd.mapindex );
+	uint64 unique_classes[MAX_PARTY] = {};
+	int32 unique_count = 0;
+
+	for( int32 i = 0; i < MAX_PARTY; i++ ){
+		const party_member& member = p->party.member[i];
+
+		if( member.account_id == 0 || !member.online )
+			continue;
+
+		if( strncmp( member.map, map_name, MAP_NAME_LENGTH_EXT ) != 0 )
+			continue;
+
+		uint64 mapid = pc_jobid2mapid( member.class_ );
+		if( mapid == 0 )
+			continue;
+
+		uint64 base_class = mapid & MAPID_SECONDMASK;
+		if( base_class == 0 )
+			base_class = mapid & MAPID_FIRSTMASK;
+
+		int32 j;
+		ARR_FIND( 0, unique_count, j, unique_classes[j] == base_class );
+		if( j == unique_count )
+			unique_classes[unique_count++] = base_class;
+	}
+
+	return min( 4, unique_count / 4 );
+}
+
 /*==========================================
  * Add a bonus(type) to player sd
  * format: bonus bBonusName,val;
@@ -4218,6 +4256,23 @@ void pc_bonus(map_session_data *sd,int32 type,int32 val)
 				sd->indexed_bonus.param_bonus[SP_LUK-SP_STR]+=val;
 			}
 			break;
+		case SP_PARTY_SYNERGY: {
+			if (sd->state.lr_flag == LR_FLAG_ARROW)
+				break;
+
+			int32 synergy_bonus = pc_party_synergy_bonus( *sd );
+			if( synergy_bonus == 0 )
+				break;
+
+			synergy_bonus *= val;
+			sd->indexed_bonus.param_bonus[SP_STR-SP_STR] += synergy_bonus;
+			sd->indexed_bonus.param_bonus[SP_AGI-SP_STR] += synergy_bonus;
+			sd->indexed_bonus.param_bonus[SP_VIT-SP_STR] += synergy_bonus;
+			sd->indexed_bonus.param_bonus[SP_INT-SP_STR] += synergy_bonus;
+			sd->indexed_bonus.param_bonus[SP_DEX-SP_STR] += synergy_bonus;
+			sd->indexed_bonus.param_bonus[SP_LUK-SP_STR] += synergy_bonus;
+			break;
+		}
 		case SP_ALL_TRAIT_STATS:
 			if (sd->state.lr_flag != LR_FLAG_ARROW) {
 				sd->indexed_bonus.param_bonus[PARAM_POW] += val;
@@ -4391,6 +4446,10 @@ void pc_bonus(map_session_data *sd,int32 type,int32 val)
 		case SP_CAMPFIRE_HEAL_RATE:
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.campfire_heal_rate += val;
+			break;
+		case SP_MONSTER_SCHOLAR:
+			if (sd->state.lr_flag != LR_FLAG_ARROW)
+				sd->bonus.monster_scholar += val;
 			break;
 		case SP_ADD_ITEM_HEAL_RATE:
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
@@ -5110,6 +5169,16 @@ void pc_bonus2(map_session_data *sd,int32 type,int32 type2,int32 val)
 		}
 
 		pc_bonus_itembonus( sd->itemgroupsphealrate, type2, val, false );
+		break;
+	case SP_FRIENDLY_FIRE: // bonus2 bFriendlyFire,chance,duration;
+		if( sd->state.lr_flag == LR_FLAG_ARROW )
+			break;
+
+		if( type2 <= 0 || val <= 0 )
+			break;
+
+		// Hook: applies a temporary status used by battle_check_target() to ignore ally filtering for offensive skills.
+		sc_start( nullptr, sd, SC_FRIENDLYFIRE, cap_value( type2, 0, 100 ), 0, val );
 		break;
 	default:
 		if (current_equip_combo_pos > 0) {
@@ -10387,6 +10456,8 @@ int64 pc_readparam( const map_session_data* sd, int64 type )
 		case SP_ADD_HEAL_RATE:   val = sd->bonus.add_heal_rate; break;
 		case SP_ADD_HEAL2_RATE:  val = sd->bonus.add_heal2_rate; break;
 		case SP_CAMPFIRE_HEAL_RATE: val = sd->bonus.campfire_heal_rate; break;
+		case SP_MONSTER_SCHOLAR: val = sd->bonus.monster_scholar; break;
+		case SP_PARTY_SYNERGY: val = pc_party_synergy_bonus( *sd ); break;
 		case SP_ADD_ITEM_HEAL_RATE: val = sd->bonus.itemhealrate2; break;
 		case SP_EMATK:           val = sd->bonus.ematk; break;
 		case SP_EMATK_HIDDEN:    val = sd->bonus.ematk_hidden; break;

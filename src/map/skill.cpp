@@ -4040,7 +4040,10 @@ static int32 skill_blood_tax_cost( const map_session_data& sd, uint16 skill_id, 
 	if( require.hp > 0 || require.hp_rate > 0 )
 		return 0;
 
-	return std::max<int32>( 1, sd.battle_status.max_hp * 2 / 100 );
+	if( battle_config.feature_blood_tax_hp_rate <= 0 )
+		return 0;
+
+	return std::max<int32>( 1, sd.battle_status.max_hp * battle_config.feature_blood_tax_hp_rate / 100 );
 }
 
 

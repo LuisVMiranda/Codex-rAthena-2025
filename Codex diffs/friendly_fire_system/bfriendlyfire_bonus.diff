@@ -1,0 +1,20 @@
+diff --git a/db/pre-re/status.yml b/db/pre-re/status.yml
+index 998c46e..066e21d 100644
+--- a/db/pre-re/status.yml
++++ b/db/pre-re/status.yml
+@@ -6852,3 +6852,5 @@ Body:
+
+   - Status: Friendlyfire
+     Icon: EFST_BLANK
++    Flags:
++      NoWarning: true
+diff --git a/db/re/status.yml b/db/re/status.yml
+index c3c544b..0b75eb9 100644
+--- a/db/re/status.yml
++++ b/db/re/status.yml
+@@ -9959,3 +9959,5 @@ Body:
+
+   - Status: Friendlyfire
+     Icon: EFST_BLANK
++    Flags:
++      NoWarning: true

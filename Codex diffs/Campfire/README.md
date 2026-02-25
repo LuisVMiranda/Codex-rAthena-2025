@@ -55,6 +55,3 @@ prontera	mapflag	nocampfire
 
 ## Message source
 - Campfire UI strings are generated in source by `npc_campfire_localized()` in `src/map/npc.cpp` and honor `feature.campfire_language` (optional `CAMPFIRE_LANG` override).
-
-## Updates
-- Includes bCampfireHeal, fixed/percent heal mode, and latest party HP + campfire tick/name fixes.

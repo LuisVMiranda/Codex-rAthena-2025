@@ -5729,6 +5729,10 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 			map_setmapflag(m, mapflag, state);
 			break;
 
+		case MF_BLOOD_TAX:
+			map_setmapflag(m, mapflag, state);
+			break;
+
 		// All others do not need special treatment
 		default:
 			map_setmapflag(m, mapflag, state);
@@ -6064,6 +6068,10 @@ bool npc_campfire_use_item( map_session_data& sd ){
 	}
 
 	char campfire_name[NPC_NAME_LENGTH + 1] = "Campfire";
+	if( battle_config.feature_campfire_language == 2 )
+		safestrncpy( campfire_name, "Fogueira", sizeof(campfire_name) );
+	else if( battle_config.feature_campfire_language == 3 )
+		safestrncpy( campfire_name, "Fogata", sizeof(campfire_name) );
 	npc_data* campfire_nd = npc_duplicate_npc( *template_nd, campfire_name, sd.m, x, y, 10252, DIR_NORTH, -1, -1, nullptr );
 	if( campfire_nd == nullptr ){
 		clif_displaymessage( sd.fd, "Failed to create campfire." );
@@ -6217,7 +6225,8 @@ TIMER_FUNC(npc_campfire_tick_timer){
 		}
 	}
 
-	npc_campfire_emit_ground_effect( nd );
+	if( do_heal )
+		npc_campfire_emit_ground_effect( nd );
 
 	const t_tick remain = DIFF_TICK( it->second.end_tick, now );
 	if( remain <= 5000 && remain > 0 ){
@@ -6240,7 +6249,7 @@ static int32 npc_campfire_cell_effect_sub( block_list* bl, va_list ap ){
 	if( tsd == nullptr )
 		return 0;
 	const int32 effect = va_arg( ap, int32 );
-	clif_specialeffect( tsd, effect, AREA );
+	clif_specialeffect( tsd, effect, SELF );
 	return 0;
 }
 

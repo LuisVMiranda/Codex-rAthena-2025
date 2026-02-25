@@ -14364,7 +14364,7 @@ bool skill_check_condition_castbegin( map_session_data& sd, uint16 skill_id, uin
 
 	const int32 blood_tax_hp = skill_blood_tax_cost( sd, skill_id, require );
 	if( blood_tax_hp > 0 && status->hp < static_cast<uint32>( blood_tax_hp ) ) {
-		clif_displaymessage( sd.fd, "Você não tem sangue suficiente para este sacrifício." );
+		clif_displaymessage( sd.fd, msg_txt( &sd, 2930 ) );
 		return false;
 	}
 

@@ -5019,7 +5019,7 @@ static void clif_getareachar_pc(map_session_data* sd,map_session_data* dstsd)
 		(sd->bg_id && sd->bg_id == dstsd->bg_id) || //BattleGround
 		pc_has_permission(sd, PC_PERM_VIEW_HPMETER)
 	)
-		clif_hpmeter_single( *sd, dstsd->id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
+		clif_hpmeter_single( *sd, dstsd->status.account_id, dstsd->battle_status.hp, dstsd->battle_status.max_hp );
 
 	// display link (sd - dstsd) to sd
 	ARR_FIND( 0, MAX_DEVOTION, i, sd->devotion[i] == dstsd->id );
@@ -8254,7 +8254,7 @@ void clif_party_hp( const map_session_data& sd ){
 	p.maxhp = sd.battle_status.max_hp;
 #endif
 
-	clif_send( &p, sizeof( p ), &sd, PARTY_AREA_WOS );
+	clif_send( &p, sizeof( p ), &sd, PARTY );
 }
 
 /// Notifies the party members of a character's death or revival.
@@ -10224,13 +10224,14 @@ void clif_name( const block_list* src, const block_list* bl, send_target target 
 				packet.packet_id = HEADER_ZC_ACK_REQNAMEALL_NPC;
 				packet.gid = bl->id;
 
-				char name_line[NAME_LENGTH] = {};
-				safesnprintf( name_line, sizeof(name_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
-				safestrncpy( packet.name, name_line, NAME_LENGTH );
-
+				// Client renders title above name for this packet, so keep name+HP in title (line 1).
 				char title_line[NAME_LENGTH] = {};
-				safesnprintf( title_line, sizeof(title_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safesnprintf( title_line, sizeof(title_line), "%s (%u%%)", md->name, get_percentage( md->status.hp, md->status.max_hp ) );
 				memcpy( packet.title, title_line, NAME_LENGTH );
+
+				char name_line[NAME_LENGTH] = {};
+				safesnprintf( name_line, sizeof(name_line), "%s %s", get_mob_race_name(md->status.race), get_mob_size_tag(md->status.size) );
+				safestrncpy( packet.name, name_line, NAME_LENGTH );
 
 				if (md->status.def_ele >= ELE_NEUTRAL && md->status.def_ele < ELE_MAX)
 					packet.groupId = 51 + md->status.def_ele;
@@ -11111,7 +11112,7 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 		clif_spawn(sd->ed);
 		clif_elemental_info(sd);
 		clif_elemental_updatestatus(*sd, SP_HP);
-		clif_hpmeter_single( *sd, sd->ed->id, sd->ed->battle_status.hp, sd->ed->battle_status.max_hp );
+		clif_hpmeter_single( *sd, static_cast<uint32>( sd->ed->id ), static_cast<uint32>( sd->ed->battle_status.hp ), static_cast<uint32>( sd->ed->battle_status.max_hp ) );
 		clif_elemental_updatestatus(*sd, SP_SP);
 		status_calc_bl(sd->ed, { SCB_SPEED }); //Elemental mimic their master's speed on each map change
 	}

@@ -32,6 +32,7 @@
 #include "path.hpp"
 #include "pc.hpp"
 #include "pc_groups.hpp"
+#include "script.hpp" // add_str
 #include "pet.hpp"
 #include "./skills/skill_impl.hpp"
 
@@ -49,6 +50,42 @@ int32 battle_get_weapon_element( const Damage *wd, const block_list* src, const 
 int32 battle_get_magic_element( const block_list* src, const block_list* target, uint16 skill_id, uint16 skill_lv, int32 mflag );
 int32 battle_get_misc_element( const block_list* src, const block_list* target, uint16 skill_id, uint16 skill_lv, int32 mflag );
 static void battle_calc_defense_reduction( Damage* wd, block_list* src, block_list* target, uint16 skill_id, uint16 skill_lv );
+
+// Hook: Progressive PvE knowledge bonus based on permanent per-race kill counters.
+static int32 battle_get_monster_scholar_bonus( const map_session_data& sd, e_race race ){
+	if( sd.bonus.monster_scholar <= 0 )
+		return 0;
+
+	if( race < 0 || race >= RC_MAX )
+		return 0;
+
+	// PvE only: player races are explicitly excluded.
+	if( race == RC_PLAYER_HUMAN || race == RC_PLAYER_DORAM )
+		return 0;
+
+	static int64 kill_vars[RC_MAX] = {};
+	static bool initialized = false;
+
+	if( !initialized ){
+		for( int32 i = 0; i < RC_MAX; i++ ){
+			char var_name[32];
+			safesnprintf( var_name, sizeof( var_name ), "MobKillCount_%d", i );
+			kill_vars[i] = add_str( var_name );
+		}
+		initialized = true;
+	}
+
+	const int64 kill_count = pc_readregistry( &sd, kill_vars[race] );
+	if( kill_count <= 0 )
+		return 0;
+
+	// +0.1% per 1000 kills, capped at +5.0% (50 steps). Return value is in 0.1% units.
+	int32 steps = static_cast<int32>( kill_count / 1000 );
+	if( steps > 50 )
+		steps = 50;
+
+	return steps * sd.bonus.monster_scholar;
+}
 
 /**
  * Returns the current/list skill used by the bl
@@ -1712,6 +1749,13 @@ int64 battle_calc_damage(block_list *src,block_list *bl,struct Damage *d,int64 d
 	}
 
 	status_change* tsc = status_get_sc(bl); //check target status
+
+	if( tsd != nullptr && damage > 0 && ( flag&( BF_WEAPON | BF_MAGIC ) ) != 0 ){
+		int32 scholar_bonus = battle_get_monster_scholar_bonus( *tsd, static_cast<e_race>( status_get_race( bl ) ) );
+
+		if( scholar_bonus > 0 )
+			damage += damage * scholar_bonus / 1000;
+	}
 
 	// Nothing can reduce the damage, but Safety Wall and Millennium Shield can block it completely.
 	// So can defense sphere's but what the heck is that??? [Rytech]
@@ -9716,6 +9760,11 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 
 	const map_data* mapdata = map_getmapdata(m);
 
+	// Hook: enables offensive skill friendly fire either by mapflag or temporary status.
+	const bool is_offensive_skill_check = ( flag & BCT_ENEMY ) && ( battle_getcurrentskill( src ) > 0 || src->type == BL_SKILL );
+	const bool has_friendly_fire_status = s_bl->type == BL_PC && static_cast<const map_session_data*>( s_bl )->sc.hasSCE( SC_FRIENDLYFIRE );
+	const bool force_friendly_fire = is_offensive_skill_check && ( mapdata->getMapFlag( MF_FRIENDLY_FIRE ) || has_friendly_fire_status );
+
 	switch( target->type ) { // Checks on actual target
 		case BL_PC: {
 				const status_change* sc = status_get_sc(src);
@@ -9958,18 +10007,32 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 		if( flag&(BCT_PARTY|BCT_ENEMY) )
 		{
 			int32 s_party = status_get_party_id(s_bl);
-			if( s_party && s_party == status_get_party_id(t_bl) && !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOPARTY)) && !(mapdata_flag_gvg(mapdata) && mapdata->getMapFlag(MF_GVG_NOPARTY)) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) )
-				state |= BCT_PARTY;
-			else
+			int32 t_party = status_get_party_id(t_bl);
+
+			if( s_party && s_party == t_party && !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOPARTY)) && !(mapdata_flag_gvg(mapdata) && mapdata->getMapFlag(MF_GVG_NOPARTY)) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) ) {
+				if( force_friendly_fire ) {
+					// Hook: on mf_friendly_fire or SC_FRIENDLYFIRE, allied party members become offensive targets.
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_PARTY;
+			}else
 				state |= BCT_ENEMY;
 		}
 		if( flag&(BCT_GUILD|BCT_ENEMY) )
 		{
 			int32 s_guild = status_get_guild_id(s_bl);
 			int32 t_guild = status_get_guild_id(t_bl);
-			if( !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOGUILD)) && s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) )
-				state |= BCT_GUILD;
-			else
+			bool is_same_guild_or_ally = s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild)));
+
+			if( !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOGUILD)) && is_same_guild_or_ally && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) ) {
+				if( force_friendly_fire ) {
+					// Hook: on mf_friendly_fire or SC_FRIENDLYFIRE, guild allies become offensive targets.
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_GUILD;
+			}else
 				state |= BCT_ENEMY;
 		}
 		if( state&BCT_ENEMY && mapdata->getMapFlag(MF_BATTLEGROUND) && sbg_id && sbg_id == tbg_id )
@@ -9994,15 +10057,28 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 		if( flag&BCT_PARTY || state&BCT_ENEMY )
 		{
 			int32 s_party = status_get_party_id(s_bl);
-			if(s_party && s_party == status_get_party_id(t_bl))
-				state |= BCT_PARTY;
+			int32 t_party = status_get_party_id(t_bl);
+
+			if( s_party && s_party == t_party ) {
+				if( force_friendly_fire ) {
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_PARTY;
+			}
 		}
 		if( flag&BCT_GUILD || state&BCT_ENEMY )
 		{
 			int32 s_guild = status_get_guild_id(s_bl);
 			int32 t_guild = status_get_guild_id(t_bl);
-			if(s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))))
-				state |= BCT_GUILD;
+
+			if( s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) ) {
+				if( force_friendly_fire ) {
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_GUILD;
+			}
 		}
 	} //end non pvp/gvg chk rivality
 
@@ -10642,6 +10718,7 @@ static const struct _battle_data {
 	{ "switch_remove_edp",                  &battle_config.switch_remove_edp,               2,      0,      3,              },
 	{ "feature.homunculus_autofeed",        &battle_config.feature_homunculus_autofeed,     1,      0,      1,              },
 	{ "feature.homunculus_autofeed_rate",   &battle_config.feature_homunculus_autofeed_rate,30,     0,    100,              },
+	{ "feature.blood_tax_hp_rate",          &battle_config.feature_blood_tax_hp_rate,       2,      0,    100,              },
 	{ "summoner_race",                      &battle_config.summoner_race,                   RC_PLAYER_DORAM,      RC_FORMLESS,      RC_PLAYER_DORAM,              },
 	{ "summoner_size",                      &battle_config.summoner_size,                   SZ_SMALL,                SZ_SMALL,               SZ_BIG,              },
 	{ "homunculus_autofeed_always",         &battle_config.homunculus_autofeed_always,      1,      0,      1,              },

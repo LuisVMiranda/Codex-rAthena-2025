@@ -27,6 +27,7 @@
 #include "mob.hpp"
 #include "pc.hpp"
 #include "pc_groups.hpp"
+#include "status.hpp"
 #include "trade.hpp"
 
 static DBMap* party_db; // int32 party_id -> struct party_data* (releases data)
@@ -35,6 +36,20 @@ static unsigned long party_booking_nextid = 1;
 
 TIMER_FUNC(party_send_xy_timer);
 int32 party_create_byscript;
+
+static void party_recalc_synergy_bonus( party_data* p ){
+	if( p == nullptr )
+		return;
+
+	for( int32 i = 0; i < MAX_PARTY; i++ ){
+		map_session_data* sd = p->data[i].sd;
+
+		// Avoid recalculating while the player is still in login bootstrap (connect_new),
+		// which can lead to unsafe chained recalculations on party updates.
+		if( sd != nullptr && !sd->state.connect_new )
+			status_calc_pc( sd, SCO_NONE );
+	}
+}
 
 /*==========================================
  * Fills the given party_member structure according to the sd provided.
@@ -636,6 +651,7 @@ void party_member_joined( map_session_data& sd ){
 		p->data[i].hp = sd.battle_status.hp;
 			p->data[i].x = sd.x;
 		p->data[i].y = sd.y;
+		party_recalc_synergy_bonus( p );
 	} else
 		sd.status.party_id = 0; //He does not belongs to the party really?
 }
@@ -695,6 +711,7 @@ int32 party_member_added(int32 party_id,uint32 account_id,uint32 char_id, int32 
 	if (p->instance_id > 0)
 		instance_reqinfo(sd, p->instance_id);
 
+	party_recalc_synergy_bonus( p );
 	return 0;
 }
 
@@ -852,6 +869,10 @@ int32 party_member_withdraw(int32 party_id, uint32 account_id, uint32 char_id, c
 			}
 		}
 	}
+
+	party_recalc_synergy_bonus( p );
+	if( sd != nullptr )
+		status_calc_pc( sd, SCO_NONE );
 
 	return 0;
 }
@@ -1047,6 +1068,7 @@ int32 party_recv_movemap( int32 party_id, uint32 account_id, uint32 char_id, int
 	}
 
 	clif_party_info( *p );
+	party_recalc_synergy_bonus( p );
 
 	return 0;
 }

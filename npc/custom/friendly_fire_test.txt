@@ -1,0 +1,45 @@
+//===== rAthena Script =======================================
+//= Friendly Fire test script
+//===== Description ===========================================
+//= 1) NPC toggles mapflag mf_friendly_fire on current map.
+//= 2) Gives test item with bonus3 bFriendlyFire,100,10000,BF_WEAPON.
+//=============================================================
+
+prontera,153,185,4	script	Friendly Fire Control	4_F_KAFRA1,{
+	mes "[Friendly Fire Control]";
+	mes "Current map: " + strcharinfo(3) + ".";
+	if (getmapflag(strcharinfo(3), mf_friendly_fire)) {
+		mes "mf_friendly_fire is currently: ON";
+	} else {
+		mes "mf_friendly_fire is currently: OFF";
+	}
+	next;
+	switch(select("Enable mapflag:Disable mapflag:Give test item:Cancel")) {
+	case 1:
+		setmapflag(strcharinfo(3), mf_friendly_fire);
+		mes "mf_friendly_fire enabled on this map.";
+		break;
+	case 2:
+		removemapflag(strcharinfo(3), mf_friendly_fire);
+		mes "mf_friendly_fire disabled on this map.";
+		break;
+	case 3:
+		getitem 50150,1;
+		mes "Given 1x Friendly Fire Test Scroll.";
+		break;
+	default:
+		mes "Cancelled.";
+		break;
+	}
+	close;
+}
+
+- 	script	FriendlyFire_TestItem_Init	FAKE_NPC,{
+	end;
+
+OnInit:
+	// Test item definition (requires item ID 50150 to exist in your item DB).
+	// Example script for item_db:
+	// 50150,Friendly_Fire_Test_Scroll,Friendly Fire Test Scroll,2,10,,10,,0,,0xFFFFFFFF,63,2,1024,,0,1,0,{ bonus3 bFriendlyFire,100,10000,BF_WEAPON; },{},{}
+	end;
+}

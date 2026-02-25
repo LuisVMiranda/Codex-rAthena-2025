@@ -100,6 +100,8 @@ bonus bInt,n;      			INT + n
 bonus bDex,n;      			DEX + n
 bonus bLuk,n;      			LUK + n
 bonus bAllStats,n; 			STR + n, AGI + n, VIT + n, INT + n, DEX + n, LUK + n
+bonus bPartySynergy,n;			For every 4 unique base class lines in the same party and map, grants +n to STR/AGI/VIT/INT/DEX/LUK (max 4 stacks)
+					DIFF requirement: `Codex diffs/bonus_party_synergy/bonus_party_synergy.diff`
 bonus bAgiVit,n;   			AGI + n, VIT + n
 bonus bAgiDexStr,n;			STR + n, AGI + n, DEX + n
 
@@ -199,6 +201,9 @@ Atk/Def
 -------
 bonus2 bSkillAtk,sk,n;    		Increases damage of skill sk by n%
 bonus bSkillRatio,n;			Adds n to the skillratio of all attacks/skills that use it
+bonus bMonsterScholar,n;		Progressive PvE damage bonus by race using permanent variable MobKillCount_<RaceID>
+					+0.1% Physical and Magical damage per 1000 kills (max +5% per race), not applied to RC_PLAYER_HUMAN/RC_PLAYER_DORAM
+					DIFF requirement: `Codex diffs/Bonus-bMonsterScholar [OK]/bMonsterScholar.diff`
 bonus bShortAtkRate,n;			Increases damage of short ranged attacks by n%
 bonus bLongAtkRate,n;     		Increases damage of long ranged attacks by n%
 bonus bCritAtkRate,n;     		Increases critical damage by +n%
@@ -221,6 +226,9 @@ Healing
 -------
 bonus bHealPower,n;						Increases heal amount of all heal skills by n%
 bonus bHealPower2,n;					Increases heal amount if you are healed by any skills by n%
+bonus bCampfireHeal,n;				Adjusts campfire healing ticks by n%
+bonus bCampfireRate,n;				Alias of bCampfireHeal (same behavior)
+					DIFF requirement: custom Campfire system patch (SP_CAMPFIRE_HEAL_RATE)
 bonus2 bSkillHeal,sk,n;					Increases heal amount of skill sk by n%
 bonus2 bSkillHeal2,sk,n;				Increases heal amount if you are healed by skill sk by n%
 bonus bAddItemHealRate,n;				Increases HP recovered by n% for healing items
@@ -345,6 +353,11 @@ bonus2 bAddEff,eff,n;       		Adds a n/100% chance to cause status eff on the ta
 bonus2 bAddEff2,eff,n;      		Adds a n/100% chance to cause status eff on self when attacking
 bonus2 bAddEffWhenHit,eff,n;		Adds a n/100% chance to cause status eff on the enemy when being hit by physical damage
 bonus2 bResEff,eff,n;       		Adds a n/100% tolerance to status eff
+bonus3 bFriendlyFire,x,t,bf;		On attack, has x%% chance to apply SC_FRIENDLYFIRE for t milliseconds
+						while matching trigger criteria bf (offensive skills can target allies while active)
+						bf supports BF_SHORT, BF_LONG, BF_WEAPON, BF_MAGIC, BF_MISC, BF_NORMAL, BF_SKILL.
+						If bf omits range/skill masks, defaults are auto-completed (same behavior as other BF bonuses).
+					DIFF requirement: `Codex diffs/friendly_fire_system/bfriendlyfire_bonus.diff`
 
 bonus3 bAddEff,eff,n,atf;       		Adds a n/100% chance to cause status eff on the target when attacking
 bonus4 bAddEff,eff,n,atf,t;     		Adds a n/100% chance to cause status eff for t milliseconds on the target when attacking

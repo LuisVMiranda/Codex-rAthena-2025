@@ -1,0 +1,16 @@
+//============================================================
+// Custom Drops Mapflag - Sample Configuration
+//============================================================
+// Syntax:
+//   <mapname>	mapflag	mobdrop	item_id>,<rate>{,<mob_id>}
+//
+// Notes:
+// - item_id: item database id to be dropped.
+// - rate: drop chance from 1~10000 (10000 = 100%).
+// - mob_id (optional): if provided, only that monster can trigger the drop.
+//   if omitted or 0, any monster on the map can trigger the drop.
+// - Use "off" to remove all mobdrop entries from the map.
+//
+// Examples:
+
+gonryun	mapflag	blood_tax

@@ -6849,8 +6849,7 @@ Body:
       StopAttacking: true
       StopCasting: true
       BossResist: true
-
   - Status: Friendlyfire
-    Icon: EFST_BLANK
+    Icon: EFST_FRIENDLYFIRE
     Flags:
       NoWarning: true

@@ -4388,6 +4388,10 @@ void pc_bonus(map_session_data *sd,int32 type,int32 val)
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.add_heal2_rate += val;
 			break;
+		case SP_CAMPFIRE_HEAL_RATE:
+			if (sd->state.lr_flag != LR_FLAG_ARROW)
+				sd->bonus.campfire_heal_rate += val;
+			break;
 		case SP_ADD_ITEM_HEAL_RATE:
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.itemhealrate2 += val;
@@ -6453,6 +6457,9 @@ int32 pc_useitem(map_session_data *sd,int32 n)
 
 	// Store information for later use before it is lost (via pc_delitem) [Paradox924X]
 	nameid = id->nameid;
+
+	if( nameid == 7035 && !npc_campfire_use_item( *sd ) )
+		return 0;
 
 	if (nameid != ITEMID_NAUTHIZ && sd->sc.opt1 > 0 && sd->sc.opt1 != OPT1_STONEWAIT && sd->sc.opt1 != OPT1_BURNING)
 		return 0;
@@ -10260,7 +10267,7 @@ int64 pc_readparam( const map_session_data* sd, int64 type )
 		case SP_COOKMASTERY:     val = sd->cook_mastery; break;
 		case SP_ACHIEVEMENT_LEVEL: val = sd->achievement_data.level; break;
 		case SP_CRITICAL:        val = sd->battle_status.cri/10; break;
-		case SP_ASPD:            val = (AMOTION_ZERO_ASPD-sd->battle_status.amotion)/AMOTION_INTERVAL; break;
+		case SP_ASPD:            val = max(0, (AMOTION_ZERO_ASPD - sd->battle_status.amotion) / AMOTION_INTERVAL); break;
 		case SP_BASE_ATK:
 #ifdef RENEWAL
 			val = sd->bonus.eatk;
@@ -10379,6 +10386,7 @@ int64 pc_readparam( const map_session_data* sd, int64 type )
 		case SP_MAGIC_HP_GAIN_VALUE: val = sd->bonus.magic_hp_gain_value; break;
 		case SP_ADD_HEAL_RATE:   val = sd->bonus.add_heal_rate; break;
 		case SP_ADD_HEAL2_RATE:  val = sd->bonus.add_heal2_rate; break;
+		case SP_CAMPFIRE_HEAL_RATE: val = sd->bonus.campfire_heal_rate; break;
 		case SP_ADD_ITEM_HEAL_RATE: val = sd->bonus.itemhealrate2; break;
 		case SP_EMATK:           val = sd->bonus.ematk; break;
 		case SP_EMATK_HIDDEN:    val = sd->bonus.ematk_hidden; break;
@@ -10759,6 +10767,11 @@ int32 pc_itemheal(map_session_data *sd, t_itemid itemid, int32 hp, int32 sp)
 		if (sd->sc.getSCE(SC_WATER_INSIGNIA) && sd->sc.getSCE(SC_WATER_INSIGNIA)->val1 == 2) {
 			hp += hp / 10;
 			sp += sp / 10;
+		}
+
+		if( map_getmapflag( sd->m, MF_NO_MERCY ) ) {
+			hp = hp * battle_config.feature_no_mercy_recover_rate / 100;
+			sp = sp * battle_config.feature_no_mercy_recover_rate / 100;
 		}
 
 #ifdef RENEWAL
@@ -12029,6 +12042,16 @@ bool pc_equipitem(map_session_data *sd,int16 n,int32 req_pos,bool equipswitch)
 		}
 		return false;
 	}
+	if( map_getmapflag( sd->m, MF_GEAR_LOCK ) ){
+		if( equipswitch ){
+			clif_equipswitch_add( sd, n, req_pos, ITEM_EQUIP_ACK_FAIL );
+		}else{
+			clif_equipitemack( *sd, ITEM_EQUIP_ACK_FAIL, n );
+		}
+		clif_displaymessage( sd->fd, "A energia deste mapa impede a troca de equipamentos." );
+		return false;
+	}
+
 	if( DIFF_TICK(sd->canequip_tick,gettick()) > 0 ) {
 		if( equipswitch ){
 			clif_equipswitch_add( sd, n, req_pos, ITEM_EQUIP_ACK_FAIL );
@@ -12408,6 +12431,12 @@ bool pc_unequipitem(map_session_data *sd, int32 n, int32 flag) {
 		clif_unequipitemack(*sd,n,0,false);
 		return false; //Nothing to unequip
 	}
+	if( map_getmapflag( sd->m, MF_GEAR_LOCK ) && !( flag & 2 ) ){
+		clif_unequipitemack( *sd, n, 0, false );
+		clif_displaymessage( sd->fd, "A energia deste mapa impede a troca de equipamentos." );
+		return false;
+	}
+
 	// status change that makes player cannot unequip equipment
 	if (!(flag&2) && !sd->sc.empty() &&( sd->sc.cant.unequip ||
 		(sd->sc.getSCE(SC_PYROCLASTIC) &&	sd->inventory_data[n]->type == IT_WEAPON)))	// can't switch weapon

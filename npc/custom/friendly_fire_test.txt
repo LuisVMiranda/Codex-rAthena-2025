@@ -2,7 +2,7 @@
 //= Friendly Fire test script
 //===== Description ===========================================
 //= 1) NPC toggles mapflag mf_friendly_fire on current map.
-//= 2) Gives test item with bonus2 bFriendlyFire,100,30000.
+//= 2) Gives test item with bonus3 bFriendlyFire,100,10000,BF_WEAPON.
 //=============================================================
 
 prontera,153,185,4	script	Friendly Fire Control	4_F_KAFRA1,{
@@ -40,6 +40,6 @@ prontera,153,185,4	script	Friendly Fire Control	4_F_KAFRA1,{
 OnInit:
 	// Test item definition (requires item ID 50150 to exist in your item DB).
 	// Example script for item_db:
-	// 50150,Friendly_Fire_Test_Scroll,Friendly Fire Test Scroll,2,10,,10,,0,,0xFFFFFFFF,63,2,1024,,0,1,0,{ bonus2 bFriendlyFire,100,30000; },{},{}
+	// 50150,Friendly_Fire_Test_Scroll,Friendly Fire Test Scroll,2,10,,10,,0,,0xFFFFFFFF,63,2,1024,,0,1,0,{ bonus3 bFriendlyFire,100,10000,BF_WEAPON; },{},{}
 	end;
 }

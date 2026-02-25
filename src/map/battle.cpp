@@ -8593,6 +8593,28 @@ void battle_vanish_damage(map_session_data *sd, block_list *target, int32 flag)
 		status_percent_damage(sd, target, -vanish_hp, -vanish_sp, false); // Damage HP/SP applied once
 }
 
+/**
+ * Try to trigger bFriendlyFire on outgoing attacks.
+ * Hook location: called from battle_calc_attack() after a successful hit so equipment change is not required to retrigger.
+ */
+static void battle_try_trigger_friendly_fire(map_session_data *sd, int32 flag)
+{
+	nullpo_retv(sd);
+
+	if( sd->friendly_fire.empty() )
+		return;
+
+	for( const auto &it : sd->friendly_fire ){
+		if( !(((it.flag) & flag) & BF_WEAPONMASK &&
+			((it.flag) & flag) & BF_RANGEMASK &&
+			((it.flag) & flag) & BF_SKILLMASK) )
+			continue;
+
+		if( it.rate > 0 && (it.rate >= 100 || rnd() % 100 < it.rate) )
+			sc_start( nullptr, sd, SC_FRIENDLYFIRE, 100, 0, it.duration );
+	}
+}
+
 /*==========================================
  * Battle main entry, from skill_attack
  *------------------------------------------
@@ -8640,8 +8662,10 @@ struct Damage battle_calc_attack(int32 attack_type,block_list *bl,block_list *ta
 
 	map_session_data *sd = BL_CAST(BL_PC, bl);
 
-	if (sd && d.damage + d.damage2 > 1)
+	if (sd && d.damage + d.damage2 > 1) {
 		battle_vanish_damage(sd, target, d.flag);
+		battle_try_trigger_friendly_fire(sd, d.flag);
+	}
 
 	return d;
 }

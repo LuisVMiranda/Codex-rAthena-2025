@@ -10041,9 +10041,9 @@ BUILDIN_FUNC(bonus)
 
 	type = script_getnum(st,2);
 
-	// Hook: bFriendlyFire is modeled as bonus2 bFriendlyFire,chance,duration.
-	if( type == SP_FRIENDLY_FIRE && script_lastdata(st) - 2 != 2 ){
-		ShowError( "buildin_bonus: bFriendlyFire requires 2 parameters (chance,duration).\n" );
+	// Hook: bFriendlyFire is modeled as bonus3 bFriendlyFire,chance,duration,bf.
+	if( type == SP_FRIENDLY_FIRE && script_lastdata(st) - 2 != 3 ){
+		ShowError( "buildin_bonus: bFriendlyFire requires 3 parameters (chance,duration,bf).\n" );
 		return SCRIPT_CMD_FAILURE;
 	}
 

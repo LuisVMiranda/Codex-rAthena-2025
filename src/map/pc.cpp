@@ -5307,6 +5307,27 @@ void pc_bonus3(map_session_data *sd,int32 type,int32 type2,int32 type3,int32 val
 		}
 		break;
 
+	case SP_FRIENDLY_FIRE: { // bonus3 bFriendlyFire,chance,duration,bf;
+		if( sd->state.lr_flag == LR_FLAG_ARROW )
+			break;
+
+		if( type2 <= 0 || type3 <= 0 || val <= 0 )
+			break;
+
+		if( sd->friendly_fire.size() == MAX_PC_BONUS ){
+			ShowWarning( "pc_bonus3: SP_FRIENDLY_FIRE: Reached max (%d) number of friendly fire bonuses per character!\n", MAX_PC_BONUS );
+			break;
+		}
+
+		s_friendly_fire_bonus entry = {};
+		entry.rate = cap_value( type2, 0, 100 );
+		entry.duration = static_cast<uint32>( type3 );
+		entry.flag = val;
+		sd->friendly_fire.push_back( entry );
+		break;
+	}
+
+
 	case SP_STATE_NORECOVER_RACE: // bonus3 bStateNoRecoverRace,r,x,t;
 		PC_BONUS_CHK_RACE(type2, SP_STATE_NORECOVER_RACE);
 		if (sd->state.lr_flag == LR_FLAG_ARROW)

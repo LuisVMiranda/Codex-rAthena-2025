@@ -1,6 +1,10 @@
 Party Synergy (bPartySynergy) - How to Install
 =============================================
 
+This package is the unified/updated version of:
+- bonus_party_synergy
+- Bonus-bPartySynergy [OK]
+
 1) Apply code changes
    - Apply `bonus_party_synergy.diff` from this folder to your source tree.
 
@@ -14,10 +18,17 @@ Party Synergy (bPartySynergy) - How to Install
 
 Behavior
 --------
-- Counts unique base class lines from party members on the same map.
+- Counts unique class lines from ONLINE party members on the SAME map.
 - Every 4 unique classes grants +1 to all basic stats (STR/AGI/VIT/INT/DEX/LUK).
 - Maximum synergy stacks: 4 (up to +4 all stats when value is 1).
-- Recalculates when party membership/map state changes.
+- Final bonus applied is: (synergy_stacks * script_value).
+- Recalculates on party join/leave/map-state updates.
+
+Polish/Safety notes
+-------------------
+- Includes guarded status recalculation to avoid unsafe login-bootstrap timing.
+- Exposes bPartySynergy in script constants and readparam handling.
+- Kept stat-bonus application under the non-arrow bonus path to match standard bonus behavior.
 
 Example
 -------

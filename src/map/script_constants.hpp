@@ -756,6 +756,7 @@
 	export_constant2("bHealPower",SP_ADD_HEAL_RATE);
 	export_constant2("bHealPower2",SP_ADD_HEAL2_RATE);
 	export_constant2("bCampfireHeal",SP_CAMPFIRE_HEAL_RATE);
+	export_constant2("bPartySynergy",SP_PARTY_SYNERGY);
 	export_constant2("bIgnoreResRaceRate",SP_SP_IGNORE_RES_RACE_RATE);
 	export_constant2("bIgnoreMResRaceRate",SP_SP_IGNORE_MRES_RACE_RATE);
 

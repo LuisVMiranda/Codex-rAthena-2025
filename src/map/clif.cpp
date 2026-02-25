@@ -8289,7 +8289,7 @@ void clif_party_job_and_level( const map_session_data& sd ){
 /*==========================================
  * Sends HP bar to a single fd. [Skotlex]
  *------------------------------------------*/
-void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp ){
+void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint32 maxhp, uint32 sp, uint32 maxsp ){
 	PACKET_ZC_NOTIFY_HP_TO_GROUPM p = {};
 
 	p.PacketType = HEADER_ZC_NOTIFY_HP_TO_GROUPM;
@@ -8306,6 +8306,10 @@ void clif_hpmeter_single( const map_session_data& sd, uint32 id, uint32 hp, uint
 #else
 	p.hp = hp;
 	p.maxhp = maxhp;
+#if PACKETVER_ZERO_NUM >= 20210504 || PACKETVER_MAIN_NUM >= 20210526 || PACKETVER_RE_NUM >= 20211103
+	p.sp = sp;
+	p.maxsp = maxsp;
+#endif
 #endif
 
 	clif_send( &p, sizeof( p ), &sd, SELF );
@@ -11112,8 +11116,7 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 		clif_spawn(sd->ed);
 		clif_elemental_info(sd);
 		clif_elemental_updatestatus(*sd, SP_HP);
-		static constexpr auto clif_hpmeter_single_fn = static_cast<void (*)( const map_session_data&, uint32, uint32, uint32 )>( &clif_hpmeter_single );
-		clif_hpmeter_single_fn( *sd, static_cast<uint32>( sd->ed->id ), static_cast<uint32>( sd->ed->battle_status.hp ), static_cast<uint32>( sd->ed->battle_status.max_hp ) );
+		clif_hpmeter_single( *sd, static_cast<uint32>( sd->ed->id ), static_cast<uint32>( sd->ed->battle_status.hp ), static_cast<uint32>( sd->ed->battle_status.max_hp ) );
 		clif_elemental_updatestatus(*sd, SP_SP);
 		status_calc_bl(sd->ed, { SCB_SPEED }); //Elemental mimic their master's speed on each map change
 	}

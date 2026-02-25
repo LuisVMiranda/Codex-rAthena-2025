@@ -69,7 +69,7 @@ index e39193f..4ca9f2d 100644
  
 +	const int32 blood_tax_hp = skill_blood_tax_cost( sd, skill_id, require );
 +	if( blood_tax_hp > 0 && status->hp < static_cast<uint32>( blood_tax_hp ) ) {
-+		clif_displaymessage( sd.fd, "Você não tem sangue suficiente para este sacrifício." );
++		clif_displaymessage( sd.fd, msg_txt( &sd, 2930 ) );
 +		return false;
 +	}
 +
@@ -87,3 +87,28 @@ index e39193f..4ca9f2d 100644
  		if(require.spiritball > 0) { // Skills that require certain types of spheres to use
  			switch (skill_id) { // Skills that require soul spheres.
  				case SP_SOULGOLEM:
+
+
+diff --git a/conf/msg_conf/map_msg.conf b/conf/msg_conf/map_msg.conf
+index 0000000..0000000 100644
+--- a/conf/msg_conf/map_msg.conf
++++ b/conf/msg_conf/map_msg.conf
+@@ -1541,3 +1541,6 @@
+ 2924: Dueno de la Fogata: %s | Tiempo restante: %d segundos.
+ 2925: Fogata creada.
+ 2926: Fogata VIP creada.
++2930: You do not have enough blood for this sacrifice.
++2931: Voce nao tem sangue suficiente para este sacrificio.
++
+
+diff --git a/conf/msg_conf/map_msg_por.conf b/conf/msg_conf/map_msg_por.conf
+index 0000000..0000000 100644
+--- a/conf/msg_conf/map_msg_por.conf
++++ b/conf/msg_conf/map_msg_por.conf
+@@ -1538,3 +1538,6 @@
+ 1538: Detecao de macro iniciada em %d jogadores.
+ 
++// MF_BLOOD_TAX
++2930: Voce nao tem sangue suficiente para este sacrificio.
++
+ //Custom translations

@@ -1,0 +1,184 @@
+diff --git a/doc/item_bonus.txt b/doc/item_bonus.txt
+index a85774a..539f090 100644
+--- a/doc/item_bonus.txt
++++ b/doc/item_bonus.txt
+@@ -353,7 +353,9 @@ bonus2 bAddEff,eff,n;       		Adds a n/100% chance to cause status eff on the ta
+ bonus2 bAddEff2,eff,n;      		Adds a n/100% chance to cause status eff on self when attacking
+ bonus2 bAddEffWhenHit,eff,n;		Adds a n/100% chance to cause status eff on the enemy when being hit by physical damage
+ bonus2 bResEff,eff,n;       		Adds a n/100% tolerance to status eff
+-bonus2 bFriendlyFire,x,t;		Applies SC_FRIENDLYFIRE at x%% chance for t milliseconds (offensive skills can target allies while active)
++bonus3 bFriendlyFire,x,t,bf;		On attack, has x%% chance to apply SC_FRIENDLYFIRE for t milliseconds
++						while matching trigger criteria bf (offensive skills can target allies while active)
++						bf supports BF_SHORT, BF_LONG, BF_WEAPON, BF_MAGIC, BF_MISC, BF_NORMAL, BF_SKILL.
+ 					DIFF requirement: `Codex diffs/friendly_fire_system/bfriendlyfire_bonus.diff`
+ 
+ bonus3 bAddEff,eff,n,atf;       		Adds a n/100% chance to cause status eff on the target when attacking
+diff --git a/npc/custom/friendly_fire_test.txt b/npc/custom/friendly_fire_test.txt
+index 8014bc1..032fa52 100644
+--- a/npc/custom/friendly_fire_test.txt
++++ b/npc/custom/friendly_fire_test.txt
+@@ -2,7 +2,7 @@
+ //= Friendly Fire test script
+ //===== Description ===========================================
+ //= 1) NPC toggles mapflag mf_friendly_fire on current map.
+-//= 2) Gives test item with bonus2 bFriendlyFire,100,30000.
++//= 2) Gives test item with bonus3 bFriendlyFire,100,10000,BF_WEAPON.
+ //=============================================================
+ 
+ prontera,153,185,4	script	Friendly Fire Control	4_F_KAFRA1,{
+@@ -40,6 +40,6 @@ prontera,153,185,4	script	Friendly Fire Control	4_F_KAFRA1,{
+ OnInit:
+ 	// Test item definition (requires item ID 50150 to exist in your item DB).
+ 	// Example script for item_db:
+-	// 50150,Friendly_Fire_Test_Scroll,Friendly Fire Test Scroll,2,10,,10,,0,,0xFFFFFFFF,63,2,1024,,0,1,0,{ bonus2 bFriendlyFire,100,30000; },{},{}
++	// 50150,Friendly_Fire_Test_Scroll,Friendly Fire Test Scroll,2,10,,10,,0,,0xFFFFFFFF,63,2,1024,,0,1,0,{ bonus3 bFriendlyFire,100,10000,BF_WEAPON; },{},{}
+ 	end;
+ }
+diff --git a/src/map/battle.cpp b/src/map/battle.cpp
+index 799ade8..bee45c4 100644
+--- a/src/map/battle.cpp
++++ b/src/map/battle.cpp
+@@ -8593,6 +8593,28 @@ void battle_vanish_damage(map_session_data *sd, block_list *target, int32 flag)
+ 		status_percent_damage(sd, target, -vanish_hp, -vanish_sp, false); // Damage HP/SP applied once
+ }
+ 
++/**
++ * Try to trigger bFriendlyFire on outgoing attacks.
++ * Hook location: called from battle_calc_attack() after a successful hit so equipment change is not required to retrigger.
++ */
++static void battle_try_trigger_friendly_fire(map_session_data *sd, int32 flag)
++{
++	nullpo_retv(sd);
++
++	if( sd->friendly_fire.empty() )
++		return;
++
++	for( const auto &it : sd->friendly_fire ){
++		if( !(((it.flag) & flag) & BF_WEAPONMASK &&
++			((it.flag) & flag) & BF_RANGEMASK &&
++			((it.flag) & flag) & BF_SKILLMASK) )
++			continue;
++
++		if( it.rate > 0 && (it.rate >= 100 || rnd() % 100 < it.rate) )
++			sc_start( nullptr, sd, SC_FRIENDLYFIRE, 100, 0, it.duration );
++	}
++}
++
+ /*==========================================
+  * Battle main entry, from skill_attack
+  *------------------------------------------
+@@ -8640,8 +8662,10 @@ struct Damage battle_calc_attack(int32 attack_type,block_list *bl,block_list *ta
+ 
+ 	map_session_data *sd = BL_CAST(BL_PC, bl);
+ 
+-	if (sd && d.damage + d.damage2 > 1)
++	if (sd && d.damage + d.damage2 > 1) {
+ 		battle_vanish_damage(sd, target, d.flag);
++		battle_try_trigger_friendly_fire(sd, d.flag);
++	}
+ 
+ 	return d;
+ }
+diff --git a/src/map/pc.cpp b/src/map/pc.cpp
+index 7ad2f12..dffb5bd 100644
+--- a/src/map/pc.cpp
++++ b/src/map/pc.cpp
+@@ -5170,16 +5170,6 @@ void pc_bonus2(map_session_data *sd,int32 type,int32 type2,int32 val)
+ 
+ 		pc_bonus_itembonus( sd->itemgroupsphealrate, type2, val, false );
+ 		break;
+-	case SP_FRIENDLY_FIRE: // bonus2 bFriendlyFire,chance,duration;
+-		if( sd->state.lr_flag == LR_FLAG_ARROW )
+-			break;
+-
+-		if( type2 <= 0 || val <= 0 )
+-			break;
+-
+-		// Hook: applies a temporary status used by battle_check_target() to ignore ally filtering for offensive skills.
+-		sc_start( nullptr, sd, SC_FRIENDLYFIRE, cap_value( type2, 0, 100 ), 0, val );
+-		break;
+ 	default:
+ 		if (current_equip_combo_pos > 0) {
+ 			ShowWarning("pc_bonus2: unknown bonus type %d %d %d in a combo with item #%u\n", type, type2, val, sd->inventory_data[pc_checkequip( sd, current_equip_combo_pos )]->nameid);
+@@ -5307,6 +5297,27 @@ void pc_bonus3(map_session_data *sd,int32 type,int32 type2,int32 type3,int32 val
+ 		}
+ 		break;
+ 
++	case SP_FRIENDLY_FIRE: { // bonus3 bFriendlyFire,chance,duration,bf;
++		if( sd->state.lr_flag == LR_FLAG_ARROW )
++			break;
++
++		if( type2 <= 0 || type3 <= 0 || val <= 0 )
++			break;
++
++		if( sd->friendly_fire.size() == MAX_PC_BONUS ){
++			ShowWarning( "pc_bonus3: SP_FRIENDLY_FIRE: Reached max (%d) number of friendly fire bonuses per character!\n", MAX_PC_BONUS );
++			break;
++		}
++
++		s_friendly_fire_bonus entry = {};
++		entry.rate = cap_value( type2, 0, 100 );
++		entry.duration = static_cast<uint32>( type3 );
++		entry.flag = val;
++		sd->friendly_fire.push_back( entry );
++		break;
++	}
++
++
+ 	case SP_STATE_NORECOVER_RACE: // bonus3 bStateNoRecoverRace,r,x,t;
+ 		PC_BONUS_CHK_RACE(type2, SP_STATE_NORECOVER_RACE);
+ 		if (sd->state.lr_flag == LR_FLAG_ARROW)
+diff --git a/src/map/pc.hpp b/src/map/pc.hpp
+index d21521f..e8b94a4 100644
+--- a/src/map/pc.hpp
++++ b/src/map/pc.hpp
+@@ -335,6 +335,12 @@ struct s_vanish_bonus {
+ 	int32 flag;
+ };
+ 
++struct s_friendly_fire_bonus {
++	int16 rate; // 100 = 100%
++	uint32 duration; // milliseconds
++	int32 flag;
++};
++
+ /// AutoBonus bonus struct
+ struct s_autobonus {
+ 	int16 rate;
+@@ -615,6 +621,7 @@ public:
+ 	std::vector<s_add_drop> add_drop;
+ 	std::vector<s_addele2> subele2;
+ 	std::vector<s_vanish_bonus> sp_vanish, hp_vanish;
++	std::vector<s_friendly_fire_bonus> friendly_fire;
+ 	std::vector<s_addrace2> subrace3;
+ 	std::vector<std::shared_ptr<s_autobonus>> autobonus, autobonus2, autobonus3; //Auto script on attack, when attacked, on skill usage
+ 
+diff --git a/src/map/script.cpp b/src/map/script.cpp
+index bcf48aa..393e3b1 100644
+--- a/src/map/script.cpp
++++ b/src/map/script.cpp
+@@ -10041,9 +10041,9 @@ BUILDIN_FUNC(bonus)
+ 
+ 	type = script_getnum(st,2);
+ 
+-	// Hook: bFriendlyFire is modeled as bonus2 bFriendlyFire,chance,duration.
+-	if( type == SP_FRIENDLY_FIRE && script_lastdata(st) - 2 != 2 ){
+-		ShowError( "buildin_bonus: bFriendlyFire requires 2 parameters (chance,duration).\n" );
++	// Hook: bFriendlyFire is modeled as bonus3 bFriendlyFire,chance,duration,bf.
++	if( type == SP_FRIENDLY_FIRE && script_lastdata(st) - 2 != 3 ){
++		ShowError( "buildin_bonus: bFriendlyFire requires 3 parameters (chance,duration,bf).\n" );
+ 		return SCRIPT_CMD_FAILURE;
+ 	}
+ 
+diff --git a/src/map/status.cpp b/src/map/status.cpp
+index 7a2c8e6..a7e9a9a 100644
+--- a/src/map/status.cpp
++++ b/src/map/status.cpp
+@@ -3892,6 +3892,7 @@ int32 status_calc_pc_sub(map_session_data* sd, uint8 opt)
+ 	sd->skilldelay.clear();
+ 	sd->sp_vanish.clear();
+ 	sd->hp_vanish.clear();
++	sd->friendly_fire.clear();
+ 	sd->itemsphealrate.clear();
+ 	sd->itemgroupsphealrate.clear();
+ 

@@ -16164,6 +16164,9 @@ Body:
     EquipLevelMin: 50
     Refineable: true
     View: 43
+    Script: |
+      bonus bMaxHp,30000;
+      bonus bCampfireHeal,300;
   - Id: 2259
     AegisName: Mini_Propeller
     Name: Mini Propeller

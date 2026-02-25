@@ -541,6 +541,7 @@
 	export_constant(MF_NOCAMPFIRE);
 	export_constant(MF_NO_MERCY);
 	export_constant(MF_BLOOD_TAX);
+	export_constant(MF_FRIENDLY_FIRE);
 	export_constant(MF_GEAR_LOCK);
 
 	/* setcell types */
@@ -756,6 +757,8 @@
 	export_constant2("bHealPower",SP_ADD_HEAL_RATE);
 	export_constant2("bHealPower2",SP_ADD_HEAL2_RATE);
 	export_constant2("bCampfireHeal",SP_CAMPFIRE_HEAL_RATE);
+	export_constant2("bPartySynergy",SP_PARTY_SYNERGY);
+	export_constant2("bFriendlyFire",SP_FRIENDLY_FIRE);
 	export_constant2("bIgnoreResRaceRate",SP_SP_IGNORE_RES_RACE_RATE);
 	export_constant2("bIgnoreMResRaceRate",SP_SP_IGNORE_MRES_RACE_RATE);
 
@@ -2012,6 +2015,7 @@
 	export_constant(SC_WIND_CHARM_POWER);
 	export_constant(SC_GROUND_CHARM_POWER);
 	export_constant(SC_VIPSTATE);
+	export_constant(SC_FRIENDLYFIRE);
 
 /// Do not modify code below this, until the end of the API hook, since it will be automatically generated again
 /// @APIHOOK_START(EFST_CONST)

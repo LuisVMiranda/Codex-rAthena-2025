@@ -9716,6 +9716,11 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 
 	const map_data* mapdata = map_getmapdata(m);
 
+	// Hook: enables offensive skill friendly fire either by mapflag or temporary status.
+	const bool is_offensive_skill_check = ( flag & BCT_ENEMY ) && ( battle_getcurrentskill( src ) > 0 || src->type == BL_SKILL );
+	const bool has_friendly_fire_status = s_bl->type == BL_PC && static_cast<const map_session_data*>( s_bl )->sc.hasSCE( SC_FRIENDLYFIRE );
+	const bool force_friendly_fire = is_offensive_skill_check && ( mapdata->getMapFlag( MF_FRIENDLY_FIRE ) || has_friendly_fire_status );
+
 	switch( target->type ) { // Checks on actual target
 		case BL_PC: {
 				const status_change* sc = status_get_sc(src);
@@ -9958,18 +9963,32 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 		if( flag&(BCT_PARTY|BCT_ENEMY) )
 		{
 			int32 s_party = status_get_party_id(s_bl);
-			if( s_party && s_party == status_get_party_id(t_bl) && !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOPARTY)) && !(mapdata_flag_gvg(mapdata) && mapdata->getMapFlag(MF_GVG_NOPARTY)) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) )
-				state |= BCT_PARTY;
-			else
+			int32 t_party = status_get_party_id(t_bl);
+
+			if( s_party && s_party == t_party && !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOPARTY)) && !(mapdata_flag_gvg(mapdata) && mapdata->getMapFlag(MF_GVG_NOPARTY)) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) ) {
+				if( force_friendly_fire ) {
+					// Hook: on mf_friendly_fire or SC_FRIENDLYFIRE, allied party members become offensive targets.
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_PARTY;
+			}else
 				state |= BCT_ENEMY;
 		}
 		if( flag&(BCT_GUILD|BCT_ENEMY) )
 		{
 			int32 s_guild = status_get_guild_id(s_bl);
 			int32 t_guild = status_get_guild_id(t_bl);
-			if( !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOGUILD)) && s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) )
-				state |= BCT_GUILD;
-			else
+			bool is_same_guild_or_ally = s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild)));
+
+			if( !(mapdata->getMapFlag(MF_PVP) && mapdata->getMapFlag(MF_PVP_NOGUILD)) && is_same_guild_or_ally && (!mapdata->getMapFlag(MF_BATTLEGROUND) || sbg_id == tbg_id) ) {
+				if( force_friendly_fire ) {
+					// Hook: on mf_friendly_fire or SC_FRIENDLYFIRE, guild allies become offensive targets.
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_GUILD;
+			}else
 				state |= BCT_ENEMY;
 		}
 		if( state&BCT_ENEMY && mapdata->getMapFlag(MF_BATTLEGROUND) && sbg_id && sbg_id == tbg_id )
@@ -9994,15 +10013,28 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 		if( flag&BCT_PARTY || state&BCT_ENEMY )
 		{
 			int32 s_party = status_get_party_id(s_bl);
-			if(s_party && s_party == status_get_party_id(t_bl))
-				state |= BCT_PARTY;
+			int32 t_party = status_get_party_id(t_bl);
+
+			if( s_party && s_party == t_party ) {
+				if( force_friendly_fire ) {
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_PARTY;
+			}
 		}
 		if( flag&BCT_GUILD || state&BCT_ENEMY )
 		{
 			int32 s_guild = status_get_guild_id(s_bl);
 			int32 t_guild = status_get_guild_id(t_bl);
-			if(s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))))
-				state |= BCT_GUILD;
+
+			if( s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) ) {
+				if( force_friendly_fire ) {
+					state |= BCT_ENEMY;
+					strip_enemy = 0;
+				}else
+					state |= BCT_GUILD;
+			}
 		}
 	} //end non pvp/gvg chk rivality
 
@@ -10642,6 +10674,7 @@ static const struct _battle_data {
 	{ "switch_remove_edp",                  &battle_config.switch_remove_edp,               2,      0,      3,              },
 	{ "feature.homunculus_autofeed",        &battle_config.feature_homunculus_autofeed,     1,      0,      1,              },
 	{ "feature.homunculus_autofeed_rate",   &battle_config.feature_homunculus_autofeed_rate,30,     0,    100,              },
+	{ "feature.blood_tax_hp_rate",          &battle_config.feature_blood_tax_hp_rate,       2,      0,    100,              },
 	{ "summoner_race",                      &battle_config.summoner_race,                   RC_PLAYER_DORAM,      RC_FORMLESS,      RC_PLAYER_DORAM,              },
 	{ "summoner_size",                      &battle_config.summoner_size,                   SZ_SMALL,                SZ_SMALL,               SZ_BIG,              },
 	{ "homunculus_autofeed_always",         &battle_config.homunculus_autofeed_always,      1,      0,      1,              },

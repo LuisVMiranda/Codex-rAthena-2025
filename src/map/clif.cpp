@@ -11112,7 +11112,8 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 		clif_spawn(sd->ed);
 		clif_elemental_info(sd);
 		clif_elemental_updatestatus(*sd, SP_HP);
-		clif_hpmeter_single( *sd, static_cast<uint32>( sd->ed->id ), static_cast<uint32>( sd->ed->battle_status.hp ), static_cast<uint32>( sd->ed->battle_status.max_hp ) );
+		static constexpr auto clif_hpmeter_single_fn = static_cast<void (*)( const map_session_data&, uint32, uint32, uint32 )>( &clif_hpmeter_single );
+		clif_hpmeter_single_fn( *sd, static_cast<uint32>( sd->ed->id ), static_cast<uint32>( sd->ed->battle_status.hp ), static_cast<uint32>( sd->ed->battle_status.max_hp ) );
 		clif_elemental_updatestatus(*sd, SP_SP);
 		status_calc_bl(sd->ed, { SCB_SPEED }); //Elemental mimic their master's speed on each map change
 	}

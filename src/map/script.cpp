@@ -10040,6 +10040,13 @@ BUILDIN_FUNC(bonus)
 		return SCRIPT_CMD_SUCCESS; // no player attached
 
 	type = script_getnum(st,2);
+
+	// Hook: bFriendlyFire is modeled as bonus2 bFriendlyFire,chance,duration.
+	if( type == SP_FRIENDLY_FIRE && script_lastdata(st) - 2 != 2 ){
+		ShowError( "buildin_bonus: bFriendlyFire requires 2 parameters (chance,duration).\n" );
+		return SCRIPT_CMD_FAILURE;
+	}
+
 	switch( type ) {
 		case SP_AUTOSPELL:
 		case SP_AUTOSPELL_WHENHIT:

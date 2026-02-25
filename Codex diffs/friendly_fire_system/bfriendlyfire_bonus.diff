@@ -1,22 +1,20 @@
 diff --git a/db/pre-re/status.yml b/db/pre-re/status.yml
-index f177ed4..998c46e 100644
+index 998c46e..066e21d 100644
 --- a/db/pre-re/status.yml
 +++ b/db/pre-re/status.yml
-@@ -6849,3 +6849,6 @@ Body:
-       StopAttacking: true
-       StopCasting: true
-       BossResist: true
-+
-+  - Status: Friendlyfire
-+    Icon: EFST_BLANK
+@@ -6852,3 +6852,5 @@ Body:
+
+   - Status: Friendlyfire
+     Icon: EFST_BLANK
++    Flags:
++      NoWarning: true
 diff --git a/db/re/status.yml b/db/re/status.yml
-index b87756b..c3c544b 100644
+index c3c544b..0b75eb9 100644
 --- a/db/re/status.yml
 +++ b/db/re/status.yml
-@@ -9956,3 +9956,6 @@ Body:
-       NoDispell: true
-       NoBanishingBuster: true
-       NoClearance: true
-+
-+  - Status: Friendlyfire
-+    Icon: EFST_BLANK
+@@ -9959,3 +9959,5 @@ Body:
+
+   - Status: Friendlyfire
+     Icon: EFST_BLANK
++    Flags:
++      NoWarning: true

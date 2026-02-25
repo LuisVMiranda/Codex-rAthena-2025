@@ -6852,3 +6852,5 @@ Body:
 
   - Status: Friendlyfire
     Icon: EFST_BLANK
+    Flags:
+      NoWarning: true

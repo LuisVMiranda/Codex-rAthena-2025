@@ -44,7 +44,9 @@ static void party_recalc_synergy_bonus( party_data* p ){
 	for( int32 i = 0; i < MAX_PARTY; i++ ){
 		map_session_data* sd = p->data[i].sd;
 
-		if( sd != nullptr )
+		// Avoid recalculating while the player is still in login bootstrap (connect_new),
+		// which can lead to unsafe chained recalculations on party updates.
+		if( sd != nullptr && !sd->state.connect_new )
 			status_calc_pc( sd, SCO_NONE );
 	}
 }
